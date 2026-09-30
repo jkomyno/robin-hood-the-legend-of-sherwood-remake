@@ -2,8 +2,16 @@ import * as THREE from "three";
 import { gameToScene, type Level3D } from "@rle/shared";
 import { decode } from "fast-png";
 import { unzipSync } from "fflate";
-import { bakeScene, renderMapBake } from "../src/map-bake-render.ts";
+import { bakeScene, renderMapBake, renderMapBakeAsync } from "../src/map-bake-render.ts";
 import { compileMap, packageCompiledMap } from "../src/map-compile.ts";
+import { PatchDisplay, applyPlacementPatches } from "../src/patch-display.ts";
+import {
+  planAppearanceRegions,
+  bakeAppearanceRegions,
+  bindBakeAppearances,
+} from "../src/map-appearance-bake.ts";
+import { packageAppearanceRegions } from "../src/map-appearance.ts";
+import { endpointAppearanceCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 
 function check(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -57,7 +65,9 @@ try {
   };
   // Nonzero crop origin exercises camera rebasing and ground-depth normalization.
   root.add(surface([-20, -10, 1100, 128], 0x808080));
-  root.add(surface([0, 30, 40, 40], 0xff0000, 20));
+  const maskOwned = surface([0, 30, 40, 40], 0xff0000, 20);
+  maskOwned.userData.map_bake_object_id = "mask-owned-wall";
+  root.add(maskOwned);
   // This surface crosses the tile boundary at output X=1024.
   root.add(surface([990, 30, 60, 40], 0x00ff00, 20));
   const alphaTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 0]), 1, 1);
@@ -80,6 +90,66 @@ try {
   root.add(hidden);
   const compiled = compileMap(document, [-20, -10, 1100, 128]);
   const rendered = renderMapBake(bakeScene([root]), camera, compiled.bounds);
+  let heartbeats = 0;
+  let progressTiles = 0;
+  const heartbeat = setInterval(() => heartbeats++, 0);
+  let asynchronous;
+  try {
+    asynchronous = await renderMapBakeAsync(
+      bakeScene([root]),
+      camera,
+      compiled.bounds,
+      undefined,
+      null,
+      new Set(),
+      (progress) => {
+        progressTiles++;
+        check(progress.completed <= progress.total, "tile progress exceeded total");
+      },
+    );
+  } finally {
+    clearInterval(heartbeat);
+  }
+  check(heartbeats >= 2 && progressTiles === 6, "async tiles must let browser input run");
+  check(
+    asynchronous.color.every((value, i) => value === rendered.color[i]),
+    "async color differs from sync bake",
+  );
+  check(
+    asynchronous.depth.every((value, i) => value === rendered.depth[i]),
+    "async depth differs from sync bake",
+  );
+  const interruptedRoot = bakeScene([root]);
+  const borrowed = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  interruptedRoot.traverse((node) => {
+    if (node instanceof THREE.Mesh) borrowed.set(node, node.material);
+  });
+  let interrupt = false;
+  let interruptionCaught = false;
+  try {
+    await renderMapBakeAsync(
+      interruptedRoot,
+      camera,
+      compiled.bounds,
+      undefined,
+      null,
+      new Set(),
+      () => {
+        interrupt = true;
+      },
+      () => {
+        if (interrupt) throw new Error("test cancellation");
+      },
+    );
+  } catch (error) {
+    interruptionCaught = error instanceof Error && error.message === "test cancellation";
+  }
+  check(
+    interruptionCaught && interruptedRoot.parent === null,
+    "cancelled bake must restore root ownership",
+  );
+  for (const [node, material] of borrowed)
+    check(node.material === material, "cancelled bake must restore borrowed materials");
   const pixel = (x: number, y: number) =>
     rendered.color.slice((y * 1100 + x) * 4, (y * 1100 + x) * 4 + 3);
   check(
@@ -108,6 +178,151 @@ try {
     "ground depth",
   );
   const archive = await packageCompiledMap(compiled, rendered);
+  const maskControlled = renderMapBake(
+    bakeScene([root]),
+    camera,
+    compiled.bounds,
+    undefined,
+    undefined,
+    new Set(["mask-owned-wall"]),
+  );
+  check(
+    maskControlled.color.every((value, index) => value === rendered.color[index]),
+    "mask ownership must preserve every color pixel",
+  );
+  check(
+    Math.abs(maskControlled.depth[30 * 1100 + 30]! - Math.round((30.5 / 128) * 65535)) <= 2,
+    "mask-controlled wall must reveal underlying ground depth",
+  );
+  check(
+    maskControlled.depth[30 * 1100 + 1024] === rendered.depth[30 * 1100 + 1024],
+    "unrelated wall must retain depth occlusion",
+  );
+  // Reuse one snapshot across state changes, including meshes hidden on its first pass.
+  const stateRoot = new THREE.Group();
+  const stateGround = surface([0, 0, 1100, 128], 0x808080);
+  const initialSurface = surface([990, 30, 60, 40], 0x00ff00, 20);
+  const appliedSurface = surface([990, 30, 60, 40], 0xff0000, 10);
+  const endpoint = endpointAppearanceCompilerFixture();
+  const transitions = compileMap(endpoint.document, [0, 0, 2000, 2000], endpoint.assets).descriptor
+    .asset_geometry!.movement_transitions!;
+  const stateId = transitions[0]!.id;
+  const available = new Set(endpoint.document.objects.map((part) => part.node));
+  for (const [mesh, id] of [
+    [initialSurface, "hut-a-body"],
+    [appliedSurface, "hut-a-open"],
+  ] as const) {
+    const part = endpoint.document.objects.find((part) => part.id === id)!;
+    mesh.userData.map_bake_object_id = id;
+    applyPlacementPatches(mesh, endpoint.document, part, available);
+  }
+  appliedSurface.visible = false;
+  stateRoot.add(stateGround, initialSurface, appliedSurface);
+  const snapshot = bakeScene([stateRoot]);
+  bindBakeAppearances(snapshot, endpoint.document, endpoint.assets, transitions);
+  const parent = new THREE.Group();
+  const before = new THREE.Group();
+  const after = new THREE.Group();
+  parent.add(before, snapshot, after);
+  const originalMaterials = [
+    stateGround.material,
+    initialSurface.material,
+    appliedSurface.material,
+  ];
+  let borrowedDisposals = 0;
+  for (const material of originalMaterials)
+    material.addEventListener("dispose", () => borrowedDisposals++);
+  const verifyOwnership = () => {
+    check(snapshot.parent === parent, "bake must restore its scene parent");
+    check(parent.children[1] === snapshot, "bake must restore its sibling order");
+    snapshot.children[0]!.children.forEach((node, index) => {
+      check(
+        (node as THREE.Mesh).material === originalMaterials[index],
+        "bake must restore borrowed materials",
+      );
+    });
+    check(borrowedDisposals === 0, "bake must not dispose borrowed materials");
+  };
+  const stateBounds: [number, number, number, number] = [0, 0, 1100, 128];
+  const initialPixels = renderMapBake(snapshot, camera, stateBounds);
+  verifyOwnership();
+  const display = new PatchDisplay();
+  display.set(stateId, true);
+  display.apply(snapshot);
+  const appliedPixels = renderMapBake(snapshot, camera, stateBounds);
+  verifyOwnership();
+  for (const x of [1023, 1024]) {
+    const offset = 40 * 1100 + x;
+    check(
+      initialPixels.color.slice(offset * 4, offset * 4 + 3).join() === "0,255,0" &&
+        appliedPixels.color.slice(offset * 4, offset * 4 + 3).join() === "255,0,0",
+      "state color must change on both sides of the tile seam",
+    );
+    check(
+      Math.abs(initialPixels.depth[offset]! - Math.round((60.5 / 128) * 65535)) <= 2 &&
+        Math.abs(appliedPixels.depth[offset]! - Math.round((50.5 / 128) * 65535)) <= 2,
+      "state depth must change together with its visible surface",
+    );
+  }
+  display.clear();
+  display.apply(snapshot);
+  const resetPixels = renderMapBake(snapshot, camera, stateBounds);
+  verifyOwnership();
+  check(
+    resetPixels.color.every((value, index) => value === initialPixels.color[index]) &&
+      resetPixels.depth.every((value, index) => value === initialPixels.depth[index]),
+    "state reset must restore every color and depth pixel",
+  );
+  const plans = planAppearanceRegions(snapshot, camera, stateBounds, transitions, false);
+  check(
+    plans.length === 1 && plans[0]!.patches.join() === stateId,
+    "automatic appearance region bindings",
+  );
+  const regions = bakeAppearanceRegions(snapshot, plans, 1100, initialPixels, () =>
+    renderMapBake(snapshot, camera, stateBounds),
+  );
+  const [regionX, regionY, regionWidth, regionHeight] = regions[0]!.bounds;
+  check(regionWidth * regionHeight < 1100 * 128, "state images should crop unaffected map pixels");
+  const stateFiles = packageAppearanceRegions(
+    "state",
+    1100,
+    128,
+    initialPixels,
+    regions,
+    transitions,
+  );
+  const stateDepth = decode(stateFiles["state.appearance-0-1.depth.png"]!).data;
+  const stateColor = decode(stateFiles["state.appearance-0-1.png"]!).data;
+  for (const x of [1023, 1024]) {
+    const local = (40 - regionY) * regionWidth + x - regionX;
+    check(
+      stateDepth[local] === appliedPixels.depth[40 * 1100 + x],
+      "cropped state must retain full-frame depth normalization",
+    );
+    check(
+      stateColor.slice(local * 4, local * 4 + 3).join() === "255,0,0",
+      "cropped state color at tile seam",
+    );
+  }
+  verifyOwnership();
+  // A depth-pass failure must leave the snapshot usable too.
+  const failingNode = snapshot.children[0]!.children[1] as THREE.Mesh;
+  const unsupported = new THREE.MeshPhongMaterial();
+  failingNode.material = unsupported;
+  let failed = false;
+  try {
+    renderMapBake(snapshot, camera, stateBounds);
+  } catch (error) {
+    failed = error instanceof Error && error.message.includes("Cannot compile depth");
+  }
+  check(failed && failingNode.material === unsupported, "failed bake must restore materials");
+  failingNode.material = initialSurface.material;
+  verifyOwnership();
+  unsupported.dispose();
+  for (const mesh of [stateGround, initialSurface, appliedSurface]) {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+  }
   const files = unzipSync(archive);
   const depth = decode(files["Data/Levels/Day/editor-bake-contract.occlusion-depth.png"]!);
   check(
@@ -119,7 +334,7 @@ try {
   // Acceptance runner can retain this real GPU-produced mod for the Rust loader test.
   (window as unknown as { __bakeZip: number[] }).__bakeZip = [...archive];
   documentResult(
-    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, ZIP/PNG roundtrip",
+    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, mask-owned depth, state apply/reset, automatic appearance regions, resource restoration, ZIP/PNG roundtrip",
   );
 } catch (error) {
   documentResult(`FAIL ${error instanceof Error ? error.stack : String(error)}`);

@@ -222,6 +222,7 @@ pub(super) fn add_overlay_data_dirs(
                 ),
             }
         })?;
+    crate::diagnostic_context::core_overlay(&core_dir);
     let manifest = crate::core_overlay::mount_validated_native_directory(
         &core_dir,
         |path| files.add_overlay_path(path),
@@ -278,7 +279,10 @@ pub(super) fn add_overlay_data_dirs(
         roots.sort();
         for path in roots {
             match crate::mod_pack::mount_mod_overlay(files, &path) {
-                Ok(()) => tracing::debug!("Registered mod overlay: {}", path.display()),
+                Ok(()) => {
+                    crate::diagnostic_context::mounted_mod_overlay(&path);
+                    tracing::debug!("Registered mod overlay: {}", path.display());
+                }
                 Err(SbFileError::PathAlreadyPresent) => {}
                 Err(error) => {
                     tracing::warn!("Failed to register mod overlay {}: {error}", path.display())
@@ -296,7 +300,10 @@ pub(super) fn add_overlay_data_dirs(
         }
         let path = path.to_string_lossy().into_owned();
         match crate::mod_pack::mount_mod_overlay(files, Path::new(&path)) {
-            Ok(()) => tracing::info!("Registered overlay datadir: {path}"),
+            Ok(()) => {
+                crate::diagnostic_context::mounted_mod_overlay(Path::new(&path));
+                tracing::info!("Registered overlay datadir: {path}");
+            }
             Err(SbFileError::PathAlreadyPresent) => {
                 tracing::debug!("Overlay datadir already registered: {path}")
             }

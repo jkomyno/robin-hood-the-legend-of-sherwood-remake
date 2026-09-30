@@ -1,0 +1,40 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "obstacle": 876,
+  "review": "The precinct southwest wall and south-central round bastion meet along the existing component seam near x=1274.277588 on boundary edge 3 and x=1285.108887 on edge 8. Retain those seam positions on the exact boundary, including the inner bastion arc at vertices 9–12 that component bounds currently fill. Restore exactly ground-level bottoms and the flat top. The two local pieces join only when their directed seams coincide. No masks, receiving geometry, material regions or state patches link this record.",
+  "parts": [
+    {
+      "asset": "york-precinct-south-central-round-bastion",
+      "node": "building-876--component-bastion",
+      "model_sha256": "9c9b3f96f880de0488e88955fe2b59ebf71607d73d823489416377bcab26564f",
+      "descriptor_sha256": "9a0d77d0fba0788508d20fb1853a030dafaaf6390c553db9da102eabe13f0e16",
+      "vertices": [
+        0,
+        1,
+        2,
+        3,
+        { "edge": 3, "fraction": 0.3784832157238029 },
+        { "edge": 8, "fraction": 0.1632457812499979 },
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "asset": "york-precinct-southwest-curtain-wall",
+      "node": "building-876--component-wall",
+      "model_sha256": "6f54f253ea2a62b03e828e3ce5780ade2c81f96df4e3e0609e3b9206565afb7c",
+      "descriptor_sha256": "cddf194cbdbfefcac10dbf89f43cbb8e56c423fcf840162817010f3b76bd34d0",
+      "vertices": [
+        { "edge": 3, "fraction": 0.3784832157238029 },
+        4,
+        5,
+        6,
+        7,
+        8,
+        { "edge": 8, "fraction": 0.1632457812499979 }
+      ]
+    }
+  ]
+}

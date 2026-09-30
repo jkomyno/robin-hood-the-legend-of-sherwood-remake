@@ -1,0 +1,60 @@
+{
+  "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
+  "entries": [
+    {
+      "source": 0,
+      "id": "sherwood-ambient-1214-127",
+      "name": "Sherwood ambient region at 1214, 127",
+      "origin": [
+        1214,
+        127,
+        0
+      ],
+      "review": "Independent polyline acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 1,
+      "id": "sherwood-ambient-1661-922",
+      "name": "Sherwood ambient region at 1661, 922",
+      "origin": [
+        1661,
+        922,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 3,
+      "id": "sherwood-ambient-1281-318",
+      "name": "Sherwood ambient region at 1281, 318",
+      "origin": [
+        1281,
+        318,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 6,
+      "id": "sherwood-ambient-309-675",
+      "name": "Sherwood ambient region at 309, 675",
+      "origin": [
+        309,
+        675,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 7,
+      "id": "sherwood-ambient-634-569",
+      "name": "Sherwood ambient region at 634, 569",
+      "origin": [
+        634,
+        569,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    }
+  ]
+}

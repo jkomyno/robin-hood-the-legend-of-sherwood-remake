@@ -1,0 +1,55 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "entries": [
+    {
+      "asset": "york-east-riverside-wooden-walkway",
+      "node": "building-024",
+      "model_sha256": "ae32c43ac259e8cc07a5dcc25d41c1f8d02dfdd12366334ad2feb9d234d598c4",
+      "source_obstacle": 24,
+      "anchor": [
+        1945,
+        1231
+      ]
+    },
+    {
+      "asset": "york-southeast-riverside-raised-terrace",
+      "node": "building-093",
+      "model_sha256": "96e6513041fc9d75578e2d390b51a91d96671d69fe68943d8e708231cdc3de14",
+      "source_obstacle": 93,
+      "anchor": [
+        2030,
+        1220
+      ]
+    },
+    {
+      "asset": "york-stone-river-bridge-and-approach-stairs",
+      "node": "building-095",
+      "model_sha256": "7fd6471a56318fdad24e709ccd7d8082cfd76267e89907af9377e267c74be973",
+      "source_obstacle": 95,
+      "anchor": [
+        1853,
+        1020
+      ]
+    },
+    {
+      "asset": "york-east-quay-ground-landing",
+      "node": "building-096",
+      "model_sha256": "3db15a451e4abed65d06be9022b2e76f36a0e5c26d01c79af1d6653d4fce6f01",
+      "source_obstacle": 96,
+      "anchor": [
+        1760,
+        978
+      ]
+    },
+    {
+      "asset": "york-river-timber-jetty",
+      "node": "building-107",
+      "model_sha256": "b5d86b7885a0093ef7556c3d719d45d703778e3cd37e975c2ebfdf92b8d91e19",
+      "source_obstacle": 107,
+      "anchor": [
+        1721,
+        829
+      ]
+    }
+  ]
+}

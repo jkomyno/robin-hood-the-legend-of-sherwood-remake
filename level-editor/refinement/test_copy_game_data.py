@@ -68,7 +68,7 @@ class CopyGameDataTests(unittest.TestCase):
             write('Data/Levels/Mission.scb.json', {})
             write('Data/Configuration/profile.cpf.json', {
                 'soldier_order': ['guard'], 'character_order': ['guard'], 'civilian_order': ['guard'],
-                **{category: {'guard': {'filename': 'bank', 'profile_name': 'Guard One'}}
+                **{category: {'guard': {'filename': 'Bank', 'profile_name': 'Guard One'}}
                    for category in ('soldiers', 'characters', 'civilians')}})
             bank('Data/Characters/Bank.rhs.d', ['Guard One', 'Unused'], [0, 3, 5, 42])
             bank('Data/Characters/Unused.rhs.d', ['Unused'], [0])
@@ -118,6 +118,51 @@ class CopyGameDataTests(unittest.TestCase):
             self.assertEqual({r['action_id'] for r in refreshed['profiles'][0]['rows']}, {0, 3})
             self.assertFalse(list(output.rglob('*.png')))
             self.assertEqual(len(list(output.rglob('atlas.webp'))), 4)
+
+    def test_authorable_characters_absent_from_missions_have_complete_canonical_idle_banks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source, output = Path(temporary) / 'source', Path(temporary) / 'output'
+            def write(relative, data):
+                path = source / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(data))
+            profiles = {
+                'character_order': ['hero'], 'soldier_order': ['guard'],
+                'characters': {'hero': {'filename': 'Hero', 'profile_name': 'Hero pose'}},
+                'soldiers': {'guard': {'filename': 'sherif', 'profile_name': 'Guard pose'}},
+            }
+            write('Data/Configuration/profile.cpf.json', profiles)
+            write('Data/Levels/Test.rhp.json', {})
+            write('Data/Levels/Test.rhm.json', {'header': {'ambiance': 1}})
+            for filename, name, action in [('Hero', 'Hero pose', 3), ('Sherif', 'Guard pose', 0)]:
+                bank = source / f'Data/Characters/{filename}.rhs.d'
+                bank.mkdir(parents=True)
+                Image.new('RGBA', (4, 5), (7, 8, 9, 255)).save(bank / 'idle.png')
+                write(f'Data/Characters/{filename}.rhs.d/manifest.json', {'profiles': [{
+                    'name': name, 'rows': [
+                        {'action_id': action, 'direction': direction, 'path': '.',
+                         'frames': [{'file': 'idle.png', 'offset_x': -2, 'offset_y': -4}]}
+                        for direction in range(16)]}]})
+            self.assertEqual(copy_game_data(source, output), 7)
+            self.assertEqual(json.loads((output / 'Data/Configuration/profile.cpf.json').read_text()), profiles)
+            for filename, name, action in [('Hero', 'Hero pose', 3), ('sherif', 'Guard pose', 0)]:
+                bank = output / f'Data/Characters/{filename}.rhs.d'
+                manifest = json.loads((bank / 'manifest.json').read_text())
+                self.assertEqual(manifest['profiles'][0]['name'], name)
+                rows = manifest['profiles'][0]['rows']
+                self.assertEqual({row['direction'] for row in rows}, set(range(16)))
+                self.assertEqual({row['action_id'] for row in rows}, {action})
+                self.assertTrue(all(row['frames'][0]['offset_x'] == -2 for row in rows))
+                self.assertTrue((bank / manifest['atlas']).is_file())
+            # An incomplete chooser sprite is an authoring failure, never silently a marker.
+            manifest_path = source / 'Data/Characters/Hero.rhs.d/manifest.json'
+            manifest = json.loads(manifest_path.read_text())
+            manifest['profiles'][0]['rows'].pop()
+            manifest_path.write_text(json.dumps(manifest))
+            before = (output / 'index.json').read_bytes()
+            with self.assertRaisesRegex(ValueError, 'incomplete idle directions'):
+                copy_game_data(source, output)
+            self.assertEqual((output / 'index.json').read_bytes(), before)
 
 
 if __name__ == '__main__':

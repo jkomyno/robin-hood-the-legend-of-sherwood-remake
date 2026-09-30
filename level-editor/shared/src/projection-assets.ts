@@ -48,6 +48,12 @@ export interface ProjectionAssetDescriptor {
     default_hidden?: boolean;
     /** Non-rendering coordinate frame for asset-local gameplay. */
     gameplay_only?: true;
+    /** Keep visual component bounds without compiling them as physical obstacles. */
+    collision?: "none";
+    /** Directed local bottom edges joining flat, static physical volumes after placement. */
+    sight_join_edges?: [import("./scene.ts").Vec3, import("./scene.ts").Vec3][];
+    /** Whole horizontal faces that may join an adjacent stacked physical volume. */
+    sight_join_caps?: ("top" | "bottom")[];
   } & (
     | {
         source_obstacle: number;
@@ -59,6 +65,8 @@ export interface ProjectionAssetDescriptor {
     | {
         source_obstacle?: never;
         source_components?: never;
+        /** Preview appearance reference. obstacle_local_game is editor bounds,
+         * not collision or navigation; gameplay must be authored separately. */
         mission_profile: string;
         scenery?: never;
         obstacle_local_game: SightObstacle;

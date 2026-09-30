@@ -1,0 +1,334 @@
+{
+  "source_sha256": "b908102046d94d6029ec7144156499a89f225834f9d27953f4202dee05bdeb53",
+  "recipes": [
+    {
+      "asset": "leicester-northeast-longhouse",
+      "model_sha256": "23b1f47bf4922afdb9d8d9a2f3274168033a183a8c5872f4d9402ee2b4dddd17",
+      "entries": [
+        {
+          "source": 132,
+          "id": "longhouse-view-occlusion",
+          "node": "building-003",
+          "anchor": [2753, 716, 0],
+          "review": "View-only coverage is fully supported by this house mesh among the audited building candidates. The receiving anchor is on ground; no character/projectile boundary, obstacle links or patch references are present."
+        },
+        {
+          "source": 133,
+          "id": "longhouse-projectile-occlusion",
+          "node": "building-003",
+          "anchor": [2580, 678, 0],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "Complete coverage belongs to this house mesh among the audited building candidates. The receiver is ground. This static projectile mask has no obstacle links; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-north-village-cottage",
+      "model_sha256": "44c31f284d5c8c923669b2a84c77c6e70453726d0905987fc62407293ad7ca88",
+      "entries": [
+        {
+          "source": 141,
+          "id": "north-cottage-character-occlusion",
+          "node": "building-024",
+          "anchor": [2361, 571, 0],
+          "characterHeights": [0, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "Complete coverage belongs to this cottage mesh among the audited building candidates. Character boundaries receive on ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 155,
+          "id": "north-cottage-projectile-view-occlusion",
+          "node": "building-024",
+          "anchor": [2315, 660, 0],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "Complete coverage belongs to this cottage mesh among the audited building candidates. The receiver is ground. This static projectile/view mask has no character threshold or obstacle links; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-mill-north-cottage",
+      "model_sha256": "5861c93b88d03c1fce1280d61d43df657a12e61f304a383a9bcd0205996902de",
+      "entries": [
+        {
+          "source": 154,
+          "id": "mill-north-cottage-occlusion",
+          "node": "building-016",
+          "anchor": [2395, 686, 0],
+          "characterHeights": [0, 0, 0],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "Complete coverage belongs to this cottage mesh among the audited building candidates. Character boundaries receive on ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-mill-south-cottage",
+      "model_sha256": "d64f95d585b5abcd664268269a6fd9ed9ac1f48ed1302fff0f613a64c65660bc",
+      "entries": [
+        {
+          "source": 166,
+          "id": "mill-south-cottage-occlusion",
+          "node": "building-047",
+          "anchor": [2950, 1169, 0],
+          "characterHeights": [0, 0, 0, 0],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "Complete coverage belongs to this cottage mesh among the audited building candidates. Character boundaries receive on ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-church-side-tower",
+      "model_sha256": "1c2a831d839e0bf5132722e7d743a6b419d1ade2b2a87543ecbd65dc861a40c4",
+      "entries": [
+        {
+          "source": 288,
+          "id": "tower-projectile-occlusion",
+          "node": "building-198",
+          "anchor": [
+            1630,
+            580,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "Static projectile mask; all linked obstacles belong to this asset and the complete bitmap is supported by its mesh. Projectile boundaries use the world XY datum; the receiving anchor is verified against the source navigation layer."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-great-keep",
+      "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
+      "entries": [
+        {
+          "source": 242,
+          "id": "keep-west-view-occlusion",
+          "node": "building-287",
+          "anchor": [416, 608, 0],
+          "review": "Static view-only coverage belongs to the keep among the audited building candidates. All 1,814 pixels have exact mesh-backed coverage; the recovered 92 triangles are identical across all four combinations of appearance-1 and appearance-2. The receiving anchor is on verified ground. No character/projectile boundaries, obstacle links or patch mask references are present. Exact coverage follows an independent one-pixel eastward move."
+        },
+        {
+          "source": 436,
+          "id": "keep-initial-roof-cover",
+          "node": "building-375",
+          "anchor": [623, 797.001, 140.001],
+          "characterHeights": [140.001, 140.001, 140.001, 140.001, 140.001],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "The keep owns the complete initial mask and sight set of patch 5. Coverage is supported by its mesh, and linked roof obstacles 283, 287 and 288 are local parts. Character thresholds use the flat receiving floor of part 280 at height 140.001; projectile thresholds retain world XY. The receiving anchor is the patch waypoint lifted onto that floor. There are no movement changes or door links."
+        },
+        {
+          "source": 399,
+          "id": "keep-raised-occlusion-a",
+          "node": "building-309",
+          "anchor": [
+            894,
+            647.001,
+            140.001
+          ],
+          "characterHeights": [
+            140.001,
+            140.001,
+            140.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Every character boundary point receives on the keep-owned flat 140.001-unit surface (building-280). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 402,
+          "id": "keep-raised-occlusion-b",
+          "node": "building-310",
+          "anchor": [
+            814,
+            614.001,
+            140.001
+          ],
+          "characterHeights": [
+            140.001,
+            140.001,
+            140.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Every character boundary point receives on the keep-owned flat 140.001-unit surface (building-280). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 404,
+          "id": "keep-raised-occlusion-c",
+          "node": "building-313",
+          "anchor": [
+            754,
+            684.001,
+            140.001
+          ],
+          "characterHeights": [
+            140.001,
+            140.001,
+            140.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Every character boundary point receives on the keep-owned flat 140.001-unit surface (building-280). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 415,
+          "id": "keep-west-projectile-occlusion",
+          "node": "building-324",
+          "anchor": [
+            630,
+            650.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Static projectile mask; all linked obstacles belong to this asset and the complete bitmap is supported by its mesh. Projectile boundaries use the world XY datum; the receiving anchor is verified against the source navigation layer."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-northeast-gabled-house",
+      "model_sha256": "0b148ca23e32eac4a33137fcac277d050fe2c150527cc6b03a408228990a98f2",
+      "entries": [
+        {
+          "source": 122,
+          "id": "gabled-house-character-view-occlusion",
+          "node": "building-011",
+          "anchor": [2917, 578, 0],
+          "characterHeights": [0, 0],
+          "review": "Complete coverage belongs to this house mesh among the audited building candidates. The character boundary receives on ground with no raised projection. This static character/view mask has no projectile boundary or obstacle links."
+        },
+        {
+          "source": 123,
+          "id": "gabled-house-view-occlusion",
+          "node": "building-011",
+          "anchor": [2940, 581, 0],
+          "review": "View-only coverage is fully supported by this house mesh among the audited building candidates. The receiving anchor is on ground; no character/projectile boundary, obstacle links or patch references are present."
+        },
+        {
+          "source": 124,
+          "id": "gabled-house-end-occlusion",
+          "node": "building-011",
+          "anchor": [2876, 577, 0],
+          "characterHeights": [0, 0, 0, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "Complete coverage belongs to this house mesh among the audited building candidates. Character boundaries receive on ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 120,
+          "id": "house-ground-occlusion",
+          "node": "building-011",
+          "anchor": [
+            2798,
+            552,
+            0
+          ],
+          "characterHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Ground-layer character boundary has no raised receiving projection. Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-southeast-cottage",
+      "model_sha256": "b68847e1ccf1b03c7924d023d6a9ab81005b1a361078b8374f5e976209795ba7",
+      "entries": [
+        {
+          "source": 263,
+          "id": "southeast-cottage-projectile-view-occlusion",
+          "node": "building-093",
+          "anchor": [2802, 1663, 0],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "All 823 pixels have exact support on the cottage's visible static mesh. Ground receiving anchor is verified; projectile thresholds retain world XY. There are no character boundaries, obstacle links, patch references or appearance controls."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-watermill",
+      "model_sha256": "ba0b9fc1d5047e0bffc876e357408270651414e3d31c8190bee86466a133dc11",
+      "entries": [
+        {
+          "source": 173,
+          "id": "watermill-west-projectile-view-occlusion",
+          "node": "building-076",
+          "anchor": [2394, 858, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "All 908 pixels have exact support on the watermill's visible static mesh. Ground receiving anchor is verified; projectile thresholds retain world XY. There are no character boundaries, obstacle links, patch references or appearance controls."
+        },
+        {
+          "source": 174,
+          "id": "watermill-north-projectile-view-occlusion",
+          "node": "building-076",
+          "anchor": [2622, 870, 0],
+          "projectileHeights": [0, 0],
+          "review": "All 18,755 pixels have exact support on the watermill's visible static mesh. Ground receiving anchor is verified; projectile thresholds retain world XY. There are no character boundaries, obstacle links, patch references or appearance controls."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-west-wing",
+      "model_sha256": "4a034a5d003f3eb3215e2623c5f8d8f9c6768390c765c7576b78345e2dc45dc1",
+      "entries": [
+        {
+          "source": 239,
+          "id": "west-wing-view-occlusion",
+          "node": "building-222",
+          "anchor": [582, 989, 0],
+          "review": "All 1,175 pixels have exact mesh support. The 140 recovered triangles are identical in both appearance states. This static view-only mask has a verified ground receiver and no character/projectile boundaries, obstacle links or patch references."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-south-stilt-shed",
+      "model_sha256": "bf68168185cc1ec733ba389a6bc0cd3691a16bc481836ac691d0f2770edde626",
+      "entries": [
+        {
+          "source": 182,
+          "id": "stilt-shed-slope-occlusion",
+          "node": "building-134",
+          "anchor": [
+            1876,
+            1905.2306886657475,
+            37.23068866574761
+          ],
+          "characterHeights": [
+            37.23068866574761,
+            25.951633570778313,
+            18.672730239064435
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Character boundary heights follow the asset-owned sloped receiving surface (building-126). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        }
+      ]
+    }
+  ]
+}

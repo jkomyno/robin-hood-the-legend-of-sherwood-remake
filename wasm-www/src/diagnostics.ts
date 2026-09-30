@@ -118,6 +118,8 @@ export function installDiagnostics(queueStore?: DiagnosticQueue): { log: (line: 
     let logBytes = 0;
     let uploading = false;
     let automaticReports = 0;
+    const reportedFailures = new Set<string>();
+    let lastPanicAt = -Infinity;
     // Open lazily inside the error-handled queue operations so denied storage
     // reports a failure without preventing the game from starting.
     const storage = (): DiagnosticQueue => queueStore ??= diagnosticQueue(window.indexedDB);
@@ -159,9 +161,17 @@ export function installDiagnostics(queueStore?: DiagnosticQueue): { log: (line: 
         void flush();
     };
     const failure = (error: unknown): void => {
+        const detail = error instanceof Error ? error.message : String(error);
+        const panic = detail.includes('panicked at');
+        // The panic hook runs before the same WASM invocation traps. Preserve
+        // its useful message instead of submitting a second, opaque incident.
+        if (/^unreachable(?: executed)?$/.test(detail) && performance.now() - lastPanicAt < 1000) return;
+        if (panic) lastPanicAt = performance.now();
+        if (reportedFailures.has(detail)) return;
         if (automaticReports >= 3) return;
+        reportedFailures.add(detail);
         automaticReports++;
-        void queue('fatal_error', error instanceof Error ? error.message : String(error), error instanceof Error ? error.stack ?? null : null)
+        void queue(panic ? 'panic' : 'fatal_error', detail, error instanceof Error ? error.stack ?? null : null)
             .catch(failure => showStatus(`Could not queue crash report: ${String(failure)}`));
     };
     button.addEventListener('click', () => { dialog.showModal(); description.focus(); });
@@ -176,14 +186,10 @@ export function installDiagnostics(queueStore?: DiagnosticQueue): { log: (line: 
             .finally(() => { send.disabled = false; });
     });
     window.addEventListener('error', event => {
-        // ResizeObserver defers undelivered notifications to the next paint.
-        // This browser-generated event has no exception; keep it visible
-        // without reporting a running game as a fatal crash.
-        // TODO: Investigate the initial canvas resize notification separately.
-        if (event.error == null && event.message === 'ResizeObserver loop completed with undelivered notifications.') {
-            console.warn(event.message);
-            return;
-        }
+        // These notifications defer resize delivery; they do not terminate
+        // the game. Leave them visible to browser tooling without uploading.
+        if (event.error == null && (event.message === 'ResizeObserver loop completed with undelivered notifications.'
+            || event.message === 'ResizeObserver loop limit exceeded')) return;
         failure(event.error ?? event.message);
     });
     window.addEventListener('unhandledrejection', event => failure(event.reason));

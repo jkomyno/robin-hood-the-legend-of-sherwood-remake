@@ -2,6 +2,7 @@ import earcut, { flatten } from "earcut";
 import clipping from "polygon-clipping";
 import type { JumpZone, Point, ProtoLevel } from "../../shared/src/level.ts";
 import type { Vec3 } from "../../shared/src/scene.ts";
+import { distanceToPolygon } from "./recovery-elevation.ts";
 import type {
   AssetJumpPair,
   AssetJumpZone,
@@ -12,7 +13,20 @@ export function recoverJumpSegment(
   side: 0 | 1,
   ...args: Parameters<typeof recoverJumpGeometry>
 ): { zone: AssetJumpZone; segment: AssetJumpSegment } {
-  const recovered = recoverJumpGeometry(...args);
+  const [proto, pairIndex, node, localize, heightAt, receivingFootprints] = args;
+  const sourcePair = proto.jump_line_pairs[pairIndex];
+  if (!sourcePair) throw new Error(`Missing jump pair ${pairIndex}`);
+  const home = proto.jump_zones[(side === 0 ? sourcePair.line2 : sourcePair.line1).jump_zone_index];
+  const recovered = recoverJumpGeometry(
+    proto,
+    pairIndex,
+    node,
+    localize,
+    heightAt,
+    receivingFootprints
+      ? (zone) => (zone === home ? receivingFootprints(zone) : undefined)
+      : undefined,
+  );
   const edge = recovered.pair.edges[side];
   const zone = recovered.zones.find((zone) => zone.id === edge.zone)!;
   const endpoints = recovered.pair.edges.flatMap((edge) => [edge.a, edge.b]);
@@ -36,6 +50,7 @@ export function recoverJumpGeometry(
   node: string,
   localize: (p: Vec3) => Vec3,
   heightAt: (zone: JumpZone, point: Point) => number,
+  receivingFootprints?: (zone: JumpZone) => Point[][] | undefined,
 ): { zones: AssetJumpZone[]; pair: AssetJumpPair } {
   const pair = proto.jump_line_pairs[pairIndex];
   if (!pair) throw new Error(`Missing jump pair ${pairIndex}`);
@@ -69,6 +84,15 @@ export function recoverJumpGeometry(
       });
       if (blockers.length)
         free = clipping.difference(free, ...blockers.map((o) => closed(o.polygon.points)));
+      const footprints = receivingFootprints?.(zone);
+      if (footprints !== undefined) {
+        if (!footprints.length)
+          throw new Error(`Jump zone ${index} has no owned receiving footprint`);
+        free = clipping.intersection(
+          free,
+          clipping.union(closed(footprints[0]!), ...footprints.slice(1).map(closed)),
+        );
+      }
       const midpoint: Point = [0, 1].map(
         (axis) =>
           zone.polygon.points.reduce((sum, p) => sum + p[axis]!, 0) / zone.polygon.points.length,
@@ -90,7 +114,17 @@ export function recoverJumpGeometry(
           Math.hypot(a[0] - midpoint[0], a[1] - midpoint[1]) -
           Math.hypot(b[0] - midpoint[0], b[1] - midpoint[1]),
       );
-      const anchor = candidates[0];
+      // Compilation resolves anchors on the integer movement grid. Evaluate
+      // elevation at that same point, while retaining only unblocked owner coverage.
+      const anchor = candidates
+        .map(([x, y]): Point => [Math.round(x), Math.round(y)])
+        .find((point) =>
+          free.some(
+            (region) =>
+              distanceToPolygon(point, region[0] as Point[]) === 0 &&
+              region.slice(1).every((hole) => distanceToPolygon(point, hole as Point[]) > 0),
+          ),
+        );
       if (!anchor) throw new Error(`Jump zone ${index} has no unblocked landing anchor`);
       const z = heightAt(zone, anchor);
       if (!Number.isFinite(z))

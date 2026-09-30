@@ -2,13 +2,15 @@ import clipping, { type Polygon } from "polygon-clipping";
 import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
-import { simplifyMotionRing } from "./motion-quantization.ts";
+import { simplifyMotionRing, quantizeGeneratedMotionPolygon } from "./motion-quantization.ts";
+import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 
 export interface NavigationPiece {
   plane: HeightPlane;
   layer: number;
   lift?: string;
   navigationRegion?: string;
+  preserveMovementBoundary?: boolean;
   polygon: Point[];
   blockers: Point[][];
 }
@@ -20,14 +22,14 @@ export interface NavigationRegion {
   pieces: NavigationPiece[];
 }
 const shape = (p: NavigationPiece): Polygon => [p.polygon, ...p.blockers];
-function movementRing(points: Point[]): Point[] {
+function movementRing(points: Point[], minimumArea = 0.5): Point[] {
   const ring = simplifyMotionRing(points);
   const area = ring.reduce((sum, p, i) => {
     const q = ring[(i + 1) % ring.length]!;
     return sum + p[0] * q[1] - q[0] * p[1];
   }, 0);
-  if (ring.length < 3 || Math.abs(area) < 1)
-    throw new Error("Joined navigation region has a degenerate contour");
+  if (ring.length < 3 || Math.abs(area) < minimumArea * 2)
+    throw new Error(`Joined navigation region has a degenerate contour: ${JSON.stringify(points)}`);
   // Movement obstacles use the same winding as outer movement boundaries.
   if (area < 0) ring.reverse();
   return ring;
@@ -52,6 +54,12 @@ export function assembleNavigationRegions(
   return [...groups.values()]
     .flatMap((members): NavigationRegion[] => {
       const first = members[0]!;
+      if (
+        members.length > 1 &&
+        members.some((m) => m.preserveMovementBoundary) &&
+        members.some((m) => !m.preserveMovementBoundary)
+      )
+        throw new Error("Joined navigation pieces must agree on movement boundary preservation");
       const layer = Math.min(...members.map((p) => p.layer));
       if (members.length === 1)
         return [
@@ -63,6 +71,39 @@ export function assembleNavigationRegions(
             pieces: members,
           },
         ];
+      if (first.preserveMovementBoundary) {
+        const boundaries = clipping.union(members.map((m): Polygon => [m.polygon]));
+        // Another surface may provide a route through a cutout that extends
+        // beyond its own partition. Preserve only the part no surface opens.
+        const cutouts = members.flatMap((m) => {
+          const otherFree = members
+            .filter((other) => other !== m)
+            .flatMap((other) =>
+              other.blockers.length
+                ? clipping.difference(
+                    [other.polygon],
+                    other.blockers.map((b) => [b]),
+                  )
+                : [[other.polygon]],
+            );
+          return m.blockers.flatMap((blocker) => clipping.difference([blocker], otherFree));
+        });
+        return boundaries.map((boundary) => {
+          const preserved = preserveMovementBoundary(
+            boundary[0]!,
+            [...boundary.slice(1).map((hole): Polygon => [hole]), ...cutouts],
+            warnings,
+          );
+          return {
+            layer,
+            lift: first.lift,
+            ...preserved,
+            pieces: members.filter(
+              (member) => clipping.intersection([member.polygon], boundary).length > 0,
+            ),
+          };
+        });
+      }
       const merged = normalizeGeneratedMotion(
         clipping.union(shape(first), ...members.slice(1).map(shape)),
         "Joined navigation region",
@@ -76,13 +117,29 @@ export function assembleNavigationRegions(
         layer,
         lift: first.lift,
         polygon: movementRing(region[0]!),
-        blockers: region.slice(1).map(movementRing),
+        blockers: region.slice(1).map((hole) => movementRing(hole)),
         pieces: members.flatMap((member) =>
-          clipping.intersection(shape(member), region).map((part) => ({
-            ...member,
-            polygon: movementRing(part[0]!),
-            blockers: part.slice(1).map(movementRing),
-          })),
+          clipping.intersection(shape(member), region).flatMap((part) => {
+            // Intersections can leave fractional slivers at a rounded union edge.
+            // A receiver that collapses to a point or line on the movement grid
+            // cannot own a playable pixel; omit it without changing navigation.
+            if (
+              !quantizeGeneratedMotionPolygon(
+                part,
+                Math.round,
+                "Joined receiving fragment",
+                warnings,
+              )
+            )
+              return [];
+            return [
+              {
+                ...member,
+                polygon: movementRing(part[0]!, 1e-7),
+                blockers: part.slice(1).map((hole) => movementRing(hole, 1e-7)),
+              },
+            ];
+          }),
         ),
       }));
     })

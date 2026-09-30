@@ -3,6 +3,8 @@ import { encode } from "fast-png";
 import { strToU8, zip } from "fflate";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import type { ProjectionAssetDescriptor } from "@rle/shared";
+import { packageAppearanceRegions, type BakedAppearanceRegion } from "./map-appearance.ts";
+import { compileMission } from "./compile-mission.ts";
 
 export type BakeBounds = [number, number, number, number];
 export interface CompiledVolume {
@@ -82,8 +84,9 @@ export function compileMap(
   document: Level3D,
   requestedBounds: BakeBounds,
   assets?: ReadonlyMap<string, ProjectionAssetDescriptor>,
+  options: { bestEffort?: boolean } = {},
 ) {
-  // TODO: Compile visual state resources, typed masks and patch-to-door links from assets.
+  // TODO: Compile visual/depth state resources and recover remaining asset mask definitions.
   const bounds = validateBakeBounds(requestedBounds);
   const slug =
     document.map
@@ -92,13 +95,17 @@ export function compileMap(
       .replace(/^-+|-+$/g, "") || "map";
   // Namespace map and mission names so installation cannot replace a base-game map.
   const name = `editor-${slug}`;
-  const assetGeometry = assets ? compileAssetGameplay(document, assets, bounds) : undefined;
+  const assetGeometry =
+    assets || document.terrain?.cells.length || document.splines?.some((p) => p.kind !== "wall")
+      ? compileAssetGameplay(document, assets ?? new Map(), bounds, options)
+      : undefined;
   const volumes = assetGeometry ? [] : compileVolumes(document, bounds);
+  const mission = compileMission(document, bounds, assetGeometry, options.bestEffort, volumes);
   const warnings = assetGeometry
     ? [
         ...(assetGeometry.warnings ?? []),
-        "Compiled from asset-local surfaces, sight geometry and doors. Navigation grids and route graphs are constructed by the engine. Player spawns and NPCs belong to a separate mission.",
-        "Visual state resources, typed masks and patch-to-door links remain incomplete. This export is not a full gameplay-parity certification.",
+        "Compiled from asset-local surfaces, sight geometry and doors. Navigation grids and route graphs are constructed by the engine. Only explicitly authored Mission spawns and soldiers are exported.",
+        "Visual/depth state resources and mask recovery for existing assets remain incomplete. This export is not a full gameplay-parity certification.",
       ]
     : [
         "This is an unscripted map sandbox. Mission scripts, triggers, and preview population are not exported.",
@@ -108,7 +115,8 @@ export function compileMap(
   const descriptor = {
     title: document.map,
     map_filename: name,
-    spawn_player: false,
+    spawn_points: mission.spawn_points,
+    ...(document.mission ? { soldiers: mission.soldiers } : {}),
     walkable_polygon: [
       [0, 0],
       [bounds[2] - 1, 0],
@@ -129,6 +137,7 @@ export function compileMap(
     hackable_missions: [name],
   };
   const editorDocument = assets ? serializeStoredMap(document, assets) : structuredClone(document);
+  warnings.push(...mission.warnings);
   return { name, bounds, descriptor, details, warnings, editorDocument };
 }
 
@@ -138,6 +147,7 @@ export type CompiledMap = ReturnType<typeof compileMap>;
 export async function packageCompiledMap(
   compiled: CompiledMap,
   pixels: BakePixels,
+  appearance: readonly BakedAppearanceRegion[] = [],
 ): Promise<Uint8Array> {
   const {
     name,
@@ -171,6 +181,14 @@ export async function packageCompiledMap(
   const json = (value: unknown) => strToU8(JSON.stringify(value, null, 2) + "\n");
   const prefix = `Data/Levels/Day/${name}`;
   const files = {
+    ...packageAppearanceRegions(
+      prefix,
+      width,
+      height,
+      pixels,
+      appearance,
+      compiled.descriptor.asset_geometry?.movement_transitions ?? [],
+    ),
     "details.json": json(compiled.details),
     [`editor/${name}.rhlos-map.json`]: json(compiled.editorDocument),
     [`Data/Levels/${name}.level.json`]: json(compiled.descriptor),

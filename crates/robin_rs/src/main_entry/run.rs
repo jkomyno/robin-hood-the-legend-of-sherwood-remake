@@ -1030,6 +1030,8 @@ async fn run_main_menu(
     #[cfg(not(target_arch = "wasm32"))]
     let mut pending_direct_browser_invite: Option<&str> = None;
     loop {
+        #[cfg(not(target_arch = "wasm32"))]
+        crate::diagnostic_context::main_menu();
         if menu.window.close_requested {
             return Ok(0);
         }

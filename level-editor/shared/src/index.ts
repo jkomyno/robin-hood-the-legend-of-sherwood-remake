@@ -16,7 +16,15 @@ export * from "./projection-assets.ts";
 export * from "./splines.ts";
 
 export * from "./population.ts";
+export * from "./mission.ts";
 
 export * from "./component-parts.ts";
 
 export * from "./glb-scene.ts";
+
+export * from "./authored-terrain.ts";
+export * from "./terrain-delete.ts";
+export type { GameplayAssetDescriptor } from "./asset-gameplay.ts";
+
+export * from "./spline-sampling.ts";
+export * from "./terrain-materials.ts";

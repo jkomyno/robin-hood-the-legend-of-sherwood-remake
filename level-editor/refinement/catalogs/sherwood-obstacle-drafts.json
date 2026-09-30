@@ -1,0 +1,19 @@
+{
+  "map": "Sherwood",
+  "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
+  "reference_sha256": "3f1424a46609a6640c90bdb91c3921071c8a497758ff4ce7c7497381ed0c2f3d",
+  "entries": [
+    {
+      "source": 13,
+      "id": "sherwood-preparation-table-canopy",
+      "name": "Preparation Table Thatched Canopy",
+      "origin": [533, 596, 0],
+      "visualPoles": [
+        { "bottom": [599, 600, 0], "top": [600, 600, 65.001], "radius": 2 },
+        { "bottom": [536, 634, 0], "top": [538.4608, 634.47974, 65.001], "radius": 2.5 },
+        { "bottom": [469, 595, 0], "top": [469, 595, 65.001], "radius": 2 }
+      ],
+      "review": "Separate thatched canopy over the preparation table, linked by mask 76. The existing preparation-table-set inventory contains table and bench meshes only; the neighbouring dining shelter owns the other roof. The elevated thin physical roof is independent. Three visible timber posts are reconstructed beneath the thatch; they add visual support only, preserving the roof-only collision. Texture, roof thatch edges and complete mask coverage remain unfinished."
+    }
+  ]
+}

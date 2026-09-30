@@ -22,12 +22,7 @@ async function main() {
   canvas.width = 1000;
   canvas.height = params.has("splines") ? 2040 : 340;
   const context = canvas.getContext("2d")!;
-  function render(
-    asset: THREE.Object3D,
-    row: number,
-    label = "Source asset",
-    focus?: THREE.Box3,
-  ) {
+  function render(asset: THREE.Object3D, row: number, label = "Source asset", focus?: THREE.Box3) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x252b32);
     scene.add(asset, new THREE.HemisphereLight(0xffffff, 0x8c93aa, 2.5));

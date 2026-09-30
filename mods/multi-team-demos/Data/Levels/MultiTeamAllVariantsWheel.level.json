@@ -2,11 +2,7 @@
   "title": "All Soldier Variants Allegiance Wheel",
   "map_filename": "OpenBattlefield",
   "reveal_all": true,
-  "spawn": [
-    1152,
-    1700
-  ],
-  "spawn_player": false,
+  "spawn_points": [],
   "walkable_polygon": [
     [
       80,

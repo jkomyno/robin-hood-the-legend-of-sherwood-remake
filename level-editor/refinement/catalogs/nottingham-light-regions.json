@@ -1,0 +1,214 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "entries": [
+    {
+      "source": 0,
+      "id": "nottingham-light-region-0",
+      "name": "Nottingham lighting field at 1394, 2265",
+      "origin": [
+        1394,
+        2265,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 1,
+      "id": "nottingham-light-region-1",
+      "name": "Nottingham lighting field at 1741, 1530",
+      "origin": [
+        1741,
+        1530,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 2,
+      "id": "nottingham-light-region-2",
+      "name": "Nottingham lighting field at 1519, 1466",
+      "origin": [
+        1519,
+        1466,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 3,
+      "id": "nottingham-light-region-3",
+      "name": "Nottingham lighting field at 1889, 1266",
+      "origin": [
+        1889,
+        1266,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 4,
+      "id": "nottingham-light-region-4",
+      "name": "Nottingham lighting field at 1792, 869",
+      "origin": [
+        1792,
+        869,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 5,
+      "id": "nottingham-light-region-5",
+      "name": "Nottingham lighting field at 1532, 456",
+      "origin": [
+        1532,
+        456,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 6,
+      "id": "nottingham-light-region-6",
+      "name": "Nottingham lighting field at 1233, 663",
+      "origin": [
+        1233,
+        663,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 7,
+      "id": "nottingham-light-region-7",
+      "name": "Nottingham lighting field at 1779, 1880",
+      "origin": [
+        1779,
+        1880,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 8,
+      "id": "nottingham-light-region-8",
+      "name": "Nottingham lighting field at 2218, 630",
+      "origin": [
+        2218,
+        630,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 9,
+      "id": "nottingham-light-region-9",
+      "name": "Nottingham lighting field at 2119, 1150",
+      "origin": [
+        2119,
+        1150,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 10,
+      "id": "nottingham-light-region-10",
+      "name": "Nottingham lighting field at 654, 2202",
+      "origin": [
+        654,
+        2202,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 12,
+      "id": "nottingham-light-region-12",
+      "name": "Nottingham lighting field at 619, 1149",
+      "origin": [
+        619,
+        1149,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 14,
+      "id": "nottingham-light-region-14",
+      "name": "Nottingham lighting field at 1078, 1353",
+      "origin": [
+        1078,
+        1353,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 15,
+      "id": "nottingham-light-region-15",
+      "name": "Nottingham lighting field at 2268, 394",
+      "origin": [
+        2268,
+        394,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 17,
+      "id": "nottingham-light-region-17",
+      "name": "Nottingham lighting field at 1569, 245",
+      "origin": [
+        1569,
+        245,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 18,
+      "id": "nottingham-light-region-18",
+      "name": "Nottingham lighting field at 934, 886",
+      "origin": [
+        934,
+        886,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 19,
+      "id": "nottingham-light-region-19",
+      "name": "Nottingham lighting field at 935, 885",
+      "origin": [
+        935,
+        885,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 20,
+      "id": "nottingham-light-region-20",
+      "name": "Nottingham lighting field at 712, 803",
+      "origin": [
+        712,
+        803,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 22,
+      "id": "nottingham-light-region-22",
+      "name": "Nottingham lighting field at 305, 665",
+      "origin": [
+        305,
+        665,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "entries": [
+    {
+      "asset": "york-east-riverside-wooden-walkway",
+      "node": "building-024",
+      "model_sha256": "ae32c43ac259e8cc07a5dcc25d41c1f8d02dfdd12366334ad2feb9d234d598c4",
+      "source_obstacle": 24,
+      "anchor": [
+        1945,
+        1231
+      ]
+    },
+    {
+      "asset": "york-west-town-raised-terrain",
+      "node": "building-086",
+      "model_sha256": "7f57b26d29a173d91eccf1793db58304331ca32b4276f95d72ed1f78c7945d02",
+      "source_obstacle": 86,
+      "anchor": [
+        1593,
+        1643
+      ]
+    },
+    {
+      "asset": "york-west-town-raised-lane",
+      "node": "building-088",
+      "model_sha256": "cf8a3ce0d45a2f87de4e6b70fb4db58651fc15191b37134d980050ec4b4f39a4",
+      "source_obstacle": 88,
+      "anchor": [
+        508,
+        794
+      ]
+    },
+    {
+      "asset": "york-south-town-raised-terrace",
+      "node": "building-090",
+      "model_sha256": "d612c96f043e29d59462023f533fe9f7cfd06561a9e0158f680abdc21a42fb3c",
+      "source_obstacle": 90,
+      "anchor": [
+        1345,
+        2236
+      ]
+    },
+    {
+      "asset": "york-south-terrace-retaining-wall-and-stairs",
+      "node": "building-091",
+      "model_sha256": "c74ca823951ce04b43e490eb19fc249468188ff77a1bc529bf5d18db9a89c7ae",
+      "source_obstacle": 91,
+      "anchor": [
+        1640,
+        1939
+      ]
+    },
+    {
+      "asset": "york-southeast-riverside-raised-terrace",
+      "node": "building-093",
+      "model_sha256": "96e6513041fc9d75578e2d390b51a91d96671d69fe68943d8e708231cdc3de14",
+      "source_obstacle": 93,
+      "anchor": [
+        2030,
+        1220
+      ]
+    },
+    {
+      "asset": "york-stone-river-bridge-and-approach-stairs",
+      "node": "building-095",
+      "model_sha256": "7fd6471a56318fdad24e709ccd7d8082cfd76267e89907af9377e267c74be973",
+      "source_obstacle": 95,
+      "anchor": [
+        1853,
+        1020
+      ]
+    },
+    {
+      "asset": "york-east-quay-ground-landing",
+      "node": "building-096",
+      "model_sha256": "3db15a451e4abed65d06be9022b2e76f36a0e5c26d01c79af1d6653d4fce6f01",
+      "source_obstacle": 96,
+      "anchor": [
+        1760,
+        978
+      ]
+    },
+    {
+      "asset": "york-south-city-gate-bridge",
+      "node": "building-099",
+      "model_sha256": "5074aeffc06ac83ae9579fc1ca8a2164cfeba29c7dd5ff24224e6000c53b2d22",
+      "source_obstacle": 99,
+      "anchor": [
+        202,
+        2310
+      ]
+    },
+    {
+      "asset": "york-river-timber-jetty",
+      "node": "building-107",
+      "model_sha256": "b5d86b7885a0093ef7556c3d719d45d703778e3cd37e975c2ebfdf92b8d91e19",
+      "source_obstacle": 107,
+      "anchor": [
+        1721,
+        829
+      ]
+    },
+    {
+      "asset": "york-west-bridge-approach-gatehouse",
+      "node": "building-171",
+      "model_sha256": "ef9dea57904999ef3a217b8ce4d7b11dff5721425d67e45edfe966f486c3041c",
+      "source_obstacle": 171,
+      "anchor": [
+        1230,
+        1212
+      ]
+    },
+    {
+      "asset": "york-west-bridge-approach-gatehouse",
+      "node": "building-177",
+      "model_sha256": "ef9dea57904999ef3a217b8ce4d7b11dff5721425d67e45edfe966f486c3041c",
+      "source_obstacle": 177,
+      "anchor": [
+        1167,
+        1217
+      ]
+    },
+    {
+      "asset": "york-central-south-red-timber-house",
+      "node": "building-327",
+      "model_sha256": "2cb7b0e64d26cccb095d9fecaec0dd193054b6361cf753d7fd0b7d409976a3a7",
+      "source_obstacle": 327,
+      "anchor": [
+        1087,
+        1683
+      ]
+    },
+    {
+      "asset": "york-south-city-gate-bridge",
+      "node": "building-547",
+      "model_sha256": "5074aeffc06ac83ae9579fc1ca8a2164cfeba29c7dd5ff24224e6000c53b2d22",
+      "source_obstacle": 547,
+      "anchor": [
+        202,
+        2310
+      ]
+    },
+    {
+      "asset": "york-south-city-gate-bridge",
+      "node": "building-550",
+      "model_sha256": "5074aeffc06ac83ae9579fc1ca8a2164cfeba29c7dd5ff24224e6000c53b2d22",
+      "source_obstacle": 550,
+      "anchor": [
+        267,
+        2210
+      ]
+    },
+    {
+      "asset": "york-west-town-lane-stone-tower",
+      "node": "building-601",
+      "model_sha256": "761d6264d92234e10f0ed91fa89c1c53123c235b759a1953830c85bb83dc7d32",
+      "source_obstacle": 601,
+      "anchor": [
+        673,
+        1095
+      ]
+    },
+    {
+      "asset": "york-west-town-lane-narrow-timber-house",
+      "node": "building-602",
+      "model_sha256": "4e2b05d2db4b09771fd1c0b8dd0a133597f91f45f12be1e87f888754b17592f7",
+      "source_obstacle": 602,
+      "anchor": [
+        574,
+        1106
+      ]
+    }
+  ]
+}

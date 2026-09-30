@@ -96,9 +96,9 @@ def encoded(index):
 
 _EDITOR_FIELDS = ('version', 'kind', 'id', 'name', 'source_map', 'source_origin_scene',
                   'model', 'model_scene', 'resources', 'states', 'editor_usage', 'gameplay')
-_EDITOR_PART_FIELDS = ('node', 'name', 'default_hidden', 'source_obstacle',
+_EDITOR_PART_FIELDS = ('node', 'name', 'default_hidden', 'gameplay_only', 'source_obstacle',
                        'source_components', 'mission_profile', 'scenery',
-                       'obstacle_local_game')
+                       'obstacle_local_game', 'collision', 'sight_join_edges', 'sight_join_caps')
 
 
 def editor_descriptor(descriptor):

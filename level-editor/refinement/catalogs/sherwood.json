@@ -4,15 +4,27 @@
   "door_sources": [
     {
       "doors": [0],
-      "owner": "sherwood-north-camp-hut-walls",
+      "owner": "sherwood-north-camp-hut",
       "node": "building-008",
-      "reason": "The north camp hut walls enclose this ground-level room and own its entrance. The separately editable roof above the room does not own the interior."
+      "reason": "The grouped north camp hut contains the room walls, roof and supply shelter. Its wall frame owns this ground-level room entrance."
     },
     {
       "doors": [1],
       "owner": "sherwood-west-camp-hut",
       "node": "building-001",
-      "reason": "The west camp hut contains the wall and doorway components for this room. Its nearby roof is a separate visual component, not a second interior owner."
+      "reason": "The grouped west camp hut contains the walls, doorway, chimney and roof. Its wall frame owns this room entrance independently of the roof geometry."
+    },
+    {
+      "doors": [3],
+      "owner": "sherwood-central-west-treehouse",
+      "node": "building-104",
+      "reason": "This entrance belongs to the central west treehouse hut. Its separately placed oak and platform support the building but do not own its room."
+    },
+    {
+      "doors": [4],
+      "owner": "sherwood-west-treehouse",
+      "node": "building-105",
+      "reason": "The west treehouse hut frame owns this entrance within the grouped hut, platform, thatch and ladder asset. The adjacent oak is a separate supporting asset."
     }
   ],
   "groups": [
@@ -1155,6 +1167,23 @@
       ]
     }
   ],
+  "nonrendering_sources": [
+    {
+      "obstacle": 97,
+      "owner": "sherwood-central-oak-platform",
+      "review": "The lower connecting ladder belongs to the platform assembly, whose ring-ladder stiles and rungs connect the 220-unit ring to the 261-unit landing. Restore its zero-thickness traversal surface as local gameplay geometry."
+    },
+    {
+      "obstacle": 98,
+      "owner": "sherwood-central-oak-platform",
+      "review": "The upper connecting ladder belongs to the same assembly; its porch-ladder stiles and rungs connect the 261-unit landing to the 286-unit porch. Restore the omitted traversal surface independently of the rendered timber."
+    },
+    {
+      "obstacle": 101,
+      "owner": "sherwood-ladder-oak-platform",
+      "review": "This assembly contains the below-platform, above-platform and long rope-ladder stiles and rungs. Its gameplay surface spans ground, the 278-unit platform and the upper attachment around 333 units; the foliage asset is a separate owner."
+    }
+  ],
   "legacy_migration": {
     "source": "work/sherwood-refinement/sherwood-refinement.blend",
     "previously_unexported_obstacles": [
@@ -1163,7 +1192,7 @@
       98,
       101
     ],
-    "limitations": "Legacy reconstruction, not a new geometry review. Zero-thickness omitted source obstacles remain unchanged; reconstructed ladder visuals belong to their treehouse. Foliage uses its first authored frame.",
+    "limitations": "Legacy visual reconstruction, not a new geometry review. Gameplay ownership for omitted ladder obstacles 97/98/101 is now declared above for the platform assemblies; obstacle 13 remains unowned. Recovered traversal still needs placement and actor verification. Foliage uses its first authored frame.",
     "export_partitions": {
       "building-048": "Existing building-032 trunk triangles above the lower obstacle height, z=221.001; geometry and collision payloads retained."
     }

@@ -1,9 +1,17 @@
 import {
+  validateCustomTerrainMaterials,
+  terrainMaterial,
+  type CustomTerrainMaterial,
+} from "./terrain-materials.ts";
+import { validateTerrainGrid } from "./authored-terrain.ts";
+import {
   componentIdentityMatches,
   isSceneryNode,
   obstaclePartIdentity,
 } from "./component-parts.ts";
 import { validatePopulation } from "./population.ts";
+import { validateMission } from "./mission.ts";
+import { maskReferenceResolver } from "./mask-references.ts";
 import {
   safeLibraryPath,
   type ExternalAssetSource,
@@ -310,6 +318,11 @@ export function parseProtoLevel(value: unknown): ProtoLevel {
     array(mask.mask_data, `masks[${i}].mask_data`);
   });
   object(d.misc, "level.misc");
+  const resolveMaskReferences = maskReferenceResolver(d.masks);
+  d.patches.forEach((patch: any, i: number) => {
+    resolveMaskReferences(patch.old_masks, `level.patches[${i}].old_masks`);
+    resolveMaskReferences(patch.new_masks, `level.patches[${i}].new_masks`);
+  });
   object(d.motion_data, "level.motion_data");
   array(d.motion_data.layers, "level.motion_data.layers");
   array(d.motion_data.graph_bytes, "level.motion_data.graph_bytes");
@@ -368,6 +381,7 @@ export async function documentProvenance(level: ProtoLevel | null) {
 
 export function parseLevel3D(value: unknown, context: DocumentContext = {}): Level3D {
   const d = base(value, "level3d");
+  if (d.customMaterials !== undefined) validateCustomTerrainMaterials(d.customMaterials);
   if (d.exportBounds !== undefined) {
     tuple(d.exportBounds, 4, "level3d.exportBounds");
     check(
@@ -589,7 +603,26 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
     );
   }
   if (d.population !== undefined) validatePopulation(d.population);
+  if (d.mission !== undefined) validateMission(d.mission);
   const splineIds = new Set<string>();
+  if (d.terrain !== undefined) {
+    validateTerrainGrid(d.terrain);
+    for (const cell of d.terrain.cells)
+      terrainMaterial(cell.material, d.customMaterials as CustomTerrainMaterial[] | undefined);
+    for (const vertex of d.terrain.vertices) {
+      if (vertex.material !== undefined)
+        terrainMaterial(vertex.material, d.customMaterials as CustomTerrainMaterial[] | undefined);
+      for (const id of Object.keys(vertex.materialMix ?? {})) {
+        if (id === "$source") {
+          check(
+            typeof d.terrain.texture === "string",
+            "terrain.materialMix",
+            "source mixture needs a terrain texture",
+          );
+        } else terrainMaterial(id, d.customMaterials as CustomTerrainMaterial[] | undefined);
+      }
+    }
+  }
   if (d.splines !== undefined)
     for (const spline of array(d.splines, "splines")) {
       object(spline, "spline");
@@ -611,6 +644,79 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
         "invalid width or repeat length",
       );
       const points = array(spline.points, "spline.points");
+      if (spline.pointHeightOffsets !== undefined) {
+        const offsets = array(spline.pointHeightOffsets, "spline.pointHeightOffsets");
+        check(
+          offsets.length === points.length,
+          spline.id,
+          "expected one height offset per control point",
+        );
+        offsets.forEach((offset) => finite(offset, "spline.pointHeightOffset"));
+      }
+      if (spline.pointWidths !== undefined) {
+        const widths = array(spline.pointWidths, "spline.pointWidths");
+        check(widths.length === points.length, spline.id, "expected one width per control point");
+        widths.forEach((width) => {
+          finite(width, "spline.pointWidth");
+          check(width > 0, spline.id, "point widths must be positive");
+        });
+      }
+      if (spline.pointMaterials !== undefined) {
+        const materials = array(spline.pointMaterials, "spline.pointMaterials");
+        check(
+          materials.length === points.length,
+          spline.id,
+          "expected one material per control point",
+        );
+        materials.forEach((material) => {
+          text(material, "spline.pointMaterial");
+          terrainMaterial(
+            material as string,
+            d.customMaterials as CustomTerrainMaterial[] | undefined,
+          );
+        });
+      }
+      if (spline.channel !== undefined) {
+        object(spline.channel, "spline.channel");
+        check(spline.kind === "river", spline.id, "only rivers can carve a channel");
+        check(
+          typeof spline.channel.enabled === "boolean",
+          spline.id,
+          "channel enabled must be boolean",
+        );
+        finite(spline.channel.bedDepth, "spline.channel.bedDepth");
+        finite(spline.channel.bankSlope, "spline.channel.bankSlope");
+        check(
+          spline.channel.bedDepth >= 0 && spline.channel.bankSlope > 0,
+          spline.id,
+          "channel needs non-negative depth and positive bank slope",
+        );
+      }
+      if (spline.pointMaterialMixes !== undefined) {
+        const mixes = array(spline.pointMaterialMixes, "spline.pointMaterialMixes");
+        check(
+          mixes.length === points.length,
+          spline.id,
+          "expected one material mix per control point",
+        );
+        for (const mix of mixes)
+          if (mix !== null) {
+            object(mix, "spline.pointMaterialMix");
+            let sum = 0;
+            for (const [id, weight] of Object.entries(mix)) {
+              text(id, "material ID");
+              finite(weight, "material weight");
+              terrainMaterial(id, d.customMaterials as CustomTerrainMaterial[] | undefined);
+              check(
+                typeof weight === "number" && weight >= 0,
+                spline.id,
+                "material weights must be non-negative",
+              );
+              sum += weight;
+            }
+            check(Math.abs(sum - 1) < 1e-6, spline.id, "material weights must sum to one");
+          }
+      }
       check(
         points.length >= (spline.closed ? 3 : 2) && points.length <= 256,
         spline.id,
@@ -926,6 +1032,44 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     nodes.add(part.node);
     if (part.default_hidden !== undefined)
       check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
+    if (part.collision !== undefined)
+      check(
+        part.collision === "none" &&
+          !part.sight_join_edges?.length &&
+          !part.sight_join_caps?.length,
+        part.node,
+        "invalid disabled part collision",
+      );
+    if (part.sight_join_caps !== undefined)
+      check(
+        part.mission_profile === undefined &&
+          part.scenery === undefined &&
+          Array.isArray(part.sight_join_caps) &&
+          part.sight_join_caps.every((cap: unknown) => cap === "top" || cap === "bottom") &&
+          new Set(part.sight_join_caps).size === part.sight_join_caps.length &&
+          !part.sight_join_edges?.length,
+        part.node,
+        "invalid physical sight seam caps",
+      );
+    if (part.sight_join_edges !== undefined)
+      check(
+        part.mission_profile === undefined &&
+          part.scenery === undefined &&
+          Array.isArray(part.sight_join_edges) &&
+          part.sight_join_edges.every(
+            (edge: unknown) =>
+              Array.isArray(edge) &&
+              edge.length === 2 &&
+              edge.every(
+                (p) =>
+                  Array.isArray(p) &&
+                  p.length === 3 &&
+                  p.every((v) => typeof v === "number" && Number.isFinite(v)),
+              ),
+          ),
+        part.node,
+        "invalid physical sight seam edges",
+      );
     if (part.scenery === undefined) {
       obstacle(part.obstacle_local_game, part.node);
       check(

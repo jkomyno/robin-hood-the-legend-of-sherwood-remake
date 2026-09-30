@@ -1,0 +1,149 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "regions": [
+    {
+      "id": "castle-east-upper-walk",
+      "review": "Exact shared boundary edges between recovered asset surfaces in one ordinary receiving region. The baseline geometry and bindings remain equivalent after regenerated sector identities are remapped. Movement checks remain separate from this baseline ownership review.",
+      "entries": [
+        {
+          "asset": "york-castle-east-round-tower",
+          "model_sha256": "c7f0d77e72108ed43efae366ed35d9bb95d28e41e31b1371673424c6ba59a093",
+          "surface": "building-769--component-tower-walk-0",
+          "node": "building-769--component-tower",
+          "source_obstacle": 769,
+          "edges": [
+            [
+              [
+                -46,
+                -10.577342960842723,
+                134.99998768946844
+              ],
+              [
+                14,
+                -28.577342960842756,
+                134.99998768946844
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "york-castle-great-hall",
+          "model_sha256": "cc65b3c35c3f2254411137ed78f3a067efcd12b780245ec37ab92493d7abb0c8",
+          "surface": "building-769--component-hall-walk-0",
+          "node": "building-769--component-hall",
+          "source_obstacle": 769,
+          "edges": [
+            [
+              [
+                53,
+                83.48919260072883,
+                134.99998768946844
+              ],
+              [
+                113,
+                65.4891926007288,
+                134.99998768946844
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cathedral-causeway-walk",
+      "review": "Exact shared boundary edges between recovered asset surfaces in one ordinary receiving region. The baseline geometry and bindings remain equivalent after regenerated sector identities are remapped. Movement checks remain separate from this baseline ownership review.",
+      "entries": [
+        {
+          "asset": "york-cathedral-precinct-raised-terrain",
+          "model_sha256": "b566e3352d9e7d5cdc63e54af74334528c1ae35cbfb9c42e78642a98c02a3afb",
+          "surface": "building-087-walk-0",
+          "node": "building-087",
+          "source_obstacle": 87,
+          "edges": [
+            [
+              [
+                -254,
+                102.05188495939194,
+                160.001
+              ],
+              [
+                -363,
+                57.051884959392055,
+                160.001
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "york-precinct-stone-causeway",
+          "model_sha256": "ae64290bb5936fc65edcd25584eb8bf0e77b6531feab84a420c141f73cdfffd1",
+          "surface": "building-089-walk-0",
+          "node": "building-089",
+          "source_obstacle": 89,
+          "edges": [
+            [
+              [
+                158,
+                -34.45930689215702,
+                160.00086916278048
+              ],
+              [
+                49,
+                -79.4593068921569,
+                160.00086916278048
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "west-city-footbridge-walk",
+      "review": "Exact shared boundary edges between recovered asset surfaces in one ordinary receiving region. The baseline geometry and bindings remain equivalent after regenerated sector identities are remapped. Movement checks remain separate from this baseline ownership review.",
+      "entries": [
+        {
+          "asset": "york-precinct-west-suspended-footbridge",
+          "model_sha256": "6b136cd5ebbf4f553306630ff0c0ce2d7d660c17bb814f9125b71b72f7bcbe09",
+          "surface": "building-929-walk-0",
+          "node": "building-929",
+          "source_obstacle": 929,
+          "edges": [
+            [
+              [
+                -59,
+                30.914325102303337,
+                145.001
+              ],
+              [
+                -78,
+                11.914325102303348,
+                145.001
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "york-west-city-wall-and-access-stair",
+          "model_sha256": "b0991662f9b8c4b362fac6f94fabab4fbec349e7cb2ca9b16a5b6d4a77b90af9",
+          "surface": "building-073-walk-0",
+          "node": "building-073",
+          "source_obstacle": 73,
+          "edges": [
+            [
+              [
+                273,
+                -50.533528859545264,
+                145.001
+              ],
+              [
+                254,
+                -69.53352885954526,
+                145.001
+              ]
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

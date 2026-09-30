@@ -36,12 +36,18 @@ pub(crate) fn set_replay(path: &Path) {
         Err(error) => tracing::warn!("Cannot track diagnostic replay: {error}"),
     }
 }
+pub(crate) fn clear_replay() {
+    match REPLAY.lock() {
+        Ok(mut replay) => *replay = None,
+        Err(error) => tracing::warn!("Cannot clear diagnostic replay: {error}"),
+    }
+}
 pub fn directory() -> Result<PathBuf> {
     Ok(dirs::data_dir()
         .context("OS data directory is unavailable")?
         .join("robin_hood/reports"))
 }
-fn bound_text(mut text: String, limit: usize) -> String {
+pub(crate) fn bound_text(mut text: String, limit: usize) -> String {
     let mut end = limit.min(text.len());
     while !text.is_char_boundary(end) {
         end -= 1;
@@ -66,7 +72,7 @@ pub fn capture(
             .try_into()?,
         backtrace: backtrace.map(|s| bound_text(s, MAX_DIAGNOSTIC_LOG_BYTES)),
         recent_log: String::new(),
-        attachments: vec![],
+        attachments: vec![crate::diagnostic_context::attachment()?],
         warnings: vec![],
     };
     // A panic may occur while either lock is held by this very thread.
@@ -98,6 +104,13 @@ pub fn capture(
     persist(&directory()?, &report)
 }
 fn collect_replay(report: &mut DiagnosticReportV1, replay: Option<&Path>) {
+    collect_replay_with_budget(report, replay, MAX_DIAGNOSTIC_ATTACHMENT_BYTES);
+}
+fn collect_replay_with_budget(
+    report: &mut DiagnosticReportV1,
+    replay: Option<&Path>,
+    budget: usize,
+) {
     let Some(replay) = replay else {
         report
             .warnings
@@ -121,7 +134,13 @@ fn collect_replay(report: &mut DiagnosticReportV1, replay: Option<&Path>) {
             vec![replay.to_owned()]
         };
         paths.sort();
-        let mut remaining = MAX_DIAGNOSTIC_ATTACHMENT_BYTES;
+        let mut remaining = budget.saturating_sub(
+            report
+                .attachments
+                .iter()
+                .map(|item| item.content.len())
+                .sum(),
+        );
         for path in paths {
             let attachment = (|| -> Result<DiagnosticAttachmentV1> {
                 anyhow::ensure!(
@@ -140,14 +159,19 @@ fn collect_replay(report: &mut DiagnosticReportV1, replay: Option<&Path>) {
                     content.len() <= remaining,
                     "replay exceeds attachment budget"
                 );
-                Ok(DiagnosticAttachmentV1 {
-                    filename: path
-                        .file_name()
-                        .context("missing filename")?
-                        .to_string_lossy()
-                        .into_owned(),
-                    content,
-                })
+                let filename = path
+                    .file_name()
+                    .context("missing filename")?
+                    .to_string_lossy()
+                    .into_owned();
+                anyhow::ensure!(
+                    !report
+                        .attachments
+                        .iter()
+                        .any(|item| item.filename == filename),
+                    "duplicate attachment filename"
+                );
+                Ok(DiagnosticAttachmentV1 { filename, content })
             })();
             match attachment {
                 Ok(attachment) => {
@@ -344,6 +368,46 @@ mod tests {
         assert_eq!(report.attachments[0].filename, "mission.json");
         collect_replay(&mut report, Some(&root.path().join("missing")));
         assert!(report.warnings.iter().any(|s| s.contains("missing")));
+    }
+
+    #[test]
+    fn native_context_roundtrips_through_queue_and_reserves_attachment_budget() {
+        let root = tempfile::tempdir().unwrap();
+        let mut report = report();
+        report
+            .attachments
+            .push(crate::diagnostic_context::attachment().unwrap());
+        let context_size = report.attachments[0].content.len();
+        let replay = root.path().join("test.rhrec.jsonl");
+        std::fs::write(&replay, "1234567890").unwrap();
+        collect_replay_with_budget(&mut report, Some(&replay), context_size + 9);
+        assert_eq!(report.attachments.len(), 1);
+        assert!(
+            report
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("budget"))
+        );
+        let path = persist(root.path(), &report).unwrap();
+        let decoded: DiagnosticReportV1 =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(decoded.attachments[0].filename, "native-context.json");
+        let context: serde_json::Value =
+            serde_json::from_str(&decoded.attachments[0].content).unwrap();
+        assert_eq!(context["schema_version"], 1);
+        collect_replay_with_budget(&mut report, Some(&replay), context_size + 10);
+        assert_eq!(report.attachments.len(), 2);
+        let collision = root.path().join("native-context.json");
+        std::fs::write(&collision, "{}").unwrap();
+        collect_replay(&mut report, Some(&collision));
+        assert_eq!(report.attachments.len(), 2);
+        assert!(
+            report
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("duplicate attachment"))
+        );
+        report.validate().unwrap();
     }
 
     #[test]

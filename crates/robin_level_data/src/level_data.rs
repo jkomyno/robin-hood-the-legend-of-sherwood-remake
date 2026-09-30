@@ -1524,6 +1524,10 @@ pub struct RawObstaclePoint {
 )]
 pub struct RawSightObstacle {
     pub points: Vec<RawObstaclePoint>,
+    /// Ordered world-space plane anchors for a thin receiving surface. Polygon
+    /// clipping must not change the anchors used for float32 height evaluation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projection_plane: Option<[[f32; 3]; 3]>,
     /// Projection area (sector, layer) if this is a projection area.
     pub projection_area: Option<(u16, u16)>,
     pub opaque: bool,
@@ -2020,6 +2024,9 @@ pub struct LoadedMission {
     /// their AI handles use zero as the null sentinel.
     #[serde(default)]
     pub reserve_null_ai_handle: bool,
+    /// Instantiate every authored spawn slot using its explicit character profile.
+    #[serde(default)]
+    pub authored_spawn_roster: bool,
     pub header: MissionHeader,
     /// Exact source order for chunks which append to legacy grid arrays.
     #[serde(default)]
@@ -2096,17 +2103,12 @@ pub fn hackable_level_exists(mission_filename: &str) -> bool {
 /// legacy RHP/RHM serialization. It is loaded through the normal datadir
 /// overlay and expanded into the same raw structs as an original level.
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
-#[serde(deny_unknown_fields)]
+#[serde(try_from = "HackableLevelDescriptorInput")]
 pub struct HackableLevelDescriptor {
     /// Display name shown in menus; falls back to the mission filename.
     #[serde(default)]
     pub title: Option<String>,
     pub map_filename: String,
-    #[serde(default)]
-    pub spawn: Option<(i16, i16)>,
-    /// Whether to create the ordinary player-controlled beam-me PC.
-    #[serde(default = "default_true")]
-    pub spawn_player: bool,
     /// Spawn authored NPCs fully revealed rather than as fog silhouettes.
     #[serde(default)]
     pub reveal_all: bool,
@@ -2119,6 +2121,9 @@ pub struct HackableLevelDescriptor {
     pub asset_geometry: Option<CompiledAssetGeometry>,
     #[serde(default)]
     pub soldiers: Vec<HackableSoldier>,
+    /// Authored mission slots for player characters.
+    #[serde(default)]
+    pub spawn_points: Vec<HackableSpawnPoint>,
     #[serde(default)]
     pub pcs: Vec<HackablePc>,
     /// Optional gameplay time limit for this mission.
@@ -2132,6 +2137,88 @@ pub struct HackableLevelDescriptor {
     pub diplomacy: Option<crate::diplomacy::DiplomacyDefinition>,
 }
 
+// Read compatibility is confined to this input shape; serialization uses spawn_points.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HackableLevelDescriptorInput {
+    /// Display name shown in menus; falls back to the mission filename.
+    #[serde(default)]
+    title: Option<String>,
+    map_filename: String,
+    #[serde(default)]
+    spawn: Option<(i16, i16)>,
+    /// Whether to create the ordinary player-controlled beam-me PC.
+    #[serde(default)]
+    spawn_player: Option<bool>,
+    /// Spawn authored NPCs fully revealed rather than as fog silhouettes.
+    #[serde(default)]
+    reveal_all: bool,
+    walkable_polygon: Vec<(i16, i16)>,
+    #[serde(default)]
+    volumes: Vec<HackableLevelVolume>,
+    /// Geometry compiled from placed asset-local definitions. Replaces the
+    /// simple rectangle/volume navigation when present.
+    #[serde(default)]
+    asset_geometry: Option<CompiledAssetGeometry>,
+    #[serde(default)]
+    soldiers: Vec<HackableSoldier>,
+    /// Authored mission slots for player characters.
+    #[serde(default)]
+    spawn_points: Option<Vec<HackableSpawnPoint>>,
+    #[serde(default)]
+    pcs: Vec<HackablePc>,
+    /// Optional gameplay time limit for this mission.
+    #[serde(default)]
+    timed_mission: Option<TimedMissionDefinition>,
+    /// Ordered ambience changes measured in active gameplay seconds.
+    #[serde(default)]
+    ambience_schedule: Vec<AmbienceScheduleCue>,
+    /// Optional symmetric relationship matrix and player coalition.
+    #[serde(default)]
+    diplomacy: Option<crate::diplomacy::DiplomacyDefinition>,
+}
+
+impl TryFrom<HackableLevelDescriptorInput> for HackableLevelDescriptor {
+    type Error = String;
+
+    fn try_from(input: HackableLevelDescriptorInput) -> Result<Self, Self::Error> {
+        let spawn_points = if let Some(points) = input.spawn_points {
+            points
+        } else if input.spawn_player.unwrap_or(true) {
+            if input.asset_geometry.is_some() {
+                return Err("compiled maps do not define player spawns; use spawn_points".into());
+            }
+            let position = input
+                .spawn
+                .ok_or("player spawning requires a mission spawn position")?;
+            vec![HackableSpawnPoint {
+                position,
+                profile: None,
+                direction: 0,
+                sector: 0,
+                layer: 0,
+                projection_area: None,
+            }]
+        } else {
+            Vec::new()
+        };
+        Ok(Self {
+            title: input.title,
+            map_filename: input.map_filename,
+            reveal_all: input.reveal_all,
+            walkable_polygon: input.walkable_polygon,
+            volumes: input.volumes,
+            asset_geometry: input.asset_geometry,
+            soldiers: input.soldiers,
+            spawn_points,
+            pcs: input.pcs,
+            timed_mission: input.timed_mission,
+            ambience_schedule: input.ambience_schedule,
+            diplomacy: input.diplomacy,
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
 #[serde(deny_unknown_fields)]
 pub struct CompiledAssetGeometry {
@@ -2143,6 +2230,11 @@ pub struct CompiledAssetGeometry {
     #[serde(default)]
     pub buildings: Vec<RawBuildingEntry>,
     pub sight_obstacles: Vec<RawSightObstacle>,
+    /// Boundaries which update an actor's receiving plane during movement.
+    #[serde(default)]
+    pub elevation_lines: Vec<RawElevationLine>,
+    #[serde(default)]
+    pub masks: Vec<RawMask>,
     #[serde(default)]
     pub material_sectors: Vec<RawMaterialSector>,
     #[serde(default)]
@@ -2166,6 +2258,12 @@ pub struct CompiledAssetGeometry {
 #[serde(deny_unknown_fields)]
 pub struct CompiledMovementTransition {
     pub id: String,
+    /// Placed asset members represented by this single switch.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<String>,
+    /// The map's paired image resources may be this transition's only effect.
+    #[serde(default)]
+    pub has_appearance: bool,
     pub waypoint: (i16, i16),
     pub sector: u16,
     pub layer: u16,
@@ -2178,6 +2276,11 @@ pub struct CompiledMovementTransition {
     pub initial_sight: Vec<u16>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub applied_sight: Vec<u16>,
+    /// Indices into the compiled mask array; converted to native per-layer references.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub initial_masks: Vec<u16>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_masks: Vec<u16>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub door_links: Option<CompiledTransitionDoors>,
 }
@@ -2253,10 +2356,6 @@ pub struct AmbienceScheduleCue {
     pub transition_seconds: u32,
 }
 
-fn default_true() -> bool {
-    true
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
 #[serde(deny_unknown_fields)]
 pub struct HackableSoldier {
@@ -2265,6 +2364,12 @@ pub struct HackableSoldier {
     pub allegiance: u16,
     #[serde(default)]
     pub direction: u32,
+    #[serde(default)]
+    pub sector: u16,
+    #[serde(default)]
+    pub layer: u16,
+    #[serde(default)]
+    pub projection_area: Option<u16>,
     #[serde(default)]
     pub command_interface: CommandInterface,
     #[serde(default)]
@@ -2278,6 +2383,23 @@ pub struct HackableSoldier {
 pub enum HackableSoldierProfile {
     Identifier(String),
     LegacyIndex(u32),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct HackableSpawnPoint {
+    pub position: (i16, i16),
+    /// Omit to let the campaign roster fill this slot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<u32>,
+    #[serde(default)]
+    pub direction: u32,
+    #[serde(default)]
+    pub sector: u16,
+    #[serde(default)]
+    pub layer: u16,
+    #[serde(default)]
+    pub projection_area: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2430,6 +2552,28 @@ impl LoadedLevel {
         if descriptor.walkable_polygon.len() < 3 {
             return Err("walkable_polygon must contain at least three points".to_owned());
         }
+        if descriptor.asset_geometry.is_none() {
+            for (index, spawn) in descriptor.spawn_points.iter().enumerate() {
+                if spawn.sector != 0
+                    || spawn.layer != 0
+                    || spawn.projection_area.is_some_and(|area| area != u16::MAX)
+                {
+                    return Err(format!(
+                        "spawn_points[{index}] references an invalid motion area"
+                    ));
+                }
+            }
+            for (index, soldier) in descriptor.soldiers.iter().enumerate() {
+                if soldier.sector != 0
+                    || soldier.layer != 0
+                    || soldier.projection_area.is_some_and(|area| area != u16::MAX)
+                {
+                    return Err(format!(
+                        "soldiers[{index}] references an invalid motion area"
+                    ));
+                }
+            }
+        }
         for (index, pc) in descriptor.pcs.iter().enumerate() {
             if let (Some(policy), Some(legacy_autonomous)) = (pc.decision_policy, pc.autonomous)
                 && (policy == DecisionPolicy::EnemyAi) != legacy_autonomous
@@ -2520,6 +2664,7 @@ impl LoadedLevel {
                 continue;
             }
             level.proto.sight_obstacles.push(RawSightObstacle {
+                projection_plane: None,
                 points: volume
                     .footprint
                     .iter()
@@ -2547,32 +2692,40 @@ impl LoadedLevel {
         };
         level.mission.element_chunk_order = vec![MissionElementChunk::Element];
         level.mission.element_group_order = Vec::new();
-        if descriptor.spawn_player {
-            if descriptor.asset_geometry.is_some() {
-                return Err("compiled maps do not define player spawns; use a mission".into());
-            }
-            let spawn = descriptor
-                .spawn
-                .ok_or("player spawning requires a mission spawn position")?;
+        if !descriptor.spawn_points.is_empty() {
+            level.mission.authored_spawn_roster = descriptor
+                .spawn_points
+                .iter()
+                .any(|point| point.profile.is_some());
             level
                 .mission
                 .element_group_order
                 .push(MissionElementGroup::BeamMe);
-            level.mission.beam_mes = vec![BeamMe {
-                position: MapPoint::new(f32::from(spawn.0), f32::from(spawn.1)),
-                direction: 0,
-                action: 0,
-                projection_area: u16::MAX,
-                sector: 0,
-                layer: 0,
-                material: 0,
-                action_required: BeamMeActions::default(),
-                index: 0,
-                script: None,
-                required_pc: 0,
-                profile_override: None,
-                robin_role: false,
-            }];
+            level.mission.beam_mes = descriptor
+                .spawn_points
+                .into_iter()
+                .enumerate()
+                .map(|(index, spawn)| {
+                    Ok(BeamMe {
+                        position: MapPoint::new(
+                            f32::from(spawn.position.0),
+                            f32::from(spawn.position.1),
+                        ),
+                        direction: spawn.direction,
+                        action: 0,
+                        projection_area: spawn.projection_area.unwrap_or(u16::MAX),
+                        sector: spawn.sector,
+                        layer: spawn.layer,
+                        material: 0,
+                        action_required: BeamMeActions::default(),
+                        index: u16::try_from(index).map_err(|_| "too many spawn_points")?,
+                        script: None,
+                        required_pc: 0,
+                        profile_override: spawn.profile,
+                        robin_role: false,
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
         }
         if !descriptor.soldiers.is_empty() {
             level
@@ -2598,9 +2751,9 @@ impl LoadedLevel {
                         .map_err(|_| "hackable soldier y must be non-negative")?,
                     direction: soldier.direction,
                     action: 0,
-                    obstacle_index: u16::MAX,
-                    sector: 0,
-                    layer: 0,
+                    obstacle_index: soldier.projection_area.unwrap_or(u16::MAX),
+                    sector: soldier.sector,
+                    layer: soldier.layer,
                     material: 0,
                     profile_number: match &soldier.profile {
                         HackableSoldierProfile::LegacyIndex(index) => *index,
@@ -2666,7 +2819,7 @@ impl LoadedLevel {
             .collect();
         level.mission.timed_mission = descriptor.timed_mission;
         level.mission.ambience_schedule = descriptor.ambience_schedule;
-        if let Some(geometry) = descriptor.asset_geometry {
+        if let Some(mut geometry) = descriptor.asset_geometry {
             if geometry.motion_data.layers.len() < 2 || !geometry.motion_data.graph_bytes.is_empty()
             {
                 return Err("asset geometry requires ordinary motion layers, a reserved lift layer and a freshly constructed graph".into());
@@ -2706,7 +2859,79 @@ impl LoadedLevel {
                         .ok_or("too many asset sectors")?;
                 }
             }
+            if geometry.elevation_lines.is_empty() {
+                geometry.elevation_lines = crate::compiled_elevation::derive(&geometry)?;
+            }
+            for (index, line) in geometry.elevation_lines.iter().enumerate() {
+                if line.point_a == line.point_b
+                    || usize::from(line.layer) >= geometry.motion_data.layers.len()
+                    || line.right_obstacle_index == line.left_obstacle_index
+                {
+                    return Err(format!("invalid compiled elevation line {index}"));
+                }
+                for receiver in [line.right_obstacle_index, line.left_obstacle_index] {
+                    if receiver == u16::MAX {
+                        continue;
+                    }
+                    let valid_receiver = geometry
+                        .sight_obstacles
+                        .get(usize::from(receiver))
+                        .and_then(|obstacle| obstacle.projection_area)
+                        .is_some_and(|(sector, layer)| {
+                            layer == line.layer && area_refs.contains(&(sector, layer))
+                        });
+                    if !valid_receiver {
+                        return Err(format!(
+                            "compiled elevation line {index} references an invalid receiving obstacle {receiver}"
+                        ));
+                    }
+                }
+            }
             let mut transition_ids = std::collections::BTreeSet::new();
+            for (index, spawn) in level.mission.beam_mes.iter().enumerate() {
+                if !area_refs.contains(&(spawn.sector, spawn.layer)) {
+                    return Err(format!(
+                        "spawn_points[{index}] references an invalid motion area"
+                    ));
+                }
+                if spawn.projection_area != u16::MAX
+                    && !geometry
+                        .sight_obstacles
+                        .get(usize::from(spawn.projection_area))
+                        .is_some_and(|obstacle| {
+                            obstacle.projection_area == Some((spawn.sector, spawn.layer))
+                        })
+                {
+                    return Err(format!(
+                        "spawn_points[{index}] references an invalid projection area"
+                    ));
+                }
+            }
+            for (index, soldier) in level.mission.soldiers.iter().enumerate() {
+                if !area_refs.contains(&(soldier.sector, soldier.layer)) {
+                    return Err(format!(
+                        "soldiers[{index}] references an invalid motion area"
+                    ));
+                }
+                if soldier.obstacle_index != u16::MAX
+                    && !geometry
+                        .sight_obstacles
+                        .get(usize::from(soldier.obstacle_index))
+                        .is_some_and(|obstacle| {
+                            obstacle.projection_area == Some((soldier.sector, soldier.layer))
+                        })
+                {
+                    return Err(format!(
+                        "soldiers[{index}] references an invalid projection area"
+                    ));
+                }
+            }
+            let mask_refs = crate::compiled_masks::validate_compiled_masks(
+                &geometry.masks,
+                &geometry.motion_data,
+                geometry.sight_obstacles.len(),
+            )?;
+            let mut transition_masks = std::collections::BTreeSet::new();
             let mut transition_sight = std::collections::BTreeSet::new();
             let mut transition_pairs = std::collections::BTreeMap::<(u16, u16), u32>::new();
             let non_lift_door_count = geometry.doors.len()
@@ -2722,16 +2947,32 @@ impl LoadedLevel {
             for transition in &geometry.movement_transitions {
                 if transition.id.is_empty()
                     || !transition_ids.insert(&transition.id)
+                    || transition
+                        .aliases
+                        .iter()
+                        .any(|alias| alias.is_empty() || !transition_ids.insert(alias))
                     || !motion_states.contains_key(&(transition.sector, transition.layer))
                     || (transition.motion_changes.is_empty()
                         && transition.initial_sight.is_empty()
                         && transition.applied_sight.is_empty()
+                        && transition.initial_masks.is_empty()
+                        && transition.applied_masks.is_empty()
+                        && !transition.has_appearance
                         && transition.door_links.is_none())
                     || [&transition.apply_polygon, &transition.no_apply_polygon]
                         .iter()
                         .any(|p| !p.points.is_empty() && p.points.len() < 3)
                 {
                     return Err("invalid compiled movement transition".into());
+                }
+                for index in transition
+                    .initial_masks
+                    .iter()
+                    .chain(&transition.applied_masks)
+                {
+                    if usize::from(*index) >= mask_refs.len() || !transition_masks.insert(*index) {
+                        return Err("invalid or multiply assigned transition mask binding".into());
+                    }
                 }
                 if let Some(links) = &transition.door_links {
                     let mut seen = std::collections::BTreeSet::new();
@@ -2751,10 +2992,10 @@ impl LoadedLevel {
                     .iter()
                     .chain(&transition.applied_sight)
                 {
-                    let Some(obstacle) = geometry.sight_obstacles.get(usize::from(*index)) else {
+                    if geometry.sight_obstacles.get(usize::from(*index)).is_none() {
                         return Err("transition references missing sight obstacle".into());
-                    };
-                    if obstacle.projection_area.is_some() || !transition_sight.insert(*index) {
+                    }
+                    if !transition_sight.insert(*index) {
                         return Err(
                             "invalid or multiply controlled transition sight obstacle".into()
                         );
@@ -2869,6 +3110,39 @@ impl LoadedLevel {
                 return Err("invalid asset material geometry or unresolved reference".into());
             }
             for obstacle in &geometry.sight_obstacles {
+                if let Some(points) = obstacle.projection_plane {
+                    let [a, b, c] = points.map(|point| point.map(f64::from));
+                    let u = std::array::from_fn::<_, 3, _>(|i| b[i] - a[i]);
+                    let v = std::array::from_fn::<_, 3, _>(|i| c[i] - a[i]);
+                    let normal = [
+                        u[1] * v[2] - u[2] * v[1],
+                        u[2] * v[0] - u[0] * v[2],
+                        u[0] * v[1] - u[1] * v[0],
+                    ];
+                    if obstacle.projection_area.is_none()
+                        || points.iter().flatten().any(|value| !value.is_finite())
+                        || normal[2].abs() < 1e-8
+                        || (normal[1] + normal[2]).abs() < 1e-8
+                        || obstacle.points.iter().any(|point| {
+                            let position = [point.x, point.y, point.z_top].map(f64::from);
+                            let residual = (0..3)
+                                .map(|i| normal[i] * (position[i] - a[i]))
+                                .sum::<f64>()
+                                / normal[2];
+                            // Input coordinates have already been rounded to f32.
+                            // Bound their accumulated quantization error, not gameplay queries.
+                            let tolerance = 8.
+                                * f64::from(f32::EPSILON)
+                                * position
+                                    .iter()
+                                    .chain(a.iter())
+                                    .fold(1_f64, |m, v| m.max(v.abs()));
+                            point.z_top != point.z_bottom || residual.abs() > tolerance
+                        })
+                    {
+                        return Err("invalid asset receiving plane".into());
+                    }
+                }
                 if obstacle.points.len() < 3
                     || obstacle.points.iter().any(|p| {
                         !p.x.is_finite()
@@ -2966,8 +3240,16 @@ impl LoadedLevel {
                         layer: transition.layer,
                         final_layer: transition.layer,
                         integrate_in_background: false,
-                        old_masks: Vec::new(),
-                        new_masks: Vec::new(),
+                        old_masks: transition
+                            .initial_masks
+                            .iter()
+                            .map(|&index| mask_refs[usize::from(index)])
+                            .collect(),
+                        new_masks: transition
+                            .applied_masks
+                            .iter()
+                            .map(|&index| mask_refs[usize::from(index)])
+                            .collect(),
                         old_sight_obstacles: transition.initial_sight,
                         new_sight_obstacles: transition.applied_sight,
                         old_mouse_sector: SectorPolygon { points: Vec::new() },
@@ -3039,6 +3321,8 @@ impl LoadedLevel {
             level.proto.sight_material_indices = geometry.sight_material_indices;
             level.proto.motion_data = Some(geometry.motion_data);
             level.proto.sight_obstacles = geometry.sight_obstacles;
+            level.proto.elevation_lines = geometry.elevation_lines;
+            level.proto.masks = geometry.masks;
             level.proto.buildings = geometry.buildings;
             // Asset interiors currently describe empty rooms. The runtime needs
             // one explicit occupant record per room, including unoccupied ones.
@@ -3097,6 +3381,7 @@ impl LoadedLevel {
             mission: LoadedMission {
                 format: LevelFormat::Fullgame,
                 reserve_null_ai_handle: false,
+                authored_spawn_roster: false,
                 header: MissionHeader {
                     control_crc: 0,
                     ambiance: 0, // Day
@@ -3876,6 +4161,7 @@ pub fn load_mission(
     Ok(LoadedMission {
         format,
         reserve_null_ai_handle: false,
+        authored_spawn_roster: false,
         header,
         grid_chunk_order,
         element_chunk_order,
@@ -4802,6 +5088,7 @@ fn read_one_sight_obstacle(reader: &mut ChunkReader) -> Result<RawSightObstacle,
 
     Ok(RawSightObstacle {
         points,
+        projection_plane: None,
         projection_area,
         opaque,
         solid,
@@ -5533,6 +5820,179 @@ fn read_archery_sectors(
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn compiled_elevation_lines_preserve_receiver_boundaries_and_validate_references() {
+        let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../robin_engine/tests/fixtures/asset-multi-plane-region.level.json"
+        ))
+        .unwrap();
+        let lines = serde_json::json!([
+            {"point_a":[400,300],"point_b":[400,400],"layer":0,"right_obstacle_index":0,"left_obstacle_index":1},
+            {"point_a":[410,300],"point_b":[410,400],"layer":0,"right_obstacle_index":0,"left_obstacle_index":65535}
+        ]);
+        descriptor["asset_geometry"]["elevation_lines"] = lines.clone();
+        let loaded =
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap()).unwrap();
+        assert_eq!(
+            serde_json::to_value(&loaded.proto.elevation_lines).unwrap(),
+            lines
+        );
+        for (field, value) in [
+            ("point_b", serde_json::json!([400, 300])),
+            ("point_a", serde_json::json!([400.5, 300])),
+            ("point_a", serde_json::json!([null, 300])),
+            ("layer", serde_json::json!(1)),
+            ("layer", serde_json::json!(65535)),
+            ("left_obstacle_index", serde_json::json!(0)),
+            ("right_obstacle_index", serde_json::json!(65534)),
+        ] {
+            let mut invalid = descriptor.clone();
+            invalid["asset_geometry"]["elevation_lines"][0][field] = value;
+            assert!(
+                LoadedLevel::hackable_from_json(&serde_json::to_vec(&invalid).unwrap()).is_err(),
+                "accepted invalid {field}"
+            );
+        }
+        descriptor["asset_geometry"]["sight_obstacles"][0]["projection_area"] =
+            serde_json::Value::Null;
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("invalid receiving obstacle")
+        );
+    }
+
+    #[test]
+    fn authored_mission_spawns_use_navigation_areas_and_beam_me_slots() {
+        let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../robin_engine/tests/fixtures/asset-multi-plane-region.level.json"
+        ))
+        .unwrap();
+        let ground = descriptor["asset_geometry"]["motion_data"]["layers"][0].clone();
+        descriptor["asset_geometry"]["motion_data"]["layers"] =
+            serde_json::json!([ground, ground, []]);
+        let motion: RawMotionData =
+            serde_json::from_value(descriptor["asset_geometry"]["motion_data"].clone()).unwrap();
+        let mut sector = 0u16;
+        let mut elevated = None;
+        for (layer, areas) in motion.layers.iter().enumerate() {
+            for area in areas {
+                if layer > 0 && !area.is_lift {
+                    elevated = Some((sector, layer as u16, area.polygon.points[0]));
+                }
+                sector += 1 + area.obstacles.len() as u16;
+            }
+        }
+        let (sector, layer, point) = elevated.expect("fixture has elevated receiving area");
+        let mut receiving = descriptor["asset_geometry"]["sight_obstacles"][0].clone();
+        receiving["projection_area"] = serde_json::json!([sector, layer]);
+        let receivers = descriptor["asset_geometry"]["sight_obstacles"]
+            .as_array_mut()
+            .unwrap();
+        let receiver = receivers.len();
+        receivers.push(receiving);
+        descriptor["spawn_points"] = serde_json::json!([
+            {"position":point,"profile":0,"direction":4,"sector":sector,"layer":layer,"projection_area":receiver},
+            {"position":point,"profile":3,"direction":8,"sector":sector,"layer":layer,"projection_area":receiver}
+        ]);
+        descriptor["soldiers"] = serde_json::json!([
+            {"position":point,"profile":2,"allegiance":1,"sector":sector,"layer":layer,"projection_area":receiver}
+        ]);
+        let level =
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap()).unwrap();
+        assert!(level.mission.authored_spawn_roster);
+        assert!(level.mission.pcs_to_rescue.is_empty());
+        assert_eq!(level.mission.beam_mes.len(), 2);
+        for (index, spawn) in level.mission.beam_mes.iter().enumerate() {
+            assert_eq!((spawn.sector, spawn.layer), (sector, layer));
+            assert_eq!(spawn.index, index as u16);
+            assert_eq!(spawn.required_pc, 0);
+        }
+        assert_eq!(level.mission.beam_mes[1].profile_override, Some(3));
+        assert_eq!(level.mission.beam_mes[1].direction, 8);
+        assert_eq!(level.mission.beam_mes[1].projection_area, receiver as u16);
+        assert_eq!(level.mission.soldiers[0].obstacle_index, receiver as u16);
+        assert_eq!(
+            (
+                level.mission.soldiers[0].sector,
+                level.mission.soldiers[0].layer
+            ),
+            (sector, layer)
+        );
+        descriptor["spawn_points"][0]["projection_area"] = serde_json::json!(0);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("invalid projection area")
+        );
+        descriptor["spawn_points"][0]["projection_area"] = serde_json::json!(receiver);
+        descriptor["spawn_points"][0]["sector"] = serde_json::json!(65535);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("spawn_points[0]")
+        );
+        descriptor["spawn_points"] = serde_json::json!([]);
+        descriptor["soldiers"][0]["layer"] = serde_json::json!(65535);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("soldiers[0]")
+        );
+    }
+
+    #[test]
+    fn canonical_spawn_points_override_legacy_inputs_and_serialize_without_them() {
+        let bytes = br#"{
+            "map_filename":"Mission", "spawn":[10,10],
+            "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]],
+            "spawn_points":[{"position":[10,10],"profile":0}]
+        }"#;
+        let descriptor: HackableLevelDescriptor = serde_json::from_slice(bytes).unwrap();
+        let serialized = serde_json::to_value(descriptor).unwrap();
+        assert!(serialized.get("spawn").is_none());
+        assert!(serialized.get("spawn_player").is_none());
+        assert_eq!(serialized["spawn_points"][0]["profile"], 0);
+        let loaded = LoadedLevel::hackable_from_json(bytes).unwrap();
+        assert_eq!(loaded.mission.beam_mes.len(), 1);
+        assert_eq!(loaded.mission.beam_mes[0].profile_override, Some(0));
+        let mut empty = serialized;
+        empty["spawn_points"] = serde_json::json!([]);
+        empty["spawn_player"] = serde_json::json!(true);
+        empty["spawn"] = serde_json::json!([20, 20]);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&empty).unwrap())
+                .unwrap()
+                .mission
+                .beam_mes
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn legacy_spawn_reads_as_a_canonical_campaign_slot() {
+        let mut legacy = serde_json::json!({
+            "map_filename":"Mission", "spawn":[10,20],
+            "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]]
+        });
+        let descriptor: HackableLevelDescriptor = serde_json::from_value(legacy.clone()).unwrap();
+        assert_eq!(descriptor.spawn_points.len(), 1);
+        assert_eq!(descriptor.spawn_points[0].profile, None);
+        let canonical = serde_json::to_vec(&descriptor).unwrap();
+        let loaded = LoadedLevel::hackable_from_json(&canonical).unwrap();
+        assert!(!loaded.mission.authored_spawn_roster);
+        assert_eq!(loaded.mission.beam_mes[0].position, MapPoint::new(10., 20.));
+        assert_eq!(loaded.mission.beam_mes[0].profile_override, None);
+        legacy["spawn_player"] = serde_json::json!(false);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&legacy).unwrap())
+                .unwrap()
+                .mission
+                .beam_mes
+                .is_empty()
+        );
+    }
 
     #[test]
     fn hackable_descriptor_expands_to_playable_level() {

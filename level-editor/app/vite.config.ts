@@ -53,7 +53,11 @@ function mountLibrary(server: import("vite").ViteDevServer | import("vite").Prev
       }
       try {
         const file = await realpath(path.join(library, ...parts));
-        if (!file.startsWith(library + path.sep)) throw new Error("Outside library");
+        // Worktrees can share the local read-only asset and game-data libraries.
+        const allowedRoot = ["3d-assets", "game-data"].includes(parts[0])
+          ? await realpath(path.join(library, parts[0]))
+          : library;
+        if (!file.startsWith(allowedRoot + path.sep)) throw new Error("Outside library");
         const info = await stat(file);
         if (!info.isFile()) throw new Error("Not a file");
         response.writeHead(200, {

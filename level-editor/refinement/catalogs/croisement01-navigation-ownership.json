@@ -1,0 +1,30 @@
+{
+  "groups": [],
+  "movement_transitions": [
+    {
+      "patch": 1,
+      "owner": "croisement01-navigation-boundary-002",
+      "node": "scenery-navigation-frame"
+    },
+    {
+      "patch": 2,
+      "owner": "croisement01-navigation-boundary-003",
+      "node": "scenery-navigation-frame"
+    },
+    {
+      "patch": 5,
+      "owner": "croisement01-navigation-boundary-006",
+      "node": "scenery-navigation-frame"
+    },
+    {
+      "patch": 4,
+      "owner": "croisement01-navigation-boundary-005",
+      "node": "scenery-navigation-frame"
+    },
+    {
+      "patch": 3,
+      "owner": "croisement01-navigation-boundary-004",
+      "node": "scenery-navigation-frame"
+    }
+  ]
+}

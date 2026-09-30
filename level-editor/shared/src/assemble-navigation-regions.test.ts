@@ -2,6 +2,61 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 
+test("preserved joined boundaries retain crossing contours without blocking another surface", () => {
+  const crossing: [number, number][] = [
+    [-3, 3],
+    [3, 4],
+    [3, 8],
+    [-3, 8],
+  ];
+  const pieces: NavigationPiece[] = [
+    {
+      navigationRegion: "joined",
+      plane: [0, 0, 0],
+      layer: 0,
+      preserveMovementBoundary: true,
+      polygon: [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 10],
+      ],
+      blockers: [
+        crossing,
+        [
+          [10, 2],
+          [14, 2],
+          [14, 7],
+          [10, 7],
+        ],
+      ],
+    },
+    {
+      navigationRegion: "joined",
+      plane: [1, 0, -10],
+      layer: 1,
+      preserveMovementBoundary: true,
+      polygon: [
+        [10, 0],
+        [20, 0],
+        [20, 10],
+        [10, 10],
+      ],
+      blockers: [],
+    },
+  ];
+  const [result] = assembleNavigationRegions(pieces, []);
+  assert.equal(result!.polygon.length, 4);
+  assert.equal(result!.blockers.length, 1);
+  assert.deepEqual(
+    new Set(result!.blockers[0]!.map((p) => JSON.stringify(p))),
+    new Set(crossing.map((p) => JSON.stringify(p))),
+  );
+  assert.equal(result!.pieces.length, 2);
+  pieces[1]!.preserveMovementBoundary = false;
+  assert.throws(() => assembleNavigationRegions(pieces, []), /must agree/);
+});
+
 test("joined planes preserve holes with native obstacle winding and disconnected components", () => {
   const pieces: NavigationPiece[] = [
     {
@@ -58,4 +113,40 @@ test("joined planes preserve holes with native obstacle winding and disconnected
     return sum + p[0] * q[1] - q[0] * p[1];
   }, 0);
   assert.equal(area, 200);
+});
+
+test("joined receiving fragments that collapse to one movement pixel are omitted with a warning", () => {
+  // A fractional sliver left where a generated union meets a clipped surface.
+  const sliver: [number, number][] = [
+    [1673.9767441860465, 730.0232558139535],
+    [1674.030303030303, 729.8484848484849],
+    [1674, 730],
+  ];
+  const pieces: NavigationPiece[] = [
+    {
+      navigationRegion: "terrain",
+      plane: [0, 0, 0],
+      layer: 0,
+      polygon: [
+        [1600, 700],
+        [1700, 700],
+        [1700, 800],
+        [1600, 800],
+      ],
+      blockers: [],
+    },
+    {
+      navigationRegion: "terrain",
+      plane: [0.1, 0, -167.4],
+      layer: 1,
+      polygon: sliver,
+      blockers: [],
+    },
+  ];
+  const warnings: string[] = [];
+  const result = assembleNavigationRegions(pieces, warnings);
+  assert.equal(result.length, 1);
+  assert.equal(result[0]!.pieces.length, 1);
+  assert.deepEqual(result[0]!.polygon, pieces[0]!.polygon);
+  assert.match(warnings.join("\n"), /Joined receiving fragment.*collaps/i);
 });

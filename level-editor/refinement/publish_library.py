@@ -52,6 +52,13 @@ def stage_library(library, output, *, worker_name='robinhood-editor-library'):
         raise ValueError('Publish output must be outside the source library')
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', worker_name):
         raise ValueError('Invalid Worker name')
+    if not (library/'game-data/index.json').is_file():
+        raise ValueError('Missing game data index.json; run pnpm library:game-data before publishing')
+    game_index_data = safe_file(library, 'game-data/index.json').read_bytes()
+    game_index = json.loads(game_index_data)
+    if (not isinstance(game_index, dict) or game_index.get('version') != 1
+            or not isinstance(game_index.get('files'), list)):
+        raise ValueError('Invalid game data index')
     index = generate_asset_index(library/'3d-assets')
     output.mkdir(parents=True, exist_ok=False)
     site = output/'site'; site.mkdir()
@@ -147,6 +154,10 @@ def stage_library(library, output, *, worker_name='robinhood-editor-library'):
             selected[identity] = catalog['sprites'][identity]
             copy(selected[identity]['image'])
         put(relative, encoded({'version': 1, 'sprites': selected}))
+    for relative in game_index['files']:
+        path = safe_file(library/'game-data', relative)
+        put('game-data/'+relative, path.read_bytes())
+    put('game-data/index.json', game_index_data)
     put('3d-assets/index.json', encoded(index))
     put('scenes/index.json', encoded(maps))
     # Static asset responses are public and revalidate paths that change between releases.

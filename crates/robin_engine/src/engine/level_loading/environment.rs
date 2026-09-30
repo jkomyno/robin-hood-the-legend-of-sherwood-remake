@@ -544,6 +544,10 @@ impl EngineInner {
                         [p2.x, p2.y, p2.z_bottom],
                         [p0.x, p0.y, p0.z_bottom],
                     ];
+                    if let Some(plane) = raw.projection_plane {
+                        obs.top_plane_points = plane;
+                        obs.bottom_plane_points = plane;
+                    }
                     orient_sight_obstacle_planes_like_original(
                         &mut obs.top_plane_points,
                         &mut obs.bottom_plane_points,
@@ -1114,6 +1118,39 @@ impl EngineInner {
 mod tests {
     use super::orient_sight_obstacle_planes_like_original;
     use crate::position_interface::PlaneZCoeffs;
+
+    #[test]
+    #[ignore = "requires editor coefficient fixtures via ROBIN_PROJECTION_PLANE_CASES"]
+    fn editor_receiving_plane_coefficients_match_native_initialization() {
+        #[derive(serde::Serialize, serde::Deserialize)]
+        struct Case {
+            points: [[f32; 3]; 3],
+            expected: [u32; 3],
+        }
+        let path = std::env::var("ROBIN_PROJECTION_PLANE_CASES").expect("coefficient fixture path");
+        let cases: Vec<Case> = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert!(!cases.is_empty());
+        for (index, case) in cases.iter().enumerate() {
+            let mut top = case.points;
+            let mut bottom = top;
+            orient_sight_obstacle_planes_like_original(&mut top, &mut bottom);
+            let coefficients = PlaneZCoeffs::from_plane_points(&top);
+            assert_eq!(
+                [
+                    coefficients.az.to_bits(),
+                    coefficients.bz.to_bits(),
+                    coefficients.dz.to_bits()
+                ],
+                case.expected,
+                "receiving plane {index}: {:?}",
+                case.points
+            );
+        }
+        println!(
+            "{} editor receiving-plane coefficient cases matched exactly",
+            cases.len()
+        );
+    }
 
     #[test]
     fn downward_flat_sight_plane_preserves_original_signed_zero_increment() {

@@ -5,24 +5,41 @@ import { unzipSync, strFromU8 } from "fflate";
 import * as THREE from "three";
 import { type Level3D, gameToScene, parseStoredMap } from "@rle/shared";
 import { compileMap, packageCompiledMap, validateBakeBounds } from "./map-compile.ts";
-import { bakeScene, contentBakeBounds } from "./map-bake-render.ts";
+import {
+  bakeScene,
+  contentBakeBounds,
+  maskOcclusionObjects,
+  withDepthOcclusion,
+} from "./map-bake-render.ts";
 import {
   assetCompilerFixture,
+  anchoredReceiverCompilerFixture,
+  preservedBoundaryCompilerFixture,
+  preservedStateBoundaryCompilerFixture,
+  preservedContoursCompilerFixture,
+  maskAssetCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
+  liftLightCompilerFixture,
   interiorAssetCompilerFixture,
   joinedInteriorCompilerFixture,
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
   projectionMaterialCompilerFixture,
+  projectionVolumeCompilerFixture,
+  receivingGapCompilerFixture,
+  receivingIslandCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
+  appearanceOnlyCompilerFixture,
+  joinedTransitionCompilerFixture,
   sightTransitionCompilerFixture,
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
   navigationRegionCompilerFixture,
   compoundLiftCompilerFixture,
   multiPlaneRegionCompilerFixture,
+  joinedNavigationCompilerFixture,
   nonrenderingVolumeCompilerFixture,
   crossAssetJumpCompilerFixture,
   detachedJumpCompilerFixture,
@@ -30,6 +47,99 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("joined asset switches match the native multi-part apply/reset fixture", async () => {
+  const { document, assets } = joinedTransitionCompilerFixture();
+  const expected = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-joined-transition.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, expected);
+});
+
+test("preserved state boundary export matches native apply/reset geometry", async () => {
+  const { document, assets } = preservedStateBoundaryCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-preserved-state-boundary.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("anchored receiver export preserves native shared ground navigation", async () => {
+  const { document, assets } = anchoredReceiverCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-anchored-receiver.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("receiving island export preserves native area and material ownership", async () => {
+  const { document, assets } = receivingIslandCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-receiving-island.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("merged platform export preserves the opening checked by native receiving queries", async () => {
+  const { document, assets } = receivingGapCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-receiving-gap.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("asset mask geometry exports the native state fixture and survives ZIP packaging", async () => {
+  const { document, assets } = maskAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL("../../../crates/robin_engine/tests/fixtures/asset-mask.level.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+  const compiled = compileMap(document, [0, 0, 512, 512], assets);
+  const bytes = await packageCompiledMap(compiled, {
+    color: new Uint8Array(512 * 512 * 4),
+    depth: new Uint16Array(512 * 512),
+  });
+  const files = unzipSync(bytes);
+  const packaged = JSON.parse(strFromU8(files[`Data/Levels/${compiled.name}.level.json`]!));
+  assert.deepEqual(packaged.asset_geometry.masks, compiled.descriptor.asset_geometry!.masks);
+  assert.deepEqual(
+    packaged.asset_geometry.movement_transitions,
+    compiled.descriptor.asset_geometry!.movement_transitions,
+  );
+});
 
 test("door receiving anchors export the native endpoint fixture", async () => {
   const { document, assets } = doorAnchorCompilerFixture();
@@ -101,6 +211,34 @@ test("non-rendering gameplay export matches the native collision fixture", async
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
+test("preserved boundary export matches the native thin corridor fixture", async () => {
+  const { document, assets } = preservedBoundaryCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-preserved-boundary.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("preserved contour export matches the native overlap fixture", async () => {
+  const { document, assets } = preservedContoursCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-preserved-contours.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
 test("ordinary multi-plane export matches the native traversal fixture", async () => {
   const { document, assets } = multiPlaneRegionCompilerFixture();
   const fixture = JSON.parse(
@@ -113,6 +251,11 @@ test("ordinary multi-plane export matches the native traversal fixture", async (
     ),
   );
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+  const joined = joinedNavigationCompilerFixture();
+  assert.deepEqual(
+    compileMap(joined.document, [0, 0, 2000, 2000], joined.assets).descriptor,
+    fixture,
+  );
 });
 
 test("compound lift export matches the native multi-plane traversal fixture", async () => {
@@ -154,6 +297,20 @@ test("jump export matches the native traversal fixture", async () => {
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
+test("traversal light export matches the native ambience fixture", async () => {
+  const { document, assets } = liftLightCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-lift-light.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
 test("light region export matches the native ambience and interior fixture", async () => {
   const { document, assets } = lightAssetCompilerFixture();
   const fixture = JSON.parse(
@@ -182,6 +339,32 @@ test("sight transition export matches native apply/reset fixture", async () => {
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
+test("appearance-only export matches native apply/reset without fabricated gameplay changes", async () => {
+  const { document, assets, hut } = appearanceOnlyCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-appearance-only.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  const compiled = compileMap(document, [0, 0, 2000, 2000], assets);
+  assert.deepEqual(compiled.descriptor, fixture);
+  const transition = compiled.descriptor.asset_geometry!.movement_transitions![0]!;
+  assert.equal(transition.has_appearance, true);
+  assert.deepEqual(transition.motion_changes, []);
+  assert.equal(transition.door_links, undefined);
+  assert.equal(transition.initial_sight, undefined);
+  assert.equal(transition.initial_masks, undefined);
+  delete hut.gameplay!.movementTransitions![0]!.appearances;
+  assert.throws(
+    () => compileMap(document, [0, 0, 2000, 2000], assets),
+    /invalid movement transition/,
+  );
+});
+
 test("movement transition export matches native apply/reset fixture", async () => {
   const { document, assets } = movementTransitionCompilerFixture();
   const fixture = JSON.parse(
@@ -196,12 +379,56 @@ test("movement transition export matches native apply/reset fixture", async () =
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
+test("map ZIP includes paired appearance resources bound to compiled patch indices", async () => {
+  const { document, assets } = appearanceOnlyCompilerFixture();
+  const compiled = compileMap(document, [0, 0, 2000, 2000], assets);
+  const transition = compiled.descriptor.asset_geometry!.movement_transitions![0]!;
+  assert.equal(transition.has_appearance, true);
+  const pixels = {
+    color: new Uint8Array(2000 * 2000 * 4).fill(255),
+    depth: new Uint16Array(2000 * 2000).fill(10),
+  };
+  const files = unzipSync(
+    await packageCompiledMap(compiled, pixels, [
+      {
+        bounds: [1, 1, 1, 1],
+        patches: [transition.id],
+        states: [
+          { color: Uint8Array.of(255, 255, 255, 255), depth: Uint16Array.of(10) },
+          { color: Uint8Array.of(255, 0, 0, 255), depth: Uint16Array.of(40000) },
+        ],
+      },
+    ]),
+  );
+  const prefix = `Data/Levels/Day/${compiled.name}`;
+  const manifest = JSON.parse(strFromU8(files[`${prefix}.appearance.json`]!));
+  assert.deepEqual(manifest.regions[0].patches, [0]);
+  assert.equal(manifest.regions[0].states[0], null);
+  const state = manifest.regions[0].states[1];
+  assert.deepEqual([...decode(files[state.color]!).data], [255, 0, 0, 255]);
+  assert.deepEqual([...decode(files[state.depth]!).data], [40000]);
+});
+
 test("asset environmental sound export matches the native source fixture", async () => {
   const { document, assets } = soundAssetCompilerFixture();
   const fixture = JSON.parse(
     await readFile(
       new URL(
         "../../../crates/robin_engine/tests/fixtures/asset-sound.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("receiving volume export matches the native state fixture", async () => {
+  const { document, assets } = projectionVolumeCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-projection-volume.level.json",
         import.meta.url,
       ),
       "utf8",
@@ -307,7 +534,8 @@ test("compilation rebases transformed volumes, namespaces output and preserves t
 
 test("map export does not invent mission spawns, even for a tiny frame", () => {
   const result = compileMap(bakeFixture(), [0, 0, 8, 8]);
-  assert.equal(result.descriptor.spawn_player, false);
+  assert.equal("spawn_player" in result.descriptor, false);
+  assert.deepEqual(result.descriptor.spawn_points, []);
   assert.equal("spawn" in result.descriptor, false);
   assert.equal("reveal_all" in result.descriptor, false);
 });
@@ -349,6 +577,99 @@ test("bake snapshot resets patch previews without changing editor objects", () =
   const snapshot = bakeScene([root]);
   assert.equal(snapshot.children[0]!.children[0]!.visible, true);
   assert.equal(node.visible, false);
+});
+
+test("bake snapshots select combined appearance states without leaking previews or depth exclusions", () => {
+  const root = new THREE.Group();
+  const covered = new THREE.Group();
+  covered.userData = { reveal_material_patch: "roof", reveal_material_state: "covered" };
+  const revealed = new THREE.Group();
+  revealed.userData = { reveal_material_patch: "roof", reveal_material_state: "revealed" };
+  revealed.visible = false;
+  const receiver = new THREE.Group();
+  receiver.userData = {
+    reveal_show_when_applied: ["roof"],
+    reveal_hide_when_applied: ["gate"],
+    map_bake_object_id: "receiver",
+  };
+  receiver.visible = false;
+  const hiddenParent = new THREE.Group();
+  hiddenParent.visible = false;
+  hiddenParent.add(revealed.clone());
+  root.add(covered, revealed, receiver, hiddenParent);
+  const peer = new THREE.Group();
+  peer.userData = { reveal_hide_when_applied: ["roof"] };
+  const snapshot = bakeScene([root, peer], new Set(["roof"]));
+  const visibility = () => snapshot.children[0]!.children.map((node) => node.visible);
+  assert.deepEqual(visibility(), [false, true, true, false]);
+  assert.equal(snapshot.children[1]!.visible, false);
+  withDepthOcclusion(snapshot, new Set(["receiver"]), () => {
+    assert.deepEqual(visibility(), [false, true, false, false]);
+  });
+  assert.deepEqual(visibility(), [false, true, true, false]);
+  const combined = bakeScene([root, peer], new Set(["roof", "gate"]));
+  assert.deepEqual(
+    combined.children[0]!.children.map((node) => node.visible),
+    [false, true, false, false],
+  );
+  assert.deepEqual(
+    root.children.map((node) => node.visible),
+    [true, false, false, false],
+  );
+  assert.equal(peer.visible, true);
+  assert.deepEqual(
+    bakeScene([root]).children[0]!.children.map((node) => node.visible),
+    [true, false, false, false],
+  );
+});
+
+test("mask-owned parts retain color visibility but reveal underlying depth geometry", () => {
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  hut.gameplay!.maskOcclusionNodes = ["building-999"];
+  const owner = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  const excluded = maskOcclusionObjects(document, assets);
+  assert.deepEqual([...excluded], [owner.id]);
+  const root = new THREE.Group(),
+    foreground = new THREE.Group(),
+    background = new THREE.Group();
+  foreground.userData.map_bake_object_id = owner.id;
+  foreground.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
+  background.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
+  root.add(foreground, background);
+  const snapshot = bakeScene([root]);
+  const visibleMeshes = () => {
+    let count = 0;
+    snapshot.traverseVisible((n) => {
+      if (n instanceof THREE.Mesh) count++;
+    });
+    return count;
+  };
+  assert.equal(visibleMeshes(), 2);
+  withDepthOcclusion(snapshot, excluded, () => assert.equal(visibleMeshes(), 1));
+  assert.equal(visibleMeshes(), 2);
+  assert.equal(foreground.visible, true);
+  assert.throws(
+    () =>
+      withDepthOcclusion(snapshot, excluded, () => {
+        throw new Error("render failed");
+      }),
+    /render failed/,
+  );
+  assert.equal(visibleMeshes(), 2);
+  compileMap(document, [0, 0, 2000, 2000], assets);
+  hut.gameplay!.maskOcclusionNodes = ["missing"];
+  assert.throws(() => compileMap(document, [0, 0, 2000, 2000], assets), /mask occlusion nodes/);
+  hut.gameplay!.maskOcclusionNodes = ["building-999", "building-999"];
+  assert.throws(() => compileMap(document, [0, 0, 2000, 2000], assets), /mask occlusion nodes/);
+  hut.gameplay!.maskOcclusionNodes = ["building-999"];
+  delete hut.gameplay!.masks;
+  assert.throws(() => compileMap(document, [0, 0, 2000, 2000], assets), /mask occlusion nodes/);
+  root.traverse((n) => {
+    if (n instanceof THREE.Mesh) {
+      n.geometry.dispose();
+      (n.material as THREE.Material).dispose();
+    }
+  });
 });
 
 test("mod ZIP has root metadata, a playable descriptor and lossless 16-bit depth", async () => {
@@ -409,6 +730,63 @@ test("asset export retains a reopenable pinned scene and matches the Rust runtim
     assets,
   );
   assert.deepEqual(reopened, expected);
+});
+
+test("best effort ZIP retains omitted mission and wall authoring and reports missing gameplay", async () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  delete hut.gameplay;
+  document.splines = [
+    {
+      id: "wall",
+      name: "Wall",
+      kind: "wall",
+      asset: "hut",
+      axis: "x",
+      points: [
+        [0, 0, 0],
+        [100, 0, 0],
+      ],
+      closed: false,
+      width: 10,
+      repeatLength: 20,
+    },
+  ];
+  document.population = {
+    version: 1,
+    spriteCatalog: "catalog.json",
+    actors: [],
+    routes: [],
+    items: [
+      {
+        id: "item",
+        name: "Item",
+        sprite: "apple",
+        position: [10, 10, 0],
+        quantity: 1,
+        purpose: "Preview",
+      },
+    ],
+  };
+  const expected = structuredClone(document);
+  const compiled = compileMap(document, [0, 0, 512, 512], assets, { bestEffort: true });
+  assert.ok(compiled.warnings.some((message) => message.includes("Mission population omitted")));
+  const files = unzipSync(
+    await packageCompiledMap(compiled, {
+      color: new Uint8Array(512 * 512 * 4),
+      depth: new Uint16Array(512 * 512),
+    }),
+  );
+  const reopened = parseStoredMap(
+    JSON.parse(strFromU8(files[`editor/${compiled.name}.rhlos-map.json`]!)),
+    assets,
+  );
+  assert.deepEqual(reopened, expected);
+  assert.deepEqual(document, expected);
+  assert.deepEqual(
+    JSON.parse(strFromU8(files["compile-report.json"]!)).warnings,
+    compiled.warnings,
+  );
+  assert.equal("spawn_player" in compiled.descriptor, false);
 });
 
 test("sloped asset export matches the native elevation/navigation fixture", async () => {

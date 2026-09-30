@@ -1,0 +1,21 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "obstacle": 110,
+  "review": "The south central curtain and angle bastion meet between boundary vertices 4 and 7, matching the existing component seam near x=1777/1782. Retain the complete bastion inner and outer contours. Restore bottom 0 and common top 340.001 instead of component bottoms 320 and different tops 355/364. The independent assets join only along their directed local seam. No masks, receiving geometry, materials or state patches reference this volume.",
+  "parts": [
+    {
+      "asset": "lincoln-south-angle-bastion",
+      "node": "building-110--component-south-angle-bastion-parapet",
+      "model_sha256": "cff344488ddcd5d135b5af52512e38c7d549ee704c38187ace3b7cc6c518d007",
+      "descriptor_sha256": "6dde43833e329bdb659fb2142592462513442d308cf75a72f85e5b923a2ba34f",
+      "vertices": [0, 1, 2, 3, 4, 7, 8, 9, 10, 11]
+    },
+    {
+      "asset": "lincoln-south-curtain-wall-central",
+      "node": "building-110--component-south-central-parapet-straight",
+      "model_sha256": "43122b1a731fc0d58f8a9b41a8e61b6b07430c26264e1a9df3facafb8ca1c86b",
+      "descriptor_sha256": "e4f6ffec587fa8c185044d7caa63cebee1959d9cc4280ac0b06c47b51c9a3900",
+      "vertices": [4, 5, 6, 7]
+    }
+  ]
+}

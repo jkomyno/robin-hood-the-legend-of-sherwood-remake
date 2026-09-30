@@ -17,7 +17,14 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { NodeIO, PropertyType } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
-import { dequantize, meshopt, prune, simplify, textureCompress, unpartition } from "@gltf-transform/functions";
+import {
+  dequantize,
+  meshopt,
+  prune,
+  simplify,
+  textureCompress,
+  unpartition,
+} from "@gltf-transform/functions";
 import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 import sharp from "sharp";
 
@@ -50,10 +57,18 @@ export function previewTextureSize(
 export async function previewFingerprint(): Promise<string> {
   const require = createRequire(import.meta.url);
   const versions: Record<string, string> = {};
-  for (const name of ["@gltf-transform/core", "@gltf-transform/extensions", "@gltf-transform/functions", "meshoptimizer", "sharp"]) {
+  for (const name of [
+    "@gltf-transform/core",
+    "@gltf-transform/extensions",
+    "@gltf-transform/functions",
+    "meshoptimizer",
+    "sharp",
+  ]) {
     let directory = path.dirname(require.resolve(name));
     for (;;) {
-      const info = await fs.readFile(path.join(directory, "package.json"), "utf8").then(JSON.parse, () => undefined);
+      const info = await fs
+        .readFile(path.join(directory, "package.json"), "utf8")
+        .then(JSON.parse, () => undefined);
       if (info?.name === name) {
         versions[name] = info.version;
         break;
@@ -63,34 +78,57 @@ export async function previewFingerprint(): Promise<string> {
       directory = parent;
     }
   }
-  return digest(JSON.stringify({ settings: SETTINGS, versions, sharp: sharp.versions,
-    script: digest(await fs.readFile(fileURLToPath(import.meta.url))) }));
+  return digest(
+    JSON.stringify({
+      settings: SETTINGS,
+      versions,
+      sharp: sharp.versions,
+      script: digest(await fs.readFile(fileURLToPath(import.meta.url))),
+    }),
+  );
 }
 
 /** Preview GLB bytes for the model at `input`, plus the texture edge used (null: untextured). */
-export async function generatePreview(input: string): Promise<{ bytes: Uint8Array; edge: number | null; texels: number }> {
-  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.encoder": MeshoptEncoder });
+export async function generatePreview(
+  input: string,
+): Promise<{ bytes: Uint8Array; edge: number | null; texels: number }> {
+  const io = new NodeIO()
+    .registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ "meshopt.encoder": MeshoptEncoder });
   const document = await io.read(input);
   // Previews show the covered state. Nodes shown only while a patch is revealed (exported
   // reveal_show_when_applied extras, e.g. revealed-interior copies) are dropped; the editor's
   // PatchDisplay switches them on the full model only.
-  const revealOnly = document.getRoot().listNodes().filter((node) => {
-    const show = node.getExtras().reveal_show_when_applied;
-    return Array.isArray(show) && show.length > 0;
-  });
+  const revealOnly = document
+    .getRoot()
+    .listNodes()
+    .filter((node) => {
+      const show = node.getExtras().reveal_show_when_applied;
+      return Array.isArray(show) && show.length > 0;
+    });
   if (revealOnly.length) {
     for (const node of revealOnly) node.dispose();
     // Only drop resources the removed nodes owned; keep every (possibly empty) part node.
-    await document.transform(prune({
-      keepLeaves: true,
-      propertyTypes: [PropertyType.MESH, PropertyType.MATERIAL, PropertyType.TEXTURE, PropertyType.ACCESSOR],
-    }));
+    await document.transform(
+      prune({
+        keepLeaves: true,
+        propertyTypes: [
+          PropertyType.MESH,
+          PropertyType.MATERIAL,
+          PropertyType.TEXTURE,
+          PropertyType.ACCESSOR,
+        ],
+      }),
+    );
   }
-  const texels = document.getRoot().listTextures().reduce((sum, texture) => {
-    const size = texture.getSize();
-    if (!size) throw new Error(`Unknown texture size: ${texture.getName()}`);
-    return sum + size[0] * size[1];
-  }, 0);
+  const texels = document
+    .getRoot()
+    .listTextures()
+    .reduce((sum, texture) => {
+      const size = texture.getSize();
+      if (!size) throw new Error(`Unknown texture size: ${texture.getName()}`);
+      return sum + size[0] * size[1];
+    }, 0);
   const edge = texels > 0 ? previewTextureSize(texels) : null;
   const transforms = [
     // Shared-payload models read their external buffers; the preview embeds one buffer.
@@ -102,7 +140,14 @@ export async function generatePreview(input: string): Promise<{ bytes: Uint8Arra
     meshopt({ encoder: MeshoptEncoder, level: SETTINGS.level }),
   ];
   if (edge !== null)
-    transforms.push(textureCompress({ encoder: sharp, targetFormat: SETTINGS.targetFormat, resize: [edge, edge], quality: SETTINGS.quality }));
+    transforms.push(
+      textureCompress({
+        encoder: sharp,
+        targetFormat: SETTINGS.targetFormat,
+        resize: [edge, edge],
+        quality: SETTINGS.quality,
+      }),
+    );
   await document.transform(...transforms);
   return { bytes: await io.writeBinary(document), edge, texels };
 }
@@ -112,10 +157,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (input === "--fingerprint") {
     console.log(await previewFingerprint());
   } else {
-    if (!input || !output) throw new Error("Usage: node src/preview-model.ts <input.glb> <output.glb> | --fingerprint");
+    if (!input || !output)
+      throw new Error("Usage: node src/preview-model.ts <input.glb> <output.glb> | --fingerprint");
     const { bytes, edge, texels } = await generatePreview(path.resolve(input));
     if (bytes.length === 0) throw new Error(`Empty preview: ${input}`);
     await fs.writeFile(output, bytes);
-    console.log(JSON.stringify({ output, bytes: bytes.length, sha256: digest(bytes), edge, texels }));
+    console.log(
+      JSON.stringify({ output, bytes: bytes.length, sha256: digest(bytes), edge, texels }),
+    );
   }
 }

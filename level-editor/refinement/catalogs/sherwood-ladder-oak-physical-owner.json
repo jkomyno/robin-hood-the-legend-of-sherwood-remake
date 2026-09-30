@@ -1,0 +1,61 @@
+{
+  "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
+  "obstacle": 24,
+  "owner": "sherwood-ladder-oak",
+  "node": "building-024--component-ladder-oak-tapered-fluted-trunk-001-8cb54eae",
+  "review": "The four-point volume is the ladder oak trunk, from ground to 355.001. Leaf sprays and limbs are visual components of the oak; the rope stiles, rungs and braces belong to the separately placed ladder platform and must not duplicate trunk collision. The ladder/platform retains its separately authored traversal surfaces and volume 101. Preserve the trunk volume on the oak frame and keep all 37 other visual components and provenance without physical collision. This source has no receiving, material, mask or patch links.",
+  "parts": [
+    {
+      "asset": "sherwood-ladder-oak",
+      "model_sha256": "b5a8ee22f32f02b82a528d16c14fee6ed1cf877c310293f7cd6f1ea4e29a40a5",
+      "descriptor_sha256": "62d382b6233cded1c921525eb9e73b590ed626f460059c30641f8f55db0d0e3f",
+      "nodes": [
+        "building-024--component-ladder-oak-tapered-fluted-trunk-001-8cb54eae",
+        "building-024--component-sherwood-arbre02-tree-024-limbs-forks-and-terminal-twigs-001-03376e78",
+        "building-024--component-sherwood-arbre02-tree-024-individual-leaf-sprays-001-972d90f2",
+        "building-024--component-sherwood-arbre02-tree-024-inner-foliage-masses-001-fdec3d54"
+      ]
+    },
+    {
+      "asset": "sherwood-ladder-oak-platform",
+      "model_sha256": "e23a23d850e92481ce23d9cd19be379a57d70abd6cdb576b02f301913321bdc3",
+      "descriptor_sha256": "2477a1c6435092727c9936597683e940fa42da79135398c9a72dff312df97342",
+      "nodes": [
+        "building-024--component-ladder-oak-left-rope-stile-001-2045f540",
+        "building-024--component-ladder-oak-right-rope-stile-001-0baed7f0",
+        "building-024--component-ladder-oak-rung-01-001-19bc0639",
+        "building-024--component-ladder-oak-rung-02-001-8bcd3ca2",
+        "building-024--component-ladder-oak-rung-03-001-7f57faf6",
+        "building-024--component-ladder-oak-rung-04-001-4ab59efd",
+        "building-024--component-ladder-oak-rung-05-001-bee3bed5",
+        "building-024--component-ladder-oak-rung-06-001-6fd1baf8",
+        "building-024--component-ladder-oak-rung-07-001-8d3b1936",
+        "building-024--component-ladder-oak-rung-08-001-7952bc30",
+        "building-024--component-ladder-oak-rung-09-001-cc0d07f2",
+        "building-024--component-ladder-oak-rung-10-001-06fce7f5",
+        "building-024--component-ladder-oak-rung-11-001-dd536a8c",
+        "building-024--component-ladder-oak-rung-12-001-d9baf889",
+        "building-024--component-ladder-oak-rung-13-001-f288bc73",
+        "building-024--component-ladder-oak-rung-14-001-62b723ef",
+        "building-024--component-ladder-oak-rung-15-001-220d5ade",
+        "building-024--component-ladder-oak-rung-16-001-52ba344a",
+        "building-024--component-ladder-oak-rung-17-001-21d34489",
+        "building-024--component-ladder-oak-rung-18-001-fe9dd741",
+        "building-024--component-ladder-oak-rung-19-001-e2499d09",
+        "building-024--component-ladder-oak-rung-20-001-d5a62d80",
+        "building-024--component-ladder-oak-rung-21-001-e869ba52",
+        "building-024--component-ladder-oak-above-platform-left-stile-001-798889bc",
+        "building-024--component-ladder-oak-above-platform-right-stile-001-1e14ebfc",
+        "building-024--component-ladder-oak-above-platform-rung-1-001-8bc3a720",
+        "building-024--component-ladder-oak-above-platform-rung-2-001-bc025008",
+        "building-024--component-ladder-oak-above-platform-rung-3-001-c57d728b",
+        "building-024--component-ladder-oak-above-platform-rung-4-001-3e1af35d",
+        "building-024--component-ladder-oak-below-platform-left-stile-001-8fd88d0f",
+        "building-024--component-ladder-oak-below-platform-right-stile-001-43d49634",
+        "building-024--component-ladder-oak-below-platform-rung-1-001-cb29d5b0",
+        "building-024--component-ladder-oak-below-platform-rung-2-001-1ed6b66b",
+        "building-024--component-ladder-oak-below-platform-rung-3-001-45afb199"
+      ]
+    }
+  ]
+}

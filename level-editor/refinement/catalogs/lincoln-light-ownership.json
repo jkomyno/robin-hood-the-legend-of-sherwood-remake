@@ -1,0 +1,623 @@
+{
+  "sound_sources": [
+    {
+      "source": 1,
+      "owner": "lincoln-west-round-tower",
+      "node": "building-387",
+      "reason": "Attach this tower-footprint emitter to the tower assembly so moving the tower carries its sound independently of the hillside.",
+      "sound": {
+        "id": 30,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          250,
+          550,
+          5
+        ],
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 250,
+        "polyline": [
+          [
+            379,
+            1559
+          ]
+        ],
+        "inner_volume": 25,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 255
+      }
+    },
+    {
+      "source": 13,
+      "owner": "lincoln-great-hall",
+      "node": "building-233",
+      "reason": "Attach this hall-footprint emitter to the hall assembly so its sound follows the building independently of the plateau.",
+      "sound": {
+        "id": 46,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          80,
+          110,
+          10
+        ],
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 350,
+        "polyline": [
+          [
+            1560,
+            1423
+          ]
+        ],
+        "inner_volume": 50,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 4
+      }
+    }
+  ],
+  "version": 1,
+  "map": "Lincoln",
+  "groups": [],
+  "endpoint_bindings": [
+    {
+      "kind": "door-inside",
+      "index": 17,
+      "projection": 85,
+      "anchor": [
+        1960,
+        1530
+      ],
+      "reason": "The endpoint is physically on the lower curtain walk but is linked to the sloped wall-walk step; keep its position and select the receiving step independently."
+    },
+    {
+      "kind": "door-outside",
+      "index": 22,
+      "projection": 228,
+      "anchor": [
+        1765,
+        1033
+      ],
+      "reason": "The gate endpoint is physically on the round-turret floor but its outside link selects the annex landing."
+    },
+    {
+      "kind": "patch-waypoint",
+      "index": 7,
+      "projection": 228,
+      "anchor": [
+        1765,
+        1033
+      ],
+      "reason": "The gate transition uses the same annex landing as its door while retaining its reference point on the round-turret floor."
+    }
+  ],
+  "door_sources": [
+    {
+      "doors": [
+        17
+      ],
+      "owner": "lincoln-south-wall-walk-step",
+      "node": "building-122",
+      "reason": "This passage connects the lower curtain walk to the sloped step. The complete step asset owns the connection; the lower endpoint lies outside its own projection footprint."
+    },
+    {
+      "doors": [
+        6
+      ],
+      "owner": "lincoln-hall-south-terrace",
+      "node": "building-242",
+      "reason": "The gate belongs to the southern hall terrace and its revealed appearance. Supporting keep terrain overlaps the inside endpoint but does not own the doorway."
+    },
+    {
+      "doors": [
+        7
+      ],
+      "owner": "lincoln-west-slate-tower",
+      "node": "building-073",
+      "reason": "This passage and its permission change belong to the western tower's revealed appearance. The landing overlaps the adjacent curtain and plateau, so nearest-solid ownership cannot identify the tower entrance."
+    },
+    {
+      "doors": [
+        35
+      ],
+      "owner": "lincoln-courtyard-shed",
+      "node": "building-188",
+      "reason": "This entrance serves the courtyard shed interior. The supporting inner-bailey plateau also contains its inside endpoint but is not the room owner."
+    },
+    {
+      "doors": [
+        54,
+        55,
+        56
+      ],
+      "owner": "lincoln-keep",
+      "node": "building-190",
+      "reason": "The three entrances on separate keep floors serve one shared keep interior. They stay together on the complete keep asset rather than the overlapping castle plateau."
+    }
+  ],
+  "light_sources": [
+    {
+      "source": 0,
+      "owner": "lincoln-light-region-0",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2748,
+              811
+            ],
+            [
+              2656,
+              868
+            ],
+            [
+              2555,
+              830
+            ],
+            [
+              2572,
+              701
+            ],
+            [
+              2754,
+              742
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 1,
+      "owner": "lincoln-light-region-1",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              1961,
+              1293
+            ],
+            [
+              1927,
+              1351
+            ],
+            [
+              1877,
+              1361
+            ],
+            [
+              1861,
+              1313
+            ],
+            [
+              1822,
+              1322
+            ],
+            [
+              1872,
+              1350
+            ],
+            [
+              1875,
+              1361
+            ],
+            [
+              1794,
+              1378
+            ],
+            [
+              1757,
+              1337
+            ],
+            [
+              1760,
+              1276
+            ],
+            [
+              1931,
+              1241
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 5,
+      "owner": "lincoln-light-region-5",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              517,
+              1642
+            ],
+            [
+              321,
+              1598
+            ],
+            [
+              297,
+              1544
+            ],
+            [
+              546,
+              1323
+            ],
+            [
+              601,
+              1313
+            ],
+            [
+              754,
+              1483
+            ],
+            [
+              739,
+              1587
+            ],
+            [
+              605,
+              1569
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 8,
+      "owner": "lincoln-light-region-8",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 2,
+        "polygon": {
+          "points": [
+            [
+              1193,
+              1379
+            ],
+            [
+              1105,
+              1316
+            ],
+            [
+              1170,
+              1270
+            ],
+            [
+              1215,
+              1311
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 14,
+      "owner": "lincoln-light-region-14",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 4,
+        "polygon": {
+          "points": [
+            [
+              1431,
+              1084
+            ],
+            [
+              1242,
+              1152
+            ],
+            [
+              1172,
+              1079
+            ],
+            [
+              1354,
+              1009
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 16,
+      "owner": "lincoln-light-region-16",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 4,
+        "polygon": {
+          "points": [
+            [
+              1933,
+              1006
+            ],
+            [
+              1768,
+              1030
+            ],
+            [
+              1733,
+              994
+            ],
+            [
+              1731,
+              908
+            ],
+            [
+              1939,
+              879
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 17,
+      "owner": "lincoln-light-region-17",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 4,
+        "polygon": {
+          "points": [
+            [
+              729,
+              1372
+            ],
+            [
+              639,
+              1335
+            ],
+            [
+              618,
+              1277
+            ],
+            [
+              730,
+              1246
+            ],
+            [
+              802,
+              1265
+            ],
+            [
+              851,
+              1311
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 20,
+      "owner": "lincoln-light-region-20",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 6,
+        "polygon": {
+          "points": [
+            [
+              1677,
+              926
+            ],
+            [
+              1640,
+              933
+            ],
+            [
+              1609,
+              907
+            ],
+            [
+              1647,
+              894
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 21,
+      "owner": "lincoln-light-region-21",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 6,
+        "polygon": {
+          "points": [
+            [
+              1361,
+              1021
+            ],
+            [
+              1292,
+              1042
+            ],
+            [
+              1262,
+              980
+            ],
+            [
+              1296,
+              966
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 24,
+      "owner": "lincoln-light-region-24",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 6,
+        "polygon": {
+          "points": [
+            [
+              1445,
+              966
+            ],
+            [
+              1377,
+              906
+            ],
+            [
+              1207,
+              952
+            ],
+            [
+              1010,
+              742
+            ],
+            [
+              1009,
+              675
+            ],
+            [
+              1142,
+              641
+            ],
+            [
+              1257,
+              706
+            ],
+            [
+              1407,
+              850
+            ],
+            [
+              1528,
+              800
+            ],
+            [
+              1646,
+              892
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 25,
+      "owner": "lincoln-great-hall",
+      "node": "building-230",
+      "reason": "Elevated field follows this building and its receiving surfaces; the underlying plateau footprint is not the owner of the elevated lighting.",
+      "light": {
+        "layer": 7,
+        "polygon": {
+          "points": [
+            [
+              1225,
+              893
+            ],
+            [
+              1054,
+              739
+            ],
+            [
+              1195,
+              689
+            ],
+            [
+              1364,
+              843
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    },
+    {
+      "source": 29,
+      "owner": "lincoln-light-region-29",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 10,
+        "polygon": {
+          "points": [
+            [
+              1748,
+              283
+            ],
+            [
+              1726,
+              173
+            ],
+            [
+              1810,
+              158
+            ],
+            [
+              1863,
+              212
+            ],
+            [
+              1842,
+              280
+            ]
+          ]
+        },
+        "ambience": 2
+      }
+    },
+    {
+      "source": 30,
+      "owner": "lincoln-keep",
+      "node": "building-190",
+      "reason": "Elevated field follows this building and its receiving surfaces; the underlying plateau footprint is not the owner of the elevated lighting.",
+      "light": {
+        "layer": 12,
+        "polygon": {
+          "points": [
+            [
+              1764,
+              121
+            ],
+            [
+              1688,
+              157
+            ],
+            [
+              1626,
+              113
+            ],
+            [
+              1707,
+              72
+            ]
+          ]
+        },
+        "ambience": 2
+      }
+    }
+  ]
+}

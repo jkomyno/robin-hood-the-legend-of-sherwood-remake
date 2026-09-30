@@ -1,11 +1,15 @@
 import type { Polygon, MultiPolygon } from "polygon-clipping";
 import { fixedClipping as clipping } from "./fixed-polygon-boolean.ts";
 import earcut, { flatten } from "earcut";
-import type { Point } from "./level.ts";
+import type { Point, SightObstacle } from "./level.ts";
 import { simplifyMotionRing } from "./motion-quantization.ts";
+import { equivalentProjectionPlanes } from "./native-projection-plane.ts";
 
 export interface ProjectionMaterialSupport {
   polygon: Point[];
+  /** Existing physical receiver; partitioning must not replace it with thin geometry. */
+  obstacleIndex?: number;
+  planePoints?: SightObstacle["projection_plane"];
   footprint?: Point[];
   defaultMaterial: number;
   materialIndices: number[];
@@ -56,17 +60,36 @@ export function partitionProjectionMaterials(
     members.push({ support, geometry });
   }
   for (const [index, member] of members.entries())
-    for (const other of members.slice(index + 1))
+    for (const other of members.slice(index + 1)) {
+      const overlap = area(clipping.intersection(member.geometry, other.geometry));
+      if (
+        (member.support.obstacleIndex !== undefined) !==
+          (other.support.obstacleIndex !== undefined) &&
+        overlap > 1e-7
+      )
+        throw new Error(
+          "Overlapping physical and generated receivers require explicit volumes for both surfaces",
+        );
       if (
         !(member.support.owner && member.support.owner === other.support.owner) &&
         (member.support.priority ?? 0) === (other.support.priority ?? 0) &&
         (member.support.tiePriority ?? 0) === (other.support.tiePriority ?? 0) &&
         (member.support.defaultMaterial !== other.support.defaultMaterial ||
+          !equivalentProjectionPlanes(member.support.planePoints, other.support.planePoints) ||
           (member.support.materialSignature ?? JSON.stringify(member.support.materialIndices)) !==
             (other.support.materialSignature ?? JSON.stringify(other.support.materialIndices))) &&
-        area(clipping.intersection(member.geometry, other.geometry)) > 1e-7
+        overlap > 1e-7
       )
-        throw new Error("Overlapping receiving surfaces have conflicting projection materials");
+        throw new Error(
+          `Overlapping receiving surfaces have conflicting projection materials: ${member.support.owner ?? "unnamed"} and ${other.support.owner ?? "unnamed"}`,
+          {
+            cause: {
+              overlap,
+              supports: [structuredClone(member.support), structuredClone(other.support)],
+            },
+          },
+        );
+    }
   members.sort(
     (a, b) =>
       (b.support.priority ?? 0) - (a.support.priority ?? 0) ||
@@ -77,13 +100,24 @@ export function partitionProjectionMaterials(
     member.geometry = clipping.intersection(remaining, member.geometry);
     remaining = clipping.difference(remaining, member.geometry);
   }
-  members.push({
-    support: { polygon: boundary, defaultMaterial: 0, materialIndices: [], explicit: false },
-    geometry: remaining,
-  });
+  // A merged motion boundary can enclose gaps between receiving supports.
+  // Default material is supplied only by an authored implicit surface, not by
+  // the absence of an explicit receiver (which must remain uncovered).
+  const implicit = supports.filter((support) => !support.explicit);
+  if (implicit.length)
+    members.push({
+      support: { polygon: boundary, defaultMaterial: 0, materialIndices: [], explicit: false },
+      geometry: clipping.intersection(
+        remaining,
+        clipping.union(
+          shape(implicit[0]!.polygon),
+          ...implicit.slice(1).map((s) => shape(s.polygon)),
+        ),
+      ),
+    });
   return members.flatMap(({ support, geometry }) =>
     geometry.flatMap((polygon) => {
-      const rings = polygon.map(simplifyMotionRing);
+      const rings = polygon.map((ring) => simplifyMotionRing(ring));
       if (rings[0]!.length < 3) {
         warnings.push("Receiving material partition collapsed to zero area and was omitted.");
         return [];

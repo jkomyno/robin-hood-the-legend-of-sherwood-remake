@@ -2,7 +2,20 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { createHash } from "node:crypto";
+import { recoverReviewedMasks, type ReviewedMaskRecipe } from "./recover-reviewed-masks.ts";
+import { maskReferenceResolver } from "../../shared/src/mask-references.ts";
+import { recoverMaskStateLinks } from "./recover-mask-state-links.ts";
+import {
+  recoverReviewedProjections,
+  type ReviewedProjections,
+} from "./recover-reviewed-projections.ts";
+import {
+  recoverReviewedNavigationJoins,
+  type ReviewedNavigationJoins,
+} from "./recover-reviewed-navigation-joins.ts";
 import polygonClipping, { type Polygon, type MultiPolygon } from "polygon-clipping";
+import { applyAffineMatrix } from "../../shared/src/geometry.ts";
 import {
   gameToScene,
   sceneToGame,
@@ -17,20 +30,36 @@ import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevatio
 import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { recoverGroundGameplay, polygonArea } from "./recover-ground-gameplay.ts";
 import {
+  recoverGroundReceivers,
+  type ReviewedGroundReceivers,
+} from "./recover-ground-receivers.ts";
+import { partitionMovementObstacles } from "../../shared/src/partition-movement-obstacles.ts";
+import {
   recoveredGameplayDefinition,
   descriptorGameplayPacket,
   type RecoveredGameplayPacket,
 } from "./recovered-gameplay-definition.ts";
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
-import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
-import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
-import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
+import {
+  recoverSoundSource,
+  containsSoundPolyline,
+  uniqueSoundOwner,
+  declaredSoundOwners,
+} from "./recover-sound-source.ts";
+import { recoverAuthoredSounds } from "./recover-authored-sounds.ts";
+import { declaredLightOwners } from "./recover-light-owner.ts";
+import { containsLightPolygon, recoverLightField } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverMovementTransition } from "./recover-movement-transition.ts";
+import { recoverAppearanceBindings } from "./recover-appearance-bindings.ts";
+import {
+  reviewedTransitionPlanes,
+  type ReviewedTransitionPlanes,
+} from "./reviewed-transition-planes.ts";
 import { recoverLiftJoins } from "./recover-lift-joins.ts";
 import {
   nonrenderingGameplayOwners,
@@ -47,6 +76,7 @@ import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantiza
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
 import { recoverMovementClearance } from "./recover-movement-clearance.ts";
+import { recoverWholeAssetVolume } from "./recover-whole-asset-volume.ts";
 import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-views.ts";
 import { declaredEndpointBindings, recoverDeclaredEndpoint } from "./recovery-endpoint-binding.ts";
 import {
@@ -62,6 +92,14 @@ const { values } = parseArgs({
     source: { type: "string" },
     out: { type: "string" },
     ownership: { type: "string" },
+    "mask-definitions": { type: "string" },
+    "navigation-definitions": { type: "string" },
+    "projection-definitions": { type: "string" },
+    "ground-receivers": { type: "string" },
+    "transition-planes": { type: "string" },
+    "preserve-ground-boundaries": { type: "boolean", default: false },
+    "precise-ground-ownership": { type: "boolean", default: false },
+    "require-movement-coverage": { type: "boolean", default: false },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -75,7 +113,18 @@ const inputDescriptors = await pinnedDescriptors(
   inputDocument.sceneAssets,
 );
 const { document, descriptors } = normalizeGameplayStateViews(inputDocument, inputDescriptors);
-const proto: ProtoLevel = JSON.parse(await fs.readFile(values.source, "utf8"));
+const sourceBytes = await fs.readFile(values.source);
+const proto: ProtoLevel = JSON.parse(sourceBytes.toString());
+const planeDefinitions: ReviewedTransitionPlanes | undefined = values["transition-planes"]
+  ? JSON.parse(await fs.readFile(values["transition-planes"], "utf8"))
+  : undefined;
+const transitionPlanes = planeDefinitions
+  ? reviewedTransitionPlanes(
+      proto,
+      createHash("sha256").update(sourceBytes).digest("hex"),
+      planeDefinitions,
+    )
+  : new Map<number, HeightPlane>();
 const locals = new Map<
   number,
   {
@@ -89,6 +138,8 @@ const locals = new Map<
 for (const part of document.objects) {
   const match = /^asset:([^:]+):(.+)$/.exec(part.node);
   if (!match || part.source.obstacle === undefined) continue;
+  if (descriptors.get(match[1]!)?.parts.find((p) => p.node === match[2])?.collision === "none")
+    continue;
   const list = locals.get(part.source.obstacle) ?? [];
   if (!list.some((item) => item.asset === match[1] && item.node === match[2]))
     list.push({ asset: match[1]!, node: match[2]!, part });
@@ -105,6 +156,9 @@ const packets = new Map<
 >();
 const recoveredMaterials = new Set<number>();
 const recoveredProjectionMaterials = new Set<number>();
+const stateSightReferences = new Set(
+  proto.patches.flatMap((patch) => [...patch.old_sight_obstacles, ...patch.new_sight_obstacles]),
+);
 const packet = (asset: string) => {
   let p = packets.get(asset);
   if (!p) {
@@ -128,7 +182,7 @@ for (const descriptor of descriptors.values()) {
   );
   if (descriptor.parts.some((p) => p.mission_profile))
     packet(descriptor.id).issues.push(
-      "Mission-authored geometry retained; recover associated state transitions and behaviours separately",
+      "Preview part bounds do not establish navigation; author associated walkable surfaces, state transitions and behaviours separately",
     );
 }
 const localize = (part: Level3DObject, point: Vec3): Vec3 => {
@@ -203,12 +257,62 @@ if (ownership)
       `Non-rendering gameplay restored from explicit ownership: ${entry.declaredOwner}`,
     );
   }
+for (const entry of ownership?.physical_volume_sources ?? []) {
+  const descriptor = descriptors.get(entry.owner);
+  const source = proto.sight_obstacles[entry.obstacle];
+  const owners = locals.get(entry.obstacle) ?? [];
+  const frames = owners.filter((owner) => owner.node === entry.node);
+  const pin = inputDocument.assetSources?.find((asset) => asset.id === entry.owner);
+  if (
+    !descriptor ||
+    !source ||
+    frames.length !== 1 ||
+    owners.some((owner) => owner.asset !== entry.owner) ||
+    pin?.model_sha256 !== entry.model_sha256 ||
+    createHash("sha256").update(sourceBytes).digest("hex") !== entry.source_sha256
+  )
+    throw new Error(`Whole-volume ownership or source pins changed: ${entry.owner}`);
+  const owner = frames[0]!;
+  const draft = packet(entry.owner);
+  if (draft.collision !== undefined || draft.volumes?.length)
+    throw new Error(`Whole-volume recovery would replace existing definitions: ${entry.owner}`);
+  const recovered = recoverWholeAssetVolume({
+    descriptor,
+    source,
+    sourceIndex: entry.obstacle,
+    node: entry.node,
+    localize: (point) => localize(owner.part, point),
+  });
+  Object.assign(draft, recovered);
+  locals.set(entry.obstacle, [
+    { ...owner, collisionId: recovered.volumes[0].id, sourceShape: source },
+  ]);
+  draft.issues.push(
+    "Reviewed whole physical volume replaces visual component bounds; verify placement before publication",
+  );
+}
 const coverage: unknown[] = [];
 const movementStateInventory: {
   sector: number;
   layer: number;
   transitions: ReturnType<typeof recoverMotionStates>["transitions"];
 }[] = [];
+const groundReceiverDefinitions: ReviewedGroundReceivers | undefined = values["ground-receivers"]
+  ? JSON.parse(await fs.readFile(values["ground-receivers"], "utf8"))
+  : undefined;
+const groundReceivers = new Map(
+  (groundReceiverDefinitions
+    ? recoverGroundReceivers(
+        document,
+        descriptors,
+        proto,
+        createHash("sha256").update(sourceBytes).digest("hex"),
+        groundReceiverDefinitions,
+        localize,
+      )
+    : []
+  ).map((entry) => [entry.source_obstacle, entry]),
+);
 const groundAreas: Parameters<typeof recoverGroundGameplay>[0] = [];
 const groundAreaSectors = new Set<number>();
 let transferredGroundExclusions: MultiPolygon = [];
@@ -252,11 +356,13 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         motion.obstacles.every((o) => o.state_id === 0) &&
         raised.every(({ index }) => locals.get(index)?.length === 1)
       ) {
-        const exclusions = raised.map(({ obstacle, index }) => {
-          const footprint = obstacle.points.map((p): Point => [p.x, p.y - p.z_top]);
-          groundProjectionOwners.push({ ...locals.get(index)![0]!, footprint });
-          return { polygon: { points: footprint } };
-        });
+        const exclusions = raised
+          .filter(({ index }) => !groundReceivers.has(index))
+          .map(({ obstacle, index }) => {
+            const footprint = obstacle.points.map((p): Point => [p.x, p.y - p.z_top]);
+            groundProjectionOwners.push({ ...locals.get(index)![0]!, footprint });
+            return { polygon: { points: footprint } };
+          });
         groundAreas.push({
           polygon: motion.polygon,
           obstacles: [...motion.obstacles, ...exclusions],
@@ -321,9 +427,50 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
       })),
     );
     const staticMotion = motion.state_id === 0 && motion.obstacles.every((o) => o.state_id === 0);
-    if (layer === 0 && staticMotion)
-      clearanceSources.push({ regions: partition.ground, plane: [0, 0, 0] });
+    if (layer === 0 && staticMotion) {
+      // Shared receivers retain ground navigation beneath their receiving footprint.
+      // Include that coverage when recovering clearances for nearby collision parts.
+      const groundCoverage = [
+        ...partition.ground,
+        ...supports.flatMap(({ index }, supportIndex) =>
+          groundReceivers.has(index) ? partition.surfaces[supportIndex]! : [],
+        ),
+      ];
+      clearanceSources.push({
+        regions: groundCoverage.length ? polygonClipping.union(groundCoverage) : [],
+        plane: [0, 0, 0],
+      });
+    }
     for (const [supportIndex, { obstacle, index }] of supports.entries()) {
+      const binding = groundReceivers.get(index);
+      if (binding) {
+        const target = packet(binding.asset);
+        (target.projectionReceivers ??= []).push({
+          id: `${binding.node}-receiver`,
+          node: binding.node,
+          volume: binding.node,
+          anchor: binding.localAnchor,
+        });
+        for (const [materialIndex, material] of obstacle.material_indices.entries()) {
+          const source = proto.material_sectors[material];
+          if (!source) throw new Error(`Missing material region ${material}`);
+          (target.materials ??= []).push({
+            id: `${binding.node}-receiver-material-${materialIndex}`,
+            node: binding.node,
+            material: source.material,
+            ground: false,
+            obstacles: [binding.node],
+            polygon: source.polygon.points.map(([x, y]) => {
+              const z = planeHeight(obstacle.points, x, y);
+              return localize(locals.get(index)![0]!.part, [x, y + z, z]);
+            }),
+          });
+          recoveredMaterials.add(material);
+        }
+        recoveredProjectionMaterials.add(index);
+        recoveredArea += polygonArea(partition.surfaces[supportIndex]!);
+        continue;
+      }
       const owners = locals.get(index) ?? [];
       if (!owners.length) {
         unresolved.push({
@@ -423,6 +570,11 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             ]),
           );
           const surfaceId = `${owner.collisionId ?? owner.node}-walk-${regionIndex}`;
+          const projectionVolume =
+            owners.length === 1 &&
+            (stateSightReferences.has(index) || (motion.is_lift && owner.collisionId !== undefined))
+              ? (owner.collisionId ?? owner.node)
+              : undefined;
           const materialRegions = obstacle.material_indices.map((material, materialIndex) => {
             const source = proto.material_sectors[material];
             if (!source) throw new Error(`Missing material region ${material}`);
@@ -432,7 +584,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
               node: owner.node,
               material: source.material,
               ground: false,
-              obstacles: [],
+              obstacles: projectionVolume === undefined ? [] : [projectionVolume],
               polygon: source.polygon.points.map(([x, y]) => {
                 const z = planeHeight(obstacle.points, x, y);
                 return localize(owner.part, [x, y + z, z]);
@@ -446,29 +598,44 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             id: surfaceId,
             node: owner.node,
             navigationRegion,
-            projectionMaterials: {
-              defaultMaterial: obstacle.default_material,
-              regions: materialRegions,
-              priority: -index,
-              footprint:
-                owners.length === 1
-                  ? obstacle.points.map((point) =>
-                      localize(owner.part, [point.x, point.y, point.z_top]),
-                    )
-                  : descriptors
-                      .get(owner.asset)!
-                      .parts.find((part) => part.node === owner.node)!
-                      .obstacle_local_game!.points.map((point): Vec3 => [
-                        point.x,
-                        point.y,
-                        point.z_top,
-                      ]),
-              priorityHeight: localize(owner.part, [
-                0,
-                0,
-                Math.max(...obstacle.points.map((point) => Math.max(point.z_top, point.z_bottom))),
-              ])[2],
-            },
+            ...(projectionVolume === undefined
+              ? {
+                  projectionMaterials: {
+                    defaultMaterial: obstacle.default_material,
+                    regions: materialRegions,
+                    planePoints: [
+                      obstacle.points[1]!,
+                      obstacle.points[2]!,
+                      obstacle.points[0]!,
+                    ].map((point) => localize(owner.part, [point.x, point.y, point.z_top])) as [
+                      Vec3,
+                      Vec3,
+                      Vec3,
+                    ],
+                    priority: -index,
+                    footprint:
+                      owners.length === 1
+                        ? obstacle.points.map((point) =>
+                            localize(owner.part, [point.x, point.y, point.z_top]),
+                          )
+                        : descriptors
+                            .get(owner.asset)!
+                            .parts.find((part) => part.node === owner.node)!
+                            .obstacle_local_game!.points.map((point): Vec3 => [
+                              point.x,
+                              point.y,
+                              point.z_top,
+                            ]),
+                    priorityHeight: localize(owner.part, [
+                      0,
+                      0,
+                      Math.max(
+                        ...obstacle.points.map((point) => Math.max(point.z_top, point.z_bottom)),
+                      ),
+                    ])[2],
+                  },
+                }
+              : { projectionVolume }),
             vertices,
             kind: motion.is_lift ? "lift" : "walkable",
             holes: region
@@ -525,32 +692,64 @@ if (groundAreas.length) {
         return [{ ...candidates[0]!, footprint: obstacle.points.map((p): Point => [p.x, p.y]) }];
       })
       .concat(groundProjectionOwners);
-    const ground = recoverGroundGameplay(groundAreas, owners);
+    const ground = recoverGroundGameplay(
+      groundAreas,
+      owners,
+      values["preserve-ground-boundaries"],
+      values["precise-ground-ownership"],
+    );
     transferredGroundExclusions = ground.blockers.flatMap((b) => b.regions);
     const terrain = packet(grounds[0]!.id);
     terrain.issues.push(...ground.warnings);
-    for (const section of ground.sections)
-      for (const [index, region] of section.terrain.entries())
+    for (const section of ground.sections) {
+      if (values["preserve-ground-boundaries"]) {
+        const holes = section.movementContours.flatMap((contour) =>
+          contour.regions
+            .flatMap((region) => partitionMovementObstacles(region, true))
+            .map((points) => ({ id: `${grounds[0]!.id}/${contour.id}`, points })),
+        );
         terrain.surfaces.push({
-          id: `${section.navigationRegion}-${index}`,
+          id: `${section.navigationRegion}-0`,
+          preserveMovementPrecision: true,
+          preserveMovementBoundary: true,
           navigationRegion: section.navigationRegion,
           node: "$root",
           kind: "walkable",
-          vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
-          holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
+          vertices: section.movementBoundary.map(([x, y]) => [x, y, 0]),
+          holes: holes.map((hole) => hole.points.map(([x, y]) => [x, y, 0])),
+          holeContours: holes.map((hole) => hole.id),
         });
+      } else
+        for (const [index, region] of section.terrain.entries())
+          terrain.surfaces.push({
+            id: `${section.navigationRegion}-${index}`,
+            preserveMovementPrecision: true,
+            navigationRegion: section.navigationRegion,
+            node: "$root",
+            kind: "walkable",
+            vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
+            holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
+          });
+    }
     for (const [index, blocker] of ground.blockers.entries()) {
       const owner = owners.find((o) => o.asset === blocker.asset && o.node === blocker.node)!;
-      for (const [regionIndex, region] of blocker.regions.entries()) {
-        const local = (ring: Point[]) =>
-          ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
-        (packet(owner.asset).movementBlockers ??= []).push({
-          id: `${owner.node}-ground-blocker-${index}-${regionIndex}`,
-          node: owner.node,
-          vertices: local(region[0]!),
-          holes: region.slice(1).map(local),
-        });
-      }
+      const ownedBlockers = (packet(owner.asset).movementBlockers ??= []);
+      const contours = blocker.contours ?? [{ id: undefined, regions: blocker.regions }];
+      for (const [contourIndex, contour] of contours.entries())
+        for (const [regionIndex, region] of contour.regions.entries()) {
+          const local = (ring: Point[]) =>
+            ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
+          ownedBlockers.push({
+            preserveMovementPrecision: true,
+            id: `${owner.node}-ground-blocker-${index}-${contour.id === undefined ? "" : `${contourIndex}-`}${regionIndex}`,
+            ...(contour.id === undefined
+              ? {}
+              : { movementContour: `${grounds[0]!.id}/${contour.id}` }),
+            node: owner.node,
+            vertices: local(region[0]!),
+            holes: region.slice(1).map(local),
+          });
+        }
       packet(owner.asset).issues.push(
         "Review movement contour ownership: footprint intersections can split exclusions shared by adjacent assets",
       );
@@ -560,17 +759,76 @@ if (groundAreas.length) {
     );
     coverage.push({
       kind: "ground-decomposition",
+      preservedBoundaries: values["preserve-ground-boundaries"],
+      preciseOwnershipIntersections: values["precise-ground-ownership"],
       sourceArea: ground.sourceArea,
       recoveredArea: ground.reconstructedArea,
       differenceArea: ground.differenceArea,
       coordinateGrid: ground.coordinateGrid,
-      blockerOwners: ground.blockers.length,
+      blockerOwners: ground.blockers.filter((blocker) => blocker.regions.length).length,
+      authoredMovementOwners: ground.blockers.length,
       navigationRegions: ground.sections.map(({ navigationRegion, differenceArea }) => ({
         navigationRegion,
         differenceArea,
       })),
     });
   }
+}
+let navigationJoinRecovery: { asset: string; surface: string; region: string; edges: number }[] =
+  [];
+if (values["navigation-definitions"]) {
+  const definitions: ReviewedNavigationJoins = JSON.parse(
+    await fs.readFile(values["navigation-definitions"], "utf8"),
+  );
+  const updates = recoverReviewedNavigationJoins(
+    document,
+    proto,
+    createHash("sha256").update(sourceBytes).digest("hex"),
+    definitions,
+    packets,
+  );
+  navigationJoinRecovery = updates.map(
+    ({
+      asset,
+      surface,
+      region,
+      edges,
+      heightTolerance,
+      vertices,
+      holes,
+      preserveMovementBoundary,
+    }) => {
+      surface.navigationRegion = region;
+      surface.navigationJoins = edges.length ? edges : undefined;
+      surface.navigationJoinHeightTolerance = heightTolerance;
+      if (preserveMovementBoundary !== undefined)
+        surface.preserveMovementBoundary = preserveMovementBoundary;
+      if (vertices) {
+        surface.vertices = vertices;
+        surface.holes = holes ?? [];
+        const part = document.objects.find((p) => p.node === `asset:${asset}:${surface.node}`)!;
+        const matrix = partMatrix(document.camera, document, part);
+        const placed = (points: Vec3[]) =>
+          points.map((p) => {
+            const [x, y, z] = sceneToGame(
+              document.camera,
+              applyAffineMatrix(matrix, gameToScene(document.camera, ...p)),
+            );
+            return [x, y - z, z] as Vec3;
+          });
+        const outer = placed(vertices);
+        const boundary = close(outer.map(([x, y]) => [x, y]));
+        // These surfaces already carry explicit exclusions. Clear derived solid
+        // slices across the whole boundary so rounded duplicates cannot expand
+        // an authored exclusion or leave a false seam between receiving planes.
+        clearanceSources.push({
+          regions: [boundary],
+          plane: fitHeightPlane(outer),
+        });
+      }
+      return { asset, surface: surface.id, region, edges: edges.length };
+    },
+  );
 }
 // Restore openings only in each placed asset's own derived collision. These
 // local contours move with the asset; no assembled-map override is exported.
@@ -590,11 +848,6 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
       let regions: MultiPolygon;
       try {
         regions = recoverMovementClearance(source.regions, source.plane, solid, 1);
-        regions = quantizeRecoveredMotion(
-          regions,
-          `${owner.node}-clearance-${sourceIndex}`,
-          packet(owner.asset).issues,
-        );
       } catch (error) {
         unresolved.push({
           kind: "movement-clearance",
@@ -606,7 +859,7 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
         continue;
       }
       for (const [regionIndex, region] of regions.entries()) {
-        const id = `${owner.node}-clearance-${sourceIndex}-${regionIndex}`;
+        const id = `${owner.collisionId ?? owner.node}-clearance-${sourceIndex}-${regionIndex}`;
         const local = (ring: Point[]) =>
           ring.slice(0, -1).map(([x, y]) => {
             const z = evaluateHeight(source.plane, [x, y]);
@@ -745,8 +998,11 @@ for (const area of movementStateInventory)
         applied: change.applied,
         initialSight,
         appliedSight,
+        uncoveredPlane: transitionPlanes.get(change.patches[0]!),
+        // Shared physical receivers retain the ground navigation plane for states.
         receivers: proto.sight_obstacles.filter(
-          (obstacle) =>
+          (obstacle, index) =>
+            !groundReceivers.has(index) &&
             Array.isArray(obstacle.projection_area) &&
             obstacle.projection_area[0] === area.sector &&
             obstacle.projection_area[1] === area.layer,
@@ -824,12 +1080,13 @@ for (const [index, lift] of proto.lifts.entries()) {
     });
     for (const [supportIndex, support] of supports.entries()) {
       const owner = support.owners[0]!;
+      const supportId = owner.collisionId ?? owner.node;
       const doors = (lift.doors as SourceDoor[]).flatMap((door, i) =>
         endpointOwners[i] !== supportIndex
           ? []
           : [
               {
-                id: `${owner.node}-endpoint-${i}`,
+                id: `${supportId}-endpoint-${i}`,
                 node: owner.node,
                 polygon: door.door_sector.points.map((point) => {
                   const z = heightAt(door.sector_out, door.layer_out, door.point_out);
@@ -863,9 +1120,10 @@ for (const [index, lift] of proto.lifts.entries()) {
             ],
       );
       packet(owner.asset).connections.push({
-        id: `${owner.node}-lift`,
+        id: `${supportId}-lift`,
         node: owner.node,
         kind: "lift",
+        surface: `${supportId}-walk-0`,
         type: lift.lift_type,
         direction: (() => {
           const angle = (lift.direction * Math.PI) / 8;
@@ -1114,6 +1372,21 @@ for (const [index, entry] of proto.buildings.entries()) {
           middle: local(door.point_mid),
           type: door.door_type,
           active: door.active,
+          ...(!isInterior &&
+          door.door_type === 0 &&
+          door.active &&
+          !door.door_sector.points.length &&
+          !door.locked_pc &&
+          !door.unlockable &&
+          !door.locked_npc_villain &&
+          !door.locked_npc_civilian &&
+          !door.locked_pc_after_patch &&
+          !door.unlockable_after_patch &&
+          !door.locked_npc_villain_after_patch &&
+          !door.locked_npc_civilian_after_patch &&
+          !proto.patches.some((patch) => patch.door_indices.includes(doorIndices.get(door)!))
+            ? { allowContinuous: true }
+            : {}),
           locks: {
             player: door.locked_pc,
             unlockable: door.unlockable,
@@ -1337,8 +1610,19 @@ for (const [index, obstacle] of proto.sight_obstacles.entries()) {
     recoveredMaterials.add(material);
   }
 }
-let recoveredSounds = 0;
+const authoredSounds = recoverAuthoredSounds(document, descriptors, proto.sound_sources);
+const authoredSoundSources = new Set(authoredSounds.flatMap((asset) => asset.sourceIndices));
+const declaredSounds = declaredSoundOwners(
+  ownership?.sound_sources ?? [],
+  proto.sound_sources,
+  (asset, node) =>
+    [...locals.values()].flat().filter((owner) => owner.asset === asset && owner.node === node),
+  authoredSoundSources,
+);
+for (const asset of authoredSounds) packet(asset.asset).sounds = asset.sounds;
+let recoveredSounds = authoredSoundSources.size;
 for (const [index, sound] of proto.sound_sources.entries()) {
+  if (authoredSoundSources.has(index)) continue;
   if (sound.global && groundMaterialOwners.length === 1) {
     const p = packet(groundMaterialOwners[0]!.id);
     (p.sounds ??= []).push(recoverSoundSource(sound, `ambient-sound-${index}`, "$root", (p) => p));
@@ -1355,7 +1639,8 @@ for (const [index, sound] of proto.sound_sources.entries()) {
       )
     );
   });
-  if (owners.length !== 1) {
+  const soundOwner = declaredSounds.get(index) ?? uniqueSoundOwner(owners);
+  if (!soundOwner) {
     unresolved.push({
       kind: "sound-owner",
       source: index,
@@ -1365,32 +1650,58 @@ for (const [index, sound] of proto.sound_sources.entries()) {
     });
     continue;
   }
-  const owner = owners[0]!;
+  const owner = soundOwner;
   const p = packet(owner.asset);
   (p.sounds ??= []).push(
     recoverSoundSource(sound, `ambient-sound-${index}`, owner.node, (point) =>
       localize(owner.part, point),
     ),
   );
-  p.issues.push("Review environmental sound ownership inferred from unique geometric containment");
+  if (!declaredSounds.has(index))
+    p.issues.push(
+      "Review environmental sound ownership inferred from unique geometric containment",
+    );
   recoveredSounds++;
 }
 let recoveredLights = 0;
+const declaredLights = declaredLightOwners(
+  ownership?.light_sources ?? [],
+  proto.light_sectors,
+  (asset, node) =>
+    document.objects.filter(
+      (part) =>
+        descriptors.get(asset)?.parts.some((p) => p.node === node) &&
+        part.node === `asset:${asset}:${node}`,
+    ),
+);
+const lightRecovery: { source: number; asset: string; ids: string[] }[] = [];
 for (const [index, light] of proto.light_sectors.entries()) {
   try {
-    const plane = recoverLightPlane(light, proto.sight_obstacles);
-    const world = recoverLightRegion(light, `light-${index}`, "$root", plane, (p) => p);
-    const contour = world.polygon.map(([x, y]): Point => [x, y]);
-    const owners = [...locals.values()].flat().filter((owner) =>
-      containsSoundPolyline(
-        [...contour, contour[0]!],
+    const { region, footprints: contours } = recoverLightField(
+      light,
+      `light-${index}`,
+      proto.sight_obstacles,
+      proto.motion_data.layers[light.layer] ?? [],
+      [...sourceMotionAreas]
+        .filter(([, area]) => area.layer === light.layer)
+        .map(([sector]) => sector),
+    );
+    const regions = [region];
+    const allOwners = [...locals.values()].flat();
+    const owners = [...new Set(allOwners.map((owner) => owner.asset))].flatMap((asset) => {
+      const parts = allOwners.filter((owner) => owner.asset === asset);
+      const footprints = parts.map((owner) =>
         (owner.sourceShape ?? transformedObstacle(document, owner.part)).points.map((p): Point => [
           p.x,
           p.y,
         ]),
-      ),
-    );
-    if (owners.length !== 1) {
+      );
+      return contours.every((contour) => containsLightPolygon(contour, footprints))
+        ? [parts[0]!]
+        : [];
+    });
+    const selected = declaredLights.get(index) ?? (owners.length === 1 ? owners[0] : undefined);
+    if (!selected) {
       unresolved.push({
         kind: "light-owner",
         source: index,
@@ -1399,14 +1710,33 @@ for (const [index, light] of proto.light_sectors.entries()) {
       });
       continue;
     }
-    const owner = owners[0]!,
+    const owner = selected,
       p = packet(owner.asset);
     (p.lights ??= []).push(
-      recoverLightRegion(light, `light-${index}`, owner.node, plane, (point) =>
-        localize(owner.part, point),
-      ),
+      ...regions.map((region) => ({
+        ...region,
+        node: owner.node,
+        polygon: region.polygon.map((point) => localize(owner.part, point)),
+        ...(region.receivers
+          ? { receivers: region.receivers.map((point) => localize(owner.part, point)) }
+          : {}),
+        ...(region.receiverSegments
+          ? {
+              receiverSegments: region.receiverSegments.map(([a, b]): [Vec3, Vec3] => [
+                localize(owner.part, a),
+                localize(owner.part, b),
+              ]),
+            }
+          : {}),
+      })),
     );
-    p.issues.push("Review light-region ownership inferred from unique geometric containment");
+    lightRecovery.push({
+      source: index,
+      asset: owner.asset,
+      ids: regions.map((region) => region.id),
+    });
+    if (!declaredLights.has(index))
+      p.issues.push("Review light-region ownership inferred from unique geometric containment");
     recoveredLights++;
   } catch (error) {
     unresolved.push({ kind: "light-geometry", source: index, error: String(error) });
@@ -1415,6 +1745,26 @@ for (const [index, light] of proto.light_sectors.entries()) {
 let recoveredJumps = 0;
 type JumpOwner = { asset: string; node: string; part?: Level3DObject };
 const jumpPoint = (owner: JumpOwner, p: Vec3) => (owner.part ? localize(owner.part, p) : p);
+const jumpReceivingFootprints = (asset: string, zone: ProtoLevel["jump_zones"][number]) => {
+  const footprints = proto.sight_obstacles.flatMap((obstacle, index) => {
+    if (
+      !Array.isArray(obstacle.projection_area) ||
+      obstacle.projection_area[0] !== zone.sector ||
+      obstacle.projection_area[1] !== zone.layer
+    )
+      return [];
+    return (locals.get(index) ?? [])
+      .filter((owner) => owner.asset === asset)
+      .map((owner) =>
+        (owner.sourceShape ?? transformedObstacle(document, owner.part)).points.map((p): Point => [
+          p.x,
+          p.y - p.z_top,
+        ]),
+      );
+  });
+  // Ground-only landing zones have no obstacle-backed projection footprint.
+  return footprints.length ? footprints : undefined;
+};
 for (const [index, pair] of proto.jump_line_pairs.entries()) {
   try {
     const sideCandidates = [pair.line1, pair.line2].map((line, side): JumpOwner[] => {
@@ -1471,6 +1821,7 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
             owner.node,
             (point) => jumpPoint(owner, point),
             (zone, point) => heightAt(zone.sector, zone.layer, point),
+            (zone) => jumpReceivingFootprints(owner.asset, zone),
           ),
         };
       });
@@ -1507,6 +1858,7 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
       owner.node,
       (point) => jumpPoint(owner, point),
       (zone, point) => heightAt(zone.sector, zone.layer, point),
+      (zone) => jumpReceivingFootprints(owner.asset, zone),
     );
     for (const zone of recovered.zones) {
       const previous = p.jumpZones?.find((z) => z.id === zone.id);
@@ -1524,7 +1876,164 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
     unresolved.push({ kind: "jump-geometry", source: index, error: String(error) });
   }
 }
+let projectionRecovery: ReturnType<typeof recoverReviewedProjections> = [];
+if (values["projection-definitions"]) {
+  const definitions: ReviewedProjections = JSON.parse(
+    await fs.readFile(values["projection-definitions"], "utf8"),
+  );
+  projectionRecovery = recoverReviewedProjections(
+    document,
+    descriptors,
+    proto,
+    createHash("sha256").update(sourceBytes).digest("hex"),
+    definitions,
+    packets,
+  );
+}
+let maskRecovery: Awaited<ReturnType<typeof recoverReviewedMasks>> = [];
+const maskTransitionRecovery: { patch: number; asset: string; transition: string }[] = [];
+if (values["mask-definitions"]) {
+  const definitions: { source_sha256: string; recipes: ReviewedMaskRecipe[] } = JSON.parse(
+    await fs.readFile(values["mask-definitions"], "utf8"),
+  );
+  if (createHash("sha256").update(sourceBytes).digest("hex") !== definitions.source_sha256)
+    throw new Error("Reviewed mask source changed");
+  const maskOwners = new Map<number, { asset: string; id: string; node: string }>();
+  for (const recipe of definitions.recipes)
+    for (const entry of recipe.entries) {
+      if (maskOwners.has(entry.source)) throw new Error("Duplicate reviewed mask index");
+      maskOwners.set(entry.source, { asset: recipe.asset, id: entry.id, node: entry.node });
+    }
+  const resolveMask = maskReferenceResolver(proto.masks);
+  for (const [index, source] of proto.patches.entries()) {
+    const masks = [...resolveMask(source.old_masks), ...resolveMask(source.new_masks)];
+    const owner = masks.map((mask) => maskOwners.get(mask)).find((entry) => entry !== undefined);
+    if (
+      !owner ||
+      [...movementTransitionRecovery, ...doorTransitionRecovery].some((t) => t.patch === index)
+    )
+      continue;
+    if (
+      source.door_indices.length ||
+      movementStateInventory.some((area) =>
+        area.transitions.some((change) => change.patches.includes(index)),
+      )
+    )
+      throw new Error(`Mask transition ${index} has unrecovered movement or door behavior`);
+    recoverMaskStateLinks(proto.masks, source, owner.asset, maskOwners);
+    const parts = document.objects.filter(
+      (part) => part.node === `asset:${owner.asset}:${owner.node}`,
+    );
+    if (parts.length !== 1)
+      throw new Error(`Mask transition ${index} needs one pinned asset frame`);
+    const part = parts[0]!;
+    const sightRef = (ref: number) => {
+      const matches = locals.get(ref) ?? [];
+      if (matches.length !== 1 || matches[0]!.asset !== owner.asset)
+        throw new Error(`Mask transition ${index} needs local sight ownership for ${ref}`);
+      return matches[0]!.collisionId ?? matches[0]!.node;
+    };
+    const initialSight = source.old_sight_obstacles.map(sightRef);
+    const appliedSight = source.new_sight_obstacles.map(sightRef);
+    const waypoint = endpointBinding(
+      `patch-waypoint/${index}`,
+      source.sector,
+      source.layer,
+      source.waypoint,
+    );
+    const transition = recoverMovementTransition({
+      id: `mask-change-${index}`,
+      node: owner.node,
+      patch: source,
+      initial: [],
+      applied: [],
+      initialSight,
+      appliedSight,
+      receivers: [],
+      groundLayer: source.layer === 0,
+      waypointHeight: waypoint.height,
+      localize: (point) => localize(part, point),
+    });
+    if (waypoint.anchor) transition.waypointAnchor = localize(part, waypoint.anchor);
+    const p = packet(owner.asset);
+    if ((initialSight.length || appliedSight.length) && p.movementBlockers === undefined) {
+      const descriptor = descriptors.get(owner.asset)!;
+      const controlled = new Set([...initialSight, ...appliedSight]);
+      const solids = p.movementSolids ?? [
+        ...descriptor.parts
+          .filter((part) => part.obstacle_local_game?.solid)
+          .map((part) => part.node),
+        ...(p.volumes ?? []).filter((volume) => volume.shape.solid).map((volume) => volume.id),
+      ];
+      p.movementSolids = solids.filter((ref) => !controlled.has(ref));
+    }
+    (p.movementTransitions ??= []).push(transition);
+    p.issues.push("Mask/sight state recovered; visual states and effects need separate authoring");
+    maskTransitionRecovery.push({ patch: index, asset: owner.asset, transition: transition.id });
+  }
+  maskRecovery = await recoverReviewedMasks(values.library, document, proto, definitions.recipes, [
+    ...movementTransitionRecovery,
+    ...doorTransitionRecovery,
+    ...maskTransitionRecovery,
+  ]);
+  for (const recovered of maskRecovery) {
+    const p = packet(recovered.asset);
+    const state = recovered.state;
+    if (state) {
+      const targets = p.movementTransitions?.filter((t) => t.id === state.transition) ?? [];
+      if (targets.length !== 1)
+        throw new Error(`Recovered mask ${recovered.source} needs one local transition`);
+      const key = state.phase === "initial" ? "initialMasks" : "appliedMasks";
+      (targets[0]![key] ??= []).push(recovered.definition.id);
+    }
+    (p.masks ??= []).push(recovered.definition);
+  }
+}
+const appearanceRecovery = recoverAppearanceBindings(
+  inputDocument,
+  proto.patches.length,
+  [...movementTransitionRecovery, ...doorTransitionRecovery, ...maskTransitionRecovery],
+  new Map([...packets].map(([id, p]) => [id, p.movementTransitions ?? []])),
+);
+for (const binding of appearanceRecovery.bindings) {
+  const transition = packet(binding.asset).movementTransitions!.find(
+    (t) => t.id === binding.transition,
+  )!;
+  transition.appearances = [...new Set([...(transition.appearances ?? []), binding.appearance])];
+}
+for (const entry of appearanceRecovery.unresolved)
+  unresolved.push({ kind: "appearance-binding", ...entry });
+// A scene frame or preview box is not proof that its physical volume migrated.
+// Inventory all source records, including ones only referenced by masks.
+const unownedSightObstacles = proto.sight_obstacles.flatMap((shape, index) => {
+  const physicalOwners = (locals.get(index) ?? []).filter((owner) => {
+    if (owner.collisionId)
+      return packets.get(owner.asset)?.volumes?.some((volume) => volume.id === owner.collisionId);
+    const part = descriptors.get(owner.asset)?.parts.find((part) => part.node === owner.node);
+    return part?.obstacle_local_game && part.mission_profile === undefined;
+  });
+  if (physicalOwners.length) return [];
+  return [
+    {
+      obstacle: index,
+      solid: shape.solid,
+      opaque: shape.opaque,
+      mouse: shape.mouse,
+      masks: proto.masks.flatMap((mask, maskIndex) =>
+        mask.obstacle_indices.includes(index) ? [maskIndex] : [],
+      ),
+      patches: proto.patches.flatMap((patch, patchIndex) =>
+        [...patch.old_sight_obstacles, ...patch.new_sight_obstacles].includes(index)
+          ? [patchIndex]
+          : [],
+      ),
+    },
+  ];
+});
+for (const entry of unownedSightObstacles) unresolved.push({ kind: "sight-owner", ...entry });
 const pending = {
+  appearanceBindings: appearanceRecovery.unresolved.length,
+  sightObstacleOwners: unownedSightObstacles.length,
   doorTransitionBindings:
     proto.patches.filter((patch) => patch.door_indices.length > 0).length -
     doorTransitionRecovery.length,
@@ -1532,13 +2041,26 @@ const pending = {
     movementStateInventory.reduce((sum, area) => sum + area.transitions.length, 0) -
     movementTransitionRecovery.length,
   buildingEntries: proto.buildings.length - recoveredBuildings,
-  maskRecords: proto.masks.length,
+  maskRecords: proto.masks.length - maskRecovery.length,
   patches: proto.patches.length,
   jumpPairs: proto.jump_line_pairs.length - recoveredJumps,
   materialRegions: proto.material_sectors.length - recoveredMaterials.size,
   shadowRegions: proto.light_sectors.length - recoveredLights,
   soundSources: proto.sound_sources.length - recoveredSounds,
 };
+if (values["require-movement-coverage"] && pending.movementTransitions)
+  throw new Error(
+    `Incomplete movement recovery: ${pending.movementTransitions} source transitions lack asset definitions; check scene ownership and authoring recipes`,
+  );
+for (const [order, owners] of locals)
+  for (const owner of owners) {
+    const p = packet(owner.asset);
+    const id = owner.collisionId ?? owner.node;
+    const orders = (p.sightOrder ??= {});
+    if (orders[id] !== undefined && orders[id] !== order)
+      throw new Error(`Ambiguous physical query order: ${owner.asset}/${id}`);
+    orders[id] = order;
+  }
 await fs.mkdir(values.out, { recursive: true });
 const definitionValidation: { asset: string; valid: boolean; error?: string }[] = [];
 for (const [asset, p] of packets) {
@@ -1568,6 +2090,7 @@ const diagnostics = diagnoseGameplayCandidates(document, candidates, {
 });
 const report = {
   status: "incomplete-authoring-recovery",
+  requiredMovementCoverage: values["require-movement-coverage"],
   assets: packets.size,
   files: [...packets.keys()].sort().map((asset) => `${asset}.gameplay-authoring.json`),
   surfaces: [...packets.values()].reduce((sum, p) => sum + p.surfaces.length, 0),
@@ -1577,9 +2100,24 @@ const report = {
     0,
   ),
   definitionValidation,
+  navigationJoinRecovery,
+  lightRecovery,
+  authoredSoundRecovery: authoredSounds.map(({ asset, sourceIndices }) => ({
+    asset,
+    sources: sourceIndices,
+  })),
+  maskRecovery: maskRecovery.map(({ asset, source, definition, state }) => ({
+    asset,
+    source,
+    id: definition.id,
+    ...(state ? { state } : {}),
+  })),
   movementStateInventory,
+  projectionRecovery,
   movementTransitionRecovery,
   doorTransitionRecovery,
+  maskTransitionRecovery,
+  appearanceRecovery,
   doorStateOwnershipRecovery,
   declaredEndpointBindings: [...endpointBindings.values()],
   declaredInteriorRecovery: [...interiorSources].map(([building, pieces]) => ({
@@ -1599,6 +2137,7 @@ const report = {
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,
+  unownedSightObstacles,
   unresolved,
   pending,
 };

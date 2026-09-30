@@ -6,17 +6,46 @@ then render-audit.mjs --segments --force, and inspect the comparison images firs
 import json
 import argparse
 import shutil
+import subprocess
 
 from build_segments import ROOT, LIB, STAGE, sha, write_asset_index
+from asset_index import generate_asset_index
+from lossy_assets import LibraryLock, verify_derivatives
 
 
-def publish(ids=None):
+def prepare_runtime(ids, *, blender='blender', stage=STAGE):
+    """Derive optimized browser payloads before installing any reviewed copy."""
+    subprocess.run([
+        blender, '--background', '--threads', '2', '--python-exit-code', '1',
+        '--python', str(ROOT / 'refinement/blender/lossy_assets.py'), '--', 'refresh',
+        '--root', str(stage), '--work', str(ROOT / 'work/wall-presets/runtime'),
+        '--assets', *ids,
+    ], check=True)
+    index = generate_asset_index(stage)
+    problems = verify_derivatives(stage, index=index)
+    if problems:
+        raise ValueError(f'Invalid runtime derivatives after refresh: {problems}')
+    entries = {entry['id']: entry for entry in index['assets']}
+    files = {}
+    for identity in ids:
+        entry = entries[identity]
+        names = [entry['model'], entry['descriptor']]
+        for kind in ('lossy_model', 'preview_model'):
+            if not entry.get(kind):
+                raise ValueError(f'Missing runtime derivative after refresh: {identity}: {kind}')
+            names.extend([entry[kind], entry[kind] + '.receipt.json'])
+        files[identity] = names
+    return files
+
+
+def publish(ids=None, *, blender='blender'):
     rows = json.loads((ROOT / 'work/wall-presets/segments.json').read_text())
     all_rows = rows
     if ids:
         if set(ids)-{row['id'] for row in rows}:raise ValueError('Unknown preset id')
         rows = [row for row in rows if row['id'] in ids]
     entries = {entry['id']: entry for entry in json.loads((LIB / 'index.json').read_text())['assets']}
+    reviewed = {}
     for row in rows:
         folder = STAGE / row['id']
         audit = json.loads((ROOT / f"work/wall-presets/segments/{row['id']}.json").read_text())
@@ -31,13 +60,25 @@ def publish(ids=None):
             raise ValueError(f"Source model changed during review: {row['source']}")
         if provenance['descriptor_sha256'] != sha(LIB / source['descriptor']):
             raise ValueError(f"Source descriptor changed during review: {row['source']}")
-    # All inputs pass before any output is replaced.
-    for row in rows:
-        target = LIB / row['id']
-        target.mkdir(exist_ok=True)
-        for name in ['model.glb', 'asset.json']:
-            shutil.copy2(STAGE / row['id'] / name, target / name)
-    write_asset_index(LIB)
+        reviewed.update({
+            folder / 'model.glb': audit['model_sha256'],
+            folder / 'asset.json': sha(folder / 'asset.json'),
+            LIB / source['model']: provenance['model_sha256'],
+            LIB / source['descriptor']: provenance['descriptor_sha256'],
+        })
+    # A local installation must also be ready for library:publish. Do not
+    # replace live models until derivation and receipt validation succeed.
+    runtime_files = prepare_runtime([row['id'] for row in rows], blender=blender)
+    with LibraryLock(LIB):
+        for path, expected in reviewed.items():
+            if sha(path) != expected:
+                raise ValueError(f'Reviewed asset changed during runtime derivation: {path}')
+        for row in rows:
+            target = LIB / row['id']
+            target.mkdir(exist_ok=True)
+            for relative in runtime_files[row['id']]:
+                shutil.copy2(STAGE / relative, LIB / relative)
+        write_asset_index(LIB)
     fields = {'name', 'asset', 'width', 'repeatLength', 'axis', 'sourceAngle',
               'sourceStraight', 'sourceStart', 'sourceEnd', 'source_map',
               'cornerAsset', 'cornerScale', 'cornerMinAngle'}
@@ -52,4 +93,6 @@ def publish(ids=None):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--ids',nargs='+',help='Publish only these reviewed presets')
-    publish(parser.parse_args().ids)
+    parser.add_argument('--blender',default='blender',help='Blender executable for runtime derivatives')
+    args=parser.parse_args()
+    publish(args.ids, blender=args.blender)

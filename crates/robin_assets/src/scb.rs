@@ -262,6 +262,56 @@ mod tests {
     use crate::original_data::{self, demo_scb_path};
 
     #[test]
+    fn derby_explorer_callbacks_allocate_locals_and_open_both_bridges() {
+        use robin_engine::interp::{HostFunctions, NativeCallOutcome, NativeStack, StopReason};
+        use robin_engine::script_manager::ScriptManager;
+
+        #[derive(Default, serde::Serialize, serde::Deserialize)]
+        struct Patches(Vec<i32>);
+        impl HostFunctions for Patches {
+            fn call(&mut self, index: u32, stack: &mut NativeStack) -> NativeCallOutcome {
+                let argument = stack.pop_i32();
+                NativeCallOutcome::Return(match index {
+                    5 => argument + 100,
+                    145 => {
+                        self.0.push(argument);
+                        0
+                    }
+                    _ => panic!("unexpected DerbyExplorer native {index}"),
+                })
+            }
+        }
+
+        let scb = parse_bytes(include_bytes!(
+            "../../../mods/derby-explorer/Data/Levels/DerbyExplorer.scb"
+        ))
+        .unwrap();
+        let mut manager = ScriptManager::new(scb);
+        let mut instance = manager.create_instance("StartUp").unwrap();
+        let mut host = Patches::default();
+        for (function, params) in [
+            ("Initialize", vec![0]),
+            ("PostInitialize", vec![]),
+            ("Finalize", vec![0]),
+        ] {
+            let mut activation = instance
+                .begin_activation(&manager, function, &params)
+                .unwrap();
+            assert_eq!(
+                instance.poll_activation_with_host(
+                    &mut manager,
+                    &mut activation,
+                    100,
+                    function,
+                    &mut host
+                ),
+                StopReason::Returned,
+            );
+        }
+        assert_eq!(host.0, [107, 108]);
+    }
+
+    #[test]
     fn parser_errors_preserve_typed_sources() {
         use std::error::Error as _;
 

@@ -1,0 +1,53 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "regions": [
+    {
+      "id": "north-curtain-walk",
+      "review": "The east and west north curtain surfaces share one ordinary receiving region and an exact 3D boundary edge. The assembled baseline is unchanged, and independent one-pixel eastward moves detach the join and pass native construction.",
+      "entries": [
+        {
+          "asset": "lincoln-north-curtain-wall-east",
+          "model_sha256": "0449b0a8dc444386a46655f08bd8d0f20792268445c009d6284e5b45485ffc53",
+          "surface": "building-180-walk-0",
+          "node": "building-180",
+          "source_obstacle": 180,
+          "edges": [
+            [
+              [
+                -127.914306640625,
+                -21.191198203905476,
+                150.0010044846821
+              ],
+              [
+                -102.914306640625,
+                -48.19119820390546,
+                150.0010044846821
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "lincoln-north-curtain-wall-west",
+          "model_sha256": "9efdc5b96f06a7e3882b752233f8aeddc9c1a58a6558661045006e0419eead6a",
+          "surface": "building-181-walk-0",
+          "node": "building-181",
+          "source_obstacle": 181,
+          "edges": [
+            [
+              [
+                308.22802734375,
+                -86.5021036775784,
+                150.00105448175512
+              ],
+              [
+                333.22802734375,
+                -113.50210367757838,
+                150.00105448175512
+              ]
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

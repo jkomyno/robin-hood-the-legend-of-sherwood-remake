@@ -17,7 +17,6 @@ class WorkspaceHygieneTests(unittest.TestCase):
         paths = [
             "mods/multi-team-demos/new-example.json",
             "mods/timed-ambience-demo/new-example.json",
-            ".gitmodules",
         ]
         result = subprocess.run(
             ["git", "check-ignore", "--no-index", "--stdin"],
@@ -30,7 +29,7 @@ class WorkspaceHygieneTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
 
     def test_local_outputs_stay_ignored(self):
-        paths = ["mods/local-install/new.json", ".agents/session.json", "tmp/example.log"]
+        paths = ["mods/local-install/new.json", ".agents/session.json", "tmp/example.log", ".gitmodules"]
         result = subprocess.run(
             ["git", "check-ignore", "--no-index", "--stdin"],
             cwd=ROOT,

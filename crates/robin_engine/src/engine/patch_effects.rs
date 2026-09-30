@@ -719,6 +719,31 @@ mod tests {
     }
 
     #[test]
+    fn preserved_state_contours_keep_fractional_routes_through_apply_and_reset() {
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-preserved-state-boundary.level.json"),
+            (2000., 2000.),
+        );
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let sim = crate::sim_rng::test_context();
+        for (step, applied) in [false, true, false].into_iter().enumerate() {
+            if step == 1 {
+                engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+            } else if step == 2 {
+                engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+            }
+            let grid = &engine.world.fast_grid;
+            let end = MapPoint::new(350., 334.5);
+            assert!(grid.is_reachable_thin(MapPoint::new(301.1, 300.05), end, 0));
+            assert_eq!(
+                grid.is_reachable_thin(end, MapPoint::new(350., 333.5), 0),
+                applied
+            );
+            assert!(!grid.is_reachable_thin(end, MapPoint::new(350., 335.5), 0));
+        }
+    }
+
+    #[test]
     fn editor_compiled_movement_transition_changes_live_routes_without_mission_content() {
         check_compiled_transition(
             include_bytes!("../../tests/fixtures/asset-movement-transition.level.json"),
@@ -732,6 +757,352 @@ mod tests {
             include_bytes!("../../tests/fixtures/asset-sight-transition.level.json"),
             true,
         );
+    }
+
+    #[test]
+    fn editor_joined_asset_switch_updates_both_members_and_resets() {
+        let bytes = include_bytes!("../../tests/fixtures/asset-joined-transition.level.json");
+        let (mut engine, assets) = load_compiled_transition(bytes, (2000., 2000.));
+        let descriptor: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        let transition: crate::level_data::CompiledMovementTransition =
+            serde_json::from_value(descriptor["asset_geometry"]["movement_transitions"][0].clone())
+                .unwrap();
+        assert_eq!(engine.script_domains.interactables.patches.len(), 1);
+        assert_eq!(transition.aliases, ["wing/wing/barriers"]);
+        assert_eq!(transition.initial_sight.len(), 2);
+        assert_eq!(transition.applied_sight.len(), 2);
+        assert_eq!(transition.motion_changes.len(), 4);
+        let states = engine.world.pathfinder.states.clone();
+        let sight = engine.world.static_sight_obstacle_active.clone();
+        let grid = engine.world.fast_grid.sector_active.clone();
+        let mut expected = states.clone();
+        for change in &transition.motion_changes {
+            let area = engine
+                .world
+                .pathfinder
+                .try_convert_sector(assets.navigation.pathfinder_graph.as_ref(), change.sector)
+                .unwrap();
+            let state = &mut expected[change.layer as usize][area as usize];
+            let initial = 1u32 << (2 * change.changing_obstacle);
+            assert_ne!(*state & initial, 0);
+            *state = (*state & !(initial * 3)) | (initial * 2);
+        }
+        let sim = crate::sim_rng::test_context();
+        let index = crate::patch::PatchIndex::new(0).unwrap();
+        for _ in 0..2 {
+            engine.apply_patch(TickCtx::new(&sim, &assets), index);
+            assert_eq!(engine.world.pathfinder.states, expected);
+            for &obstacle in &transition.initial_sight {
+                assert!(!engine.world.static_sight_obstacle_active[obstacle as usize]);
+            }
+            for &obstacle in &transition.applied_sight {
+                assert!(engine.world.static_sight_obstacle_active[obstacle as usize]);
+            }
+            assert_ne!(engine.world.fast_grid.sector_active, grid);
+            engine.reset_patch(TickCtx::new(&sim, &assets), index);
+            assert_eq!(engine.world.pathfinder.states, states);
+            assert_eq!(engine.world.static_sight_obstacle_active, sight);
+            assert_eq!(engine.world.fast_grid.sector_active, grid);
+        }
+        for aliases in [
+            vec![""],
+            vec!["hut-a/hut/barriers"],
+            vec!["duplicate", "duplicate"],
+        ] {
+            let mut invalid = descriptor.clone();
+            invalid["asset_geometry"]["movement_transitions"][0]["aliases"] =
+                serde_json::json!(aliases);
+            assert!(
+                crate::level_data::LoadedLevel::hackable_from_json(
+                    &serde_json::to_vec(&invalid).unwrap(),
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn editor_projection_volume_preserves_physical_state_and_receiving_geometry() {
+        use crate::coordinates::WorldPoint3D;
+        use crate::sight_obstacle::{
+            SIGHTOBSTACLE_OPAQUE, SIGHTOBSTACLE_SOLID, is_reachable_impact_3d,
+        };
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-projection-volume.level.json"),
+            (2000., 2000.),
+        );
+        let receiver = &assets.environment.static_sight_obstacles[0];
+        assert!(receiver.projection_area_ref().is_some());
+        assert_eq!(receiver.compute_top_z(350., 350.), 20.);
+        let impact = |engine: &EngineInner, filter, upward| {
+            is_reachable_impact_3d(
+                WorldPoint3D::new(350., 350., if upward { 1. } else { 100. }),
+                WorldPoint3D::new(350., 350., if upward { 100. } else { 1. }),
+                filter,
+                engine.sight_obstacles(&assets),
+                None,
+                None,
+            )
+            .map(|hit| hit.impact.z)
+        };
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let sim = crate::sim_rng::test_context();
+        for applied in [false, true, false] {
+            if applied {
+                engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+            } else {
+                engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+            }
+            for filter in [SIGHTOBSTACLE_SOLID, SIGHTOBSTACLE_OPAQUE] {
+                assert_eq!(impact(&engine, filter, false), applied.then_some(20.));
+                assert_eq!(impact(&engine, filter, true), applied.then_some(15.));
+            }
+        }
+    }
+
+    #[test]
+    fn compiled_projection_states_toggle_collision_without_changing_elevation_lookup() {
+        use crate::coordinates::MapPoint;
+        use crate::fast_find_grid::SectorIndex;
+        use crate::position_interface::SectorHandle;
+        use crate::sector::SectorNumber;
+        for swap in [false, true] {
+            let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+                "../../tests/fixtures/asset-projection-material.level.json"
+            ))
+            .unwrap();
+            descriptor["asset_geometry"]["sight_obstacles"][0]["solid"] = true.into();
+            let applied = if swap {
+                let mut upper = descriptor["asset_geometry"]["sight_obstacles"][0].clone();
+                for point in upper["points"].as_array_mut().unwrap() {
+                    point["y"] = (point["y"].as_f64().unwrap() + 20.).into();
+                    point["z_top"] = 40.into();
+                    point["z_bottom"] = 40.into();
+                }
+                upper["default_material"] = 4.into();
+                upper["material_indices"] = serde_json::json!([]);
+                descriptor["asset_geometry"]["sight_obstacles"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(upper);
+                2
+            } else {
+                0
+            };
+            descriptor["asset_geometry"]["movement_transitions"] = serde_json::json!([{
+                "id":"receiver-state", "waypoint":[300,300], "sector":0,"layer":0,
+                "active":true,"definitive":false,
+                "apply_polygon":{"points":[]},"no_apply_polygon":{"points":[]},
+                "motion_changes":[], "initial_sight":if swap {vec![0]} else {vec![]},
+                "applied_sight":[applied]
+            }]);
+            let (mut engine, assets) =
+                load_compiled_transition(&serde_json::to_vec(&descriptor).unwrap(), (2000., 2000.));
+            let level = engine.world.fast_grid.level.clone();
+            let index = level.sector_number_map[&SectorNumber::new(1)];
+            let sector = SectorHandle::new(1)
+                .unwrap()
+                .with_arena_index(SectorIndex::new(index as u32).unwrap());
+            let point = MapPoint::new(350., 330.);
+            let receive = |engine: &EngineInner| {
+                engine
+                    .get_projection_area_index(&assets, sector, 1, point)
+                    .map(|index| {
+                        let obstacle =
+                            &assets.environment.static_sight_obstacles[usize::from(index)];
+                        (
+                            obstacle.compute_top_z_from_projection(point.x, point.y),
+                            assets
+                                .environment
+                                .material_sectors
+                                .material_at_with_obstacle(Some(obstacle), point),
+                        )
+                    })
+            };
+            let collision = |engine: &EngineInner| {
+                use crate::coordinates::WorldPoint3D;
+                use crate::sight_obstacle::{SIGHTOBSTACLE_SOLID, is_reachable_impact_3d};
+                is_reachable_impact_3d(
+                    WorldPoint3D::new(350., 350., 100.),
+                    WorldPoint3D::new(350., 350., 1.),
+                    SIGHTOBSTACLE_SOLID,
+                    engine.sight_obstacles(&assets),
+                    None,
+                    None,
+                )
+                .map(|hit| hit.impact.z)
+            };
+            let receiving = Some((
+                if swap { 40. } else { 20. },
+                crate::element::GameMaterial::from_u32(if swap { 4 } else { 2 }),
+            ));
+            assert_eq!(receive(&engine), receiving);
+            assert_eq!(collision(&engine), if swap { Some(20.) } else { None });
+            let patch = crate::patch::PatchIndex::new(0).unwrap();
+            let sim = crate::sim_rng::test_context();
+            engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+            assert_eq!(receive(&engine), receiving);
+            assert_eq!(collision(&engine), Some(if swap { 40. } else { 20. }));
+            engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+            assert_eq!(receive(&engine), receiving);
+            assert_eq!(collision(&engine), if swap { Some(20.) } else { None });
+            assert!(std::sync::Arc::ptr_eq(
+                &level,
+                &engine.world.fast_grid.level
+            ));
+        }
+    }
+
+    #[test]
+    fn compiled_mask_only_transition_resolves_layer_indices_and_resets() {
+        let mut descriptor: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../../tests/fixtures/asset-lift.level.json"))
+                .unwrap();
+        let mask = serde_json::json!({
+            "layer": 0, "mask_type": 1,
+            "character_polyline": [[300, 320], [308, 320]],
+            "projectile_polyline": null,
+            "box_top_left": [300, 300], "box_size": [8, 1],
+            "mask_data": [2, 129, 255], "obstacle_indices": []
+        });
+        let mut upper = mask.clone();
+        upper["layer"] = 1.into();
+        descriptor["asset_geometry"]["masks"] = serde_json::json!([mask, upper, mask]);
+        descriptor["asset_geometry"]["movement_transitions"] = serde_json::json!([{
+            "id": "mask-state", "waypoint": [300, 300], "sector": 0, "layer": 0,
+            "active": true, "definitive": false,
+            "apply_polygon": {"points": []}, "no_apply_polygon": {"points": []},
+            "motion_changes": [], "initial_masks": [2], "applied_masks": [0]
+        }]);
+        let (mut engine, assets) =
+            load_compiled_transition(&serde_json::to_vec(&descriptor).unwrap(), (2000., 2000.));
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let index = |i| crate::mask::MaskIndex::new(i).unwrap();
+        let state = |engine: &EngineInner| {
+            (0..3)
+                .map(|i| engine.world.fast_grid.is_mask_active(index(i)))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(state(&engine), [false, true, true]);
+        let binding = &engine.script_domains.interactables.patches[0];
+        assert_eq!(binding.old_mask_indices, [index(2)]);
+        assert_eq!(binding.new_mask_indices, [index(0)]);
+        let sim = crate::sim_rng::test_context();
+        engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(state(&engine), [true, true, false]);
+        engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(state(&engine), [false, true, true]);
+
+        for (initial, applied) in [(vec![3], vec![]), (vec![0], vec![0]), (vec![2, 2], vec![0])] {
+            let mut bad = descriptor.clone();
+            bad["asset_geometry"]["movement_transitions"][0]["initial_masks"] =
+                serde_json::json!(initial);
+            bad["asset_geometry"]["movement_transitions"][0]["applied_masks"] =
+                serde_json::json!(applied);
+            assert!(
+                crate::level_data::LoadedLevel::hackable_from_json(
+                    &serde_json::to_vec(&bad).unwrap()
+                )
+                .is_err()
+            );
+        }
+        let mut duplicate = descriptor.clone();
+        let mut second = duplicate["asset_geometry"]["movement_transitions"][0].clone();
+        second["id"] = "second-controller".into();
+        duplicate["asset_geometry"]["movement_transitions"]
+            .as_array_mut()
+            .unwrap()
+            .push(second);
+        assert!(
+            crate::level_data::LoadedLevel::hackable_from_json(
+                &serde_json::to_vec(&duplicate).unwrap()
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn editor_appearance_only_transition_toggles_without_geometry_side_effects() {
+        let bytes = include_bytes!("../../tests/fixtures/asset-appearance-only.level.json");
+        let (mut engine, assets) = load_compiled_transition(bytes, (2000., 2000.));
+        let index = crate::patch::PatchIndex::new(0).unwrap();
+        assert_eq!(engine.script_domains.interactables.patches.len(), 1);
+        let patch = &engine.script_domains.interactables.patches[0];
+        assert!(!patch.use_changing_obstacles);
+        assert!(patch.additional_motion_changes.is_empty());
+        assert!(patch.door_indices.is_empty());
+        assert!(patch.old_mask_indices.is_empty() && patch.new_mask_indices.is_empty());
+        assert!(
+            patch.old_sight_obstacle_indices.is_empty()
+                && patch.new_sight_obstacle_indices.is_empty()
+        );
+        let grid = serde_json::to_value(&engine.world.fast_grid).unwrap();
+        let doors = serde_json::to_value(&engine.script_domains.interactables.doors).unwrap();
+        let sim = crate::sim_rng::test_context();
+        for expected in [true, false, true] {
+            engine.apply_patch(TickCtx::new(&sim, &assets), index);
+            assert_eq!(
+                engine.script_domains.interactables.patches[0].applied,
+                expected
+            );
+            assert_eq!(serde_json::to_value(&engine.world.fast_grid).unwrap(), grid);
+            assert_eq!(
+                serde_json::to_value(&engine.script_domains.interactables.doors).unwrap(),
+                doors
+            );
+        }
+        engine.reset_patch(TickCtx::new(&sim, &assets), index);
+        assert!(!engine.script_domains.interactables.patches[0].applied);
+        assert_eq!(serde_json::to_value(&engine.world.fast_grid).unwrap(), grid);
+        assert_eq!(
+            serde_json::to_value(&engine.script_domains.interactables.doors).unwrap(),
+            doors
+        );
+        let mut invalid: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        invalid["asset_geometry"]["movement_transitions"][0]["has_appearance"] = false.into();
+        let error = crate::level_data::LoadedLevel::hackable_from_json(
+            &serde_json::to_vec(&invalid).unwrap(),
+        )
+        .err()
+        .unwrap();
+        assert!(error.contains("invalid compiled movement transition"));
+    }
+
+    #[test]
+    fn editor_asset_mask_transition_switches_baked_coverage_and_resets() {
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-mask.level.json"),
+            (2000., 2000.),
+        );
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let coverage = |engine: &EngineInner| {
+            engine
+                .world
+                .fast_grid
+                .level
+                .masks
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| {
+                    engine
+                        .world
+                        .fast_grid
+                        .is_mask_active(crate::mask::MaskIndex::new(*index as u32).unwrap())
+                })
+                .map(|(_, mask)| {
+                    mask.bitmap
+                        .iter()
+                        .map(|&pixel| usize::from(pixel))
+                        .sum::<usize>()
+                })
+                .sum::<usize>()
+        };
+        assert_eq!(coverage(&engine), 400);
+        let sim = crate::sim_rng::test_context();
+        engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(coverage(&engine), 100);
+        engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(coverage(&engine), 400);
     }
 
     #[test]
@@ -829,6 +1200,98 @@ mod tests {
 
     #[test]
     #[ignore = "requires recovered diagnostics via ROBIN_ASSET_MAP_DIAGNOSTICS"]
+    fn recovered_lift_passage_callbacks_preserve_sector_and_layer() {
+        let directory = std::path::PathBuf::from(
+            std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").expect("diagnostic directory"),
+        );
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.join("diagnostics.json")).unwrap())
+                .unwrap();
+        assert_eq!(manifest["complete"], true, "incomplete diagnostic batch");
+        let sim = crate::sim_rng::test_context();
+        let mut checked = 0;
+        for result in manifest["results"].as_array().unwrap() {
+            assert!(result["error"].is_null(), "failed diagnostic: {result}");
+            let file = result["file"].as_str().unwrap();
+            let bytes = std::fs::read(directory.join(file)).unwrap();
+            let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let dims = &descriptor["walkable_polygon"][2];
+            let (mut engine, assets) = load_compiled_transition(
+                &bytes,
+                (
+                    dims[0].as_f64().unwrap() as f32 + 1.,
+                    dims[1].as_f64().unwrap() as f32 + 1.,
+                ),
+            );
+            let doors: Vec<_> = engine
+                .script_domains
+                .interactables
+                .doors
+                .iter()
+                .enumerate()
+                .filter(|(_, door)| {
+                    engine.world.fast_grid.level.sectors[usize::from(door.sector_in_index.unwrap())]
+                        .sector_type
+                        .is_lift()
+                })
+                .map(|(index, door)| (index, door.clone()))
+                .collect();
+            let mut passages = 0;
+            for (entry_index, entry) in &doors {
+                for (exit_index, exit) in &doors {
+                    if entry_index == exit_index || entry.sector_in_index != exit.sector_in_index {
+                        continue;
+                    }
+                    // Exercise each directed endpoint pair through passage callbacks.
+                    // Approach routing and climb animation are separate checks.
+                    let actor = engine.add_test_entity(
+                        crate::engine::test_support::actors::TestActor::pc(Posture::Upright)
+                            .sector(u16::from(entry.sector_out))
+                            .map_position(entry.point_out)
+                            .build(),
+                    );
+                    engine
+                        .get_entity_mut(actor)
+                        .unwrap()
+                        .element_data_mut()
+                        .set_layer(entry.layer_out);
+                    engine.execute_pass_door(
+                        TickCtx::new(&sim, &assets),
+                        actor,
+                        crate::gate::DoorIndex::new(*entry_index as u32).unwrap(),
+                        true,
+                    );
+                    let element = engine.get_entity(actor).unwrap().element_data();
+                    assert_eq!(
+                        element.sector().map(u16::from),
+                        Some(u16::from(entry.sector_in)),
+                        "{file}"
+                    );
+                    assert_eq!(element.layer(), entry.layer_in, "{file}");
+                    engine.execute_pass_door(
+                        TickCtx::new(&sim, &assets),
+                        actor,
+                        crate::gate::DoorIndex::new(*exit_index as u32).unwrap(),
+                        false,
+                    );
+                    let element = engine.get_entity(actor).unwrap().element_data();
+                    assert_eq!(
+                        element.sector().map(u16::from),
+                        Some(u16::from(exit.sector_out)),
+                        "{file}"
+                    );
+                    assert_eq!(element.layer(), exit.layer_out, "{file}");
+                    passages += 1;
+                }
+            }
+            println!("{file}: checked {passages} directed lift passage callbacks");
+            checked += passages;
+        }
+        assert!(checked > 0, "No recovered lift passages were tested");
+    }
+
+    #[test]
+    #[ignore = "requires recovered diagnostics via ROBIN_ASSET_MAP_DIAGNOSTICS"]
     fn recovered_asset_transitions_apply_and_reset_native_geometry() {
         let directory = std::path::PathBuf::from(
             std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").expect("diagnostic directory"),
@@ -912,6 +1375,29 @@ mod tests {
                 let before_states = engine.world.pathfinder.states.clone();
                 let before_sight = engine.world.static_sight_obstacle_active.clone();
                 let before_sectors = engine.world.fast_grid.sector_active.clone();
+                let mask_count = descriptor["asset_geometry"]["masks"]
+                    .as_array()
+                    .map_or(0, Vec::len);
+                let mask_states = |engine: &EngineInner| {
+                    (0..mask_count)
+                        .map(|i| {
+                            engine
+                                .world
+                                .fast_grid
+                                .is_mask_active(crate::mask::MaskIndex::new(i as u32).unwrap())
+                        })
+                        .collect::<Vec<_>>()
+                };
+                let before_masks = mask_states(&engine);
+                let mut expected_masks = before_masks.clone();
+                for &mask in &transition.initial_masks {
+                    assert!(before_masks[mask as usize], "{file}: {}", transition.id);
+                    expected_masks[mask as usize] = false;
+                }
+                for &mask in &transition.applied_masks {
+                    assert!(!before_masks[mask as usize], "{file}: {}", transition.id);
+                    expected_masks[mask as usize] = true;
+                }
                 let mut expected_states = before_states.clone();
                 for change in &transition.motion_changes {
                     let area = engine
@@ -934,6 +1420,12 @@ mod tests {
                     assert!(!before_sight[sight as usize]);
                 }
                 engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(
+                    mask_states(&engine),
+                    expected_masks,
+                    "{file}: {}",
+                    transition.id
+                );
                 assert_eq!(
                     rights(&engine),
                     expected_rights,
@@ -974,6 +1466,12 @@ mod tests {
                     }
                 }
                 engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(
+                    mask_states(&engine),
+                    before_masks,
+                    "{file}: {}",
+                    transition.id
+                );
                 assert_eq!(rights(&engine), before_rights, "{file}: {}", transition.id);
                 assert_eq!(engine.world.pathfinder.states, before_states, "{file}");
                 assert_eq!(
@@ -984,6 +1482,82 @@ mod tests {
                     engine.world.fast_grid.sector_active, before_sectors,
                     "{file}"
                 );
+                if (!transition.initial_masks.is_empty() || !transition.applied_masks.is_empty())
+                    && let Some(links) = &transition.door_links
+                    && matches!(
+                        links.mode,
+                        crate::level_data::CompiledDoorLinkMode::TriggerTransition
+                    )
+                {
+                    for &door_index in &links.indices {
+                        // Exercise the passage callback with a test actor; this does
+                        // not simulate approach routing or animation playback.
+                        let (mut passage, passage_assets) = load_compiled_transition(
+                            &bytes,
+                            (
+                                dims[0].as_f64().unwrap() as f32 + 1.,
+                                dims[1].as_f64().unwrap() as f32 + 1.,
+                            ),
+                        );
+                        let door =
+                            passage.script_domains.interactables.doors[door_index as usize].clone();
+                        let actor = passage.add_test_entity(
+                            crate::engine::test_support::actors::TestActor::pc(
+                                crate::element::Posture::Upright,
+                            )
+                            .sector(u16::from(door.sector_out))
+                            .map_position(door.point_out)
+                            .build(),
+                        );
+                        passage
+                            .get_entity_mut(actor)
+                            .unwrap()
+                            .element_data_mut()
+                            .set_layer(door.layer_out);
+                        let door_index =
+                            crate::gate::DoorIndex::new(u32::from(door_index)).unwrap();
+                        passage.execute_pass_door(
+                            TickCtx::new(&sim, &passage_assets),
+                            actor,
+                            door_index,
+                            true,
+                        );
+                        let element = passage.get_entity(actor).unwrap().element_data();
+                        assert_eq!(
+                            element.sector().map(u16::from),
+                            Some(u16::from(door.sector_in)),
+                            "{file}"
+                        );
+                        assert_eq!(element.layer(), door.layer_in, "{file}");
+                        assert_eq!(
+                            mask_states(&passage),
+                            expected_masks,
+                            "{file}: door {door_index}"
+                        );
+                        assert!(passage.script_domains.interactables.patches[index].applied);
+                        for &sight in &transition.initial_sight {
+                            assert!(!passage.world.static_sight_obstacle_active[sight as usize]);
+                        }
+                        for &sight in &transition.applied_sight {
+                            assert!(passage.world.static_sight_obstacle_active[sight as usize]);
+                        }
+                        passage.execute_pass_door(
+                            TickCtx::new(&sim, &passage_assets),
+                            actor,
+                            door_index,
+                            false,
+                        );
+                        let element = passage.get_entity(actor).unwrap().element_data();
+                        assert_eq!(
+                            element.sector().map(u16::from),
+                            Some(u16::from(door.sector_out)),
+                            "{file}"
+                        );
+                        assert_eq!(element.layer(), door.layer_out, "{file}");
+                        passage.reset_patch(TickCtx::new(&sim, &passage_assets), patch);
+                        assert_eq!(mask_states(&passage), before_masks, "{file}: door reset");
+                    }
+                }
                 checked += 1;
             }
             println!(

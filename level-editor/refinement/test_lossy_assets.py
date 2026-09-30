@@ -6,6 +6,7 @@ import struct
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
@@ -46,6 +47,29 @@ UNLIT = {'pbrMetallicRoughness': {'baseColorTexture': {'index': 0}}, 'extensions
 
 
 class LossyAssetsTest(unittest.TestCase):
+    def test_packed_uvs_cannot_destroy_source_textured_triangles(self):
+        source = np.array([[[0., 0.], [1., 0.], [0., 1.]]])
+        lossy_assets.check_atlas_uvs(source, source * .5 + .1)
+        for damaged in [np.full_like(source, .5), source + 1, source * np.nan]:
+            with self.assertRaises(lossy_assets.UnsafeAtlasError):
+                lossy_assets.check_atlas_uvs(source, damaged)
+        # Degenerate source UVs do not become a new optimizer failure.
+        lossy_assets.check_atlas_uvs(np.zeros_like(source), np.zeros_like(source))
+
+    def test_ownership_alpha_is_not_physical_transparency(self):
+        for mode, expected in [('OPAQUE', 'NONE'), ('MASK', 'STRAIGHT'), ('BLEND', 'STRAIGHT')]:
+            with self.subTest(mode=mode):
+                material = {**UNLIT, 'alphaMode': mode}
+                path = self.root / 'derby/house/model.glb'
+                path.write_bytes(glb(material))
+                doc, binary, _ = lossy_assets.read_glb(path)
+                loaded = SimpleNamespace(alpha_mode=None)
+                bpy = SimpleNamespace(data=SimpleNamespace(images=SimpleNamespace(load=lambda _: loaded)))
+                with patch.dict(sys.modules, {'bpy': bpy}):
+                    images = lossy_assets.load_images(doc, binary, self.root / 'decoded')
+                self.assertIs(images[0], loaded)
+                self.assertEqual(loaded.alpha_mode, expected)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1] / 'work')
         self.root = Path(self.temporary.name) / '3d-assets'

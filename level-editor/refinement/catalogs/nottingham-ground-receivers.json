@@ -1,0 +1,15 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "entries": [
+    {
+      "asset": "nottingham-northwest-roof-return",
+      "node": "building-168",
+      "model_sha256": "6ff090fc4a54c637b0683357cbca1340626f601ba4075b2a23c2a66d0d875f4c",
+      "source_obstacle": 168,
+      "anchor": [
+        1392,
+        1235
+      ]
+    }
+  ]
+}

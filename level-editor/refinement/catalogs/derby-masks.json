@@ -1,0 +1,140 @@
+{
+  "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
+  "recipes": [
+    {
+      "asset": "derby-keep-main-hall",
+      "model_sha256": "721311bf83222e0aad0ce8d53c433fcc644a6a36b035c8f57cbfdcee75eae1f5",
+      "entries": [
+        {
+          "source": 134,
+          "id": "main-hall-west-gallery-cover",
+          "node": "building-233",
+          "anchor": [700, 1125.001, 465.001],
+          "projectileHeights": [0, 0, 0],
+          "review": "The main hall uniquely supports the complete bitmap among audited building meshes. This static view/projectile mask receives on the adjacent 465.001-unit gallery platform. Projectile thresholds retain the world XY datum; there are no character thresholds, obstacle links or state references."
+        },
+        {
+          "source": 135,
+          "id": "main-hall-east-gallery-cover",
+          "node": "building-233",
+          "anchor": [780, 985.001, 465.001],
+          "characterHeights": [465.001, 465.001],
+          "projectileHeights": [0, 0, 0],
+          "review": "The main hall uniquely supports the complete bitmap among audited building meshes. Its character threshold continues the adjacent flat 465.001-unit gallery receiving plane beyond the navigation boundary. Projectile thresholds retain the world XY datum. This static character/view/projectile mask has no obstacle links or state references."
+        }
+      ]
+    },
+    {
+      "asset": "derby-keep-west-tower",
+      "model_sha256": "275066ae3238a4aafd527350f586138a3f8c550fc5ff23b0511289c11f543534",
+      "entries": [
+        {
+          "source": 200,
+          "id": "west-tower-applied-front-cover",
+          "node": "building-239",
+          "anchor": [480, 1080, 249.167],
+          "characterHeights": [249.167, 249.167],
+          "projectileHeights": [0, 0, 0, 0, 0, 0],
+          "review": "Together with record 201 this is the complete applied mask set of patch 1, owned by the west tower assembly. Coverage is supported by its mesh. Character thresholds are authored on the flat receiving platform of part 239; projectile thresholds retain the world XY datum. The patch has no sight, movement or door changes."
+        },
+        {
+          "source": 201,
+          "id": "west-tower-applied-side-cover",
+          "node": "building-239",
+          "anchor": [480, 1080, 249.167],
+          "characterHeights": [249.167, 249.167],
+          "projectileHeights": [0, 0, 0],
+          "review": "This is the second applied mask of the same local tower state as record 200. Its complete coverage is supported by the assembly mesh, with the same receiving platform and world XY projectile datum."
+        }
+      ]
+    },
+    {
+      "asset": "derby-east-hall",
+      "model_sha256": "44f101f4933c8a3f0b445dda7b70ce647fc561fb3b87b0cb55eb583808245354",
+      "entries": [
+        {
+          "source": 153,
+          "id": "east-hall-south-roof-projectile-occlusion",
+          "node": "building-204",
+          "anchor": [1298, 1337, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "The boundary follows the hall's south roof end; only the hall supports its complete bitmap among the audited building meshes. The receiving anchor is on adjacent ground. This static projectile-only mask has no character threshold, obstacle links or patch references. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 154,
+          "id": "east-hall-north-roof-projectile-occlusion",
+          "node": "building-205",
+          "anchor": [1268, 1276, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "The boundary follows the hall's north roof end; only the hall supports its complete bitmap among the audited building meshes. The receiving anchor is on adjacent ground. This static projectile-only mask has no character threshold, obstacle links or patch references. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "derby-lower-east-curtain",
+      "model_sha256": "0d933f55eb3fe4611fbee2071b05d6385219e76931ad52bf49e9b936f116800e",
+      "entries": [
+        {
+          "source": 39,
+          "id": "east-curtain-walk-occlusion",
+          "node": "building-044",
+          "anchor": [1050, 2150.001, 150.001],
+          "characterHeights": [150.001, 150.001, 150.001, 150.001],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "The mask follows the east curtain's inner parapet; only this asset fully supports its bitmap among the audited building meshes. Its receiving navigation and flat 150.001-unit surface belong to the same curtain. Character thresholds use that plane, including their extension beyond navigation. This static mask has no obstacle links or patch references. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "derby-lower-west-curtain",
+      "model_sha256": "709c2706aaff8a760eccd51dc508fc072b16657e9d4603c25ecb62f4de45e61c",
+      "entries": [
+        {
+          "source": 44,
+          "id": "west-curtain-walk-occlusion",
+          "node": "building-045",
+          "anchor": [350, 1750.001, 150.001],
+          "characterHeights": [150.001, 150.001, 150.001],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "The mask follows the west curtain's inner parapet; only this asset fully supports its bitmap among the audited building meshes. Its receiving navigation and flat 150.001-unit surface belong to the same curtain. Character thresholds use that plane, including their extension beyond navigation. This static mask has no obstacle links or patch references. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "derby-southwest-postern",
+      "model_sha256": "3b03292e8411111b1db5992168fe57b749de7d180851e35118e3bdbc099bb61d",
+      "entries": [
+        {
+          "source": 70,
+          "id": "postern-stair-occlusion",
+          "node": "building-040",
+          "anchor": [593.033515, 2458.006575, 127.501005],
+          "projectileHeights": [0, 0, 0],
+          "review": "Stair obstacle and receiving surface belong to the postern. Full coverage lifts onto the published postern mesh. The anchor is the stair top-plane centroid; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 71,
+          "id": "postern-platform-occlusion",
+          "node": "building-034",
+          "anchor": [615, 2470, 0],
+          "projectileHeights": [0, 0],
+          "review": "Platform obstacle belongs to the postern. Full coverage lifts onto the published postern mesh. The receiving anchor is on adjacent ground, not the elevated platform; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "derby-upper-gatehouse",
+      "model_sha256": "db30b2e76a1b710ea488ea9b582f3b0960c994d7326b2ab211603aad27cd1691",
+      "entries": [
+        {
+          "source": 105,
+          "id": "gatehouse-tower-projectile-occlusion",
+          "node": "building-258",
+          "anchor": [780, 1640, 0],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "Both linked tower obstacles belong to the upper gatehouse. This static mask has no patch references. Coverage lifts onto the gatehouse assembly mesh; the receiving anchor is on adjacent ground. Projectile boundaries use the world XY datum."
+        }
+      ]
+    }
+  ]
+}

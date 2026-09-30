@@ -68,9 +68,41 @@ class AssetIndexTest(unittest.TestCase):
         index = write_asset_index(self.root)
         self.assertEqual([e['id'] for e in index['assets']], ['another'])
 
+    def test_nonrendering_gameplay_frames_survive_catalog_and_variant_projection(self):
+        part = {'node': 'scenery-emitter', 'name': 'Ambient region',
+                'scenery': True, 'gameplay_only': True}
+        descriptor = {**self.descriptor, 'parts': [part],
+                      'gameplay': {'version': 1, 'collision': 'none', 'surfaces': [],
+                                   'doors': [], 'sounds': []},
+                      'state_variants': {'initial': {'name': 'Initial', 'model': 'model.glb',
+                                                     'parts': [part]}}}
+        (self.asset/'asset.json').write_text(json.dumps(descriptor))
+        editor = write_asset_index(self.root)['assets'][0]['editor']
+        self.assertEqual(editor['parts'], [part])
+        self.assertEqual(editor['state_variants']['initial']['parts'], [part])
+        self.assertEqual(editor['gameplay'], descriptor['gameplay'])
+
     def test_source_change_rejects_even_with_a_missing_cached_index_entry(self):
         (self.asset/'model.glb').write_bytes(b'republished')
         self.reject('house: lossy receipt does not bind the current model')
+
+    def test_gameplay_collision_and_join_metadata_survive_all_catalog_views(self):
+        part = {'node': 'building-000', 'name': 'Visual shell', 'source_obstacle': 0,
+                'obstacle_local_game': {'points': []}, 'collision': 'none',
+                'sight_join_edges': [[[0, 0, 0], [10, 0, 0]]],
+                'sight_join_caps': ['top', 'bottom']}
+        variant = {'name': 'Alternate', 'model': 'model.glb', 'parts': [part]}
+        descriptor = {**self.descriptor, 'parts': [part],
+                      'state_variants': {'applied': variant},
+                      'standalone_variants': {'initial': variant},
+                      'gameplay': {'version': 1, 'collision': 'parts', 'surfaces': [],
+                                   'doors': [], 'draft': {'issues': ['Mask recovery incomplete.']}}}
+        (self.asset/'asset.json').write_text(json.dumps(descriptor))
+        editor = write_asset_index(self.root)['assets'][0]['editor']
+        self.assertEqual(editor['parts'], [part])
+        self.assertEqual(editor['state_variants']['applied']['parts'], [part])
+        self.assertEqual(editor['standalone_variants']['initial']['parts'], [part])
+        self.assertEqual(editor['gameplay'], descriptor['gameplay'])
 
     def test_corrupt_output_is_rejected(self):
         (self.asset/'lossy.glb').write_bytes(b'corrupt')

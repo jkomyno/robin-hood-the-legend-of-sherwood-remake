@@ -9,11 +9,13 @@
   "dependencies": {
     "clipper-lib": "6.4.2",
     "earcut": "3.2.3",
-    "polygon-clipping": "^0.15.7"
+    "polygon-clipping": "^0.15.7",
+    "three": "^0.186.0"
   },
   "devDependencies": {
     "@types/clipper-lib": "6.4.0",
     "@types/earcut": "3.0.0",
-    "@types/node": "26.5.1"
+    "@types/node": "26.5.1",
+    "@types/three": "^0.186.0"
   }
 }

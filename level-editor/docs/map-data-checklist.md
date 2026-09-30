@@ -9,37 +9,263 @@ with it. Global indices and connections are rebuilt after placement.
 with Derby/York. “Partial” identifies a remaining gap. “Planned” describes the
 intended construction, not functionality available today.
 
+Current combined drafts recover all 27 map-source movement transitions.
+York's market assembly completes the movement-state ownership inventory.
+Nottingham has both after assembling its four changing northern facade parts.
+Croisement03 has all nine after combining its staged state assets
+with the ground-receiver recovery; older ground-only batches omit two of them.
+All twenty-seven recovered transitions have matching initial/applied changing-obstacle
+coverage on matching movement envelopes. Nottingham's two stateful regions now
+also match full walkable coverage in both states. Actor traversal remains unverified.
+No map is yet published or certified at full gameplay parity.
+
+Draft gameplay is now available in the main editor library: 1,139 structurally
+validated definitions were installed, and descriptor pins in all ten saved scenes
+were updated. All ten scenes reopen successfully.
+This includes 17 legacy Sherwood assets whose recovered definitions were rebased
+to their existing pivots. Definitions carry explicit draft issues; publication is
+not parity certification. The initial publication skipped assets with changed
+physical metadata or without a matching recovery. The publication tool retains
+before/after snapshots and a report under `work/map-compile/main-library-draft-publication`.
+A further 169 additive assets and their placements are installed in the nine
+recovered map scenes: 80 lighting fields, 72 sound fields and 17 navigation or
+physical assets. All existing placements, references and scene settings are
+preserved; Wychford is unchanged by this addition. Models are copied into the
+library with verified resource hashes, not linked to work directories. The
+transaction backup is `work/map-compile/additive-gameplay-publication`. Eighteen
+replacement-family assets are now installed across Croisement01/02/03, Nottingham
+and York, replacing 31 old placements without overlapping old and new geometry.
+All 125 replaced obstacle parts retain their world coordinates and physical flags;
+723 unrelated placements and all other scene settings remain unchanged. Models
+and resources are copied into the main library, and all 42 installed files pass
+hash verification. The transaction backup is
+`work/map-compile/family-gameplay-publication`. All ten maps compile after this
+migration; full traversal and visual parity remain unverified.
+Twenty previously skipped physical definitions are now explicitly reconciled in
+Lincoln, Nottingham, Sherwood and York. Only obstacle volumes, collision opt-outs,
+sight-join edges/caps and recovered gameplay changed; all artwork and resources
+remain intact. Live and recovered model bytes match for all twenty assets, with
+221 canonical part frames and their source identities verified independently.
+Saved scenes retain every placement and receive only descriptor pin updates.
+Default publication still rejects physical differences; this separate reviewed
+operation is backed up under `work/map-compile/reviewed-physical-publication`.
+These definitions remain incomplete drafts, not full parity certification.
+Light bindings whose receiving geometry is still missing produce best-effort
+warnings; available receivers remain active and strict mode still rejects gaps.
+After family migration and physical reconciliation, all ten maps compile and
+construct in Rust. Native apply/reset checks cover 56 switches, up from 47 after
+the additive publication. Lighting contours pass all three ambience checks.
+Nottingham now constructs 95 movement areas, 659 sight obstacles, 172 doors and
+38 jump pairs; York constructs 161 areas, 1,180 sight obstacles, 254 doors and
+72 jump pairs. Lincoln has 62 areas and 541 sight obstacles; Sherwood has 11
+areas and 127 sight obstacles, with 15 doors and one jump pair. These counts confirm
+the added definitions load; they do not establish complete gameplay parity.
+Native pathfinding crosses a joined walkway seam in both directions and its
+independently rotated copy, with actor clearance enforced. Routes off the walkway
+and between spatially separate copies are rejected. Native roof-jump routes also
+check both directions, character jump skills and destination helper requirements
+on assembled and detached asset fixtures. Actor movement ticks now cross a joined
+walkway and its rotated copy in both directions, using a synthetic walking
+animation; receiver identity and final height match the destination plane.
+Native construction derives static elevation boundaries from placed receiving
+polygons, including partial contacts and transitions to uncovered ground. All ten
+maps load with 4,852 derived boundaries in total (4,066 in Wychford and 109 in Leicester).
+Receiving planes remain registered when their sight obstacle is inactive; switches
+control collision and navigation access rather than removing height lookup.
+Boundary construction now includes these planes instead of omitting their entire
+movement area. Walking actor tests verify the initial, applied and reset states,
+including overlapping receiving planes with different heights; the same highest
+receiver and destination height remain valid in each state. Ambiguous boundaries
+smaller than one native pixel are still
+omitted with runtime warnings.
+Full-map actor traversal and animation playback remain unverified.
+Before physical reconciliation, Sherwood's main-library browser bake passed at
+1920×1088 with 115 sight obstacles and an
+8,246,241-byte ZIP. That archive loads in Rust with seven door projections and
+5,040 grid blocks; this differs from the more complete staged-library bake below.
+Wychford's terrain adds 1,804 sloped receiving triangles derived from its authored
+mesh, simplified with a one-unit error budget. Native construction passes. Water
+exclusion, impassable slopes and material regions are not yet authored, so this
+terrain is explicitly provisional rather than a finished traversal definition.
+Its separate publication snapshot is `work/map-compile/main-library-terrain-publication`.
+The combined Wychford best-effort descriptor constructs in Rust with 13 movement
+areas, 2,216 sight obstacles, six doors and no jump pairs. Disconnected connections
+and incomplete states are reported as omissions; this is not traversal parity.
+Its complete 3600×2400 browser export now produces a 35,842,113-byte ZIP with 370
+warnings. The actual archive loads color, depth, minimap and gameplay into Rust
+without a base datadir. Its editor JSON preserves 46 preview actors and 14 items;
+none become runtime map population. The initial generated grid had 3,691,968
+blocks because joined receiving planes left unused layer slots. Compaction now
+reduces that to 32,144 blocks (1,607 layers to 13), while retaining ground layer
+zero, light separation and the reserved lift layer. All ten maps construct in
+Rust after compaction, with exact geometry/reference equivalence after layer
+renumbering. This reduces allocation; it does not restore omitted gameplay.
+
+Editor export now requests best-effort compilation: missing definitions,
+unsupported walls, unavailable door/jump connections and unbound appearance
+controls produce omission warnings. An invalid lift connection omits that placed
+asset's gameplay; its artwork remains. Legacy preview population is excluded from
+runtime gameplay but preserved in the embedded editor JSON. Explicit Mission-tab
+placements export separately as PC spawn points and NPC soldiers. Strict compiler mode remains
+available for parity checks; best-effort export does not establish full parity.
+Export displays phase progress and cancellation. Compilation and image/ZIP
+encoding run in a worker; rendering yields between 512-pixel tiles. Browser tests
+check worker responsiveness, transferred buffer ownership, cancellation cleanup
+and exact synchronous/asynchronous color/depth equality. All ten saved main-library
+maps pass best-effort compilation; Wychford and Sherwood's complete published-library
+ZIPs were native-loaded in this publication batch.
+The combined `editor-field-model-library` drafts now contain regenerated light/sound
+field models and repinned scenes; older diagnostic libraries retain their old pins.
+The nine source-backed `embedded-gameplay-library` drafts now embed 1,121 recovered
+definitions in pinned asset descriptors. They remain incomplete local drafts.
+The scene baker can now select explicit combinations of appearance patches,
+independently of viewport previews, for color/depth rendering. ZIP packaging and
+the Rust loader/renderer now support paired color/depth state images in disjoint
+regions. Overlapping changes share complete combination tables; reset uses the
+base map pixels. The editor now derives regions from potentially visible model
+geometry and binds `movementTransitions[].appearances` to fresh per-placement
+patch IDs. Export renders and packages every overlapping combination, with an
+explicit 64-megapixel state-image budget. Dynamic shadows conservatively require
+full-frame combinations. Automatic framing includes applied variants too.
+Existing assets still need these local bindings restored. Unbound preview names,
+shared aliases across different assets without a joined gameplay transition, and
+manual group state overrides remain export errors. Purely visual transitions now compile when an asset
+declares local appearances: the native `has_appearance` flag permits an otherwise
+empty effect list, without inventing movement, sight, mask or door changes.
+ZIP packaging rejects declared appearance transitions without rendered state regions,
+including unresolved model bindings or geometry outside the export frame.
+The shared editor/native fixture verifies apply, toggle and reset while grid flags
+and door data stay unchanged. Animated mechanisms still need authored animation
+resources; mission-only placeholder profiles remain excluded.
+Asset-local transition `join` metadata now carries a semantic key and a point in
+the transition node's frame. Equal keys with world anchors within 0.01 game units
+compile to one switch when their world trigger geometry and flags agree. Motion,
+sight, mask and compatible door bindings are combined; conflicting triggers,
+door modes or state bindings fail explicitly. Joined placement aliases map all
+member appearances to the same native patch. Moving a contact apart detaches its
+switch; duplicating a complete assembly elsewhere creates an independent switch.
+Compiler and native fixtures cover two joined assets, moved/duplicated placement,
+combined navigation and sight apply/reset, and invalid aliases. Existing maps
+still need reviewed join definitions recovered into their assets; this feature
+does not resolve their outstanding shared ownership or certify map parity.
+One-time recovery now preserves exported map-appearance provenance when exactly
+one recovered gameplay switch belongs to the same asset. Duplicate recovery
+evidence is deduplicated; conflicting placements, mission preview names, absent
+definitions and cross-asset ownership remain explicit unresolved records.
+The staged Derby/Leicester/Lincoln/Nottingham libraries now contain respectively
+1/5/8/4 restored local appearance bindings (18 total), with 3/8/7/2 still unresolved.
+Their compiled geometry is unchanged apart from the 18 `has_appearance` flags.
+Pinned model inspection found all 15 direct appearance names; the other three
+bindings use Leicester drawbridge endpoint variants whose applied definitions
+are present. This does not verify endpoint baking. Native apply/reset still passes
+for all 56 staged gameplay transitions across the nine libraries.
+The baker now resolves applied model views through the same pinned primary asset
+identity as gameplay compilation. Endpoint visibility and local material controls
+therefore use one native switch per placement. Copies may retain the same preview
+name while switching independently; sharing a name across different assets still
+requires an explicit join. Model-metadata checks on all three Leicester drawbridges
+confirm their initial/applied parts bind to their existing door switches and reset
+exactly (3/2/2 visibility changes). A synthetic GPU bake exercises the complete
+endpoint binding path, color/depth changes across a tile boundary and exact reset.
+New gameplay-enabled endpoint placements now load both authored models before
+insertion, register their resources together and save both pins in one placement.
+Shared parts remain single instances; endpoint-only parts get the local state
+visibility rule. Failed loads dispose both models and conflicting revisions fail
+before publication. Drag placement preserves the authored base-height offset.
+The actual-model Chromium insertion check passes for all three Leicester
+drawbridges: two copies produce 6/4/4 placed parts, reopen without structural
+changes, switch independently and reset exactly. The staged Leicester palette
+also no longer lists its three applied views as separate base assets; all nine
+staged palette indexes validate. These checks do not certify actual drawbridge
+pixels, animations, traversal or a complete map ZIP round trip. Existing incomplete
+placements are not automatically repaired.
+The four town full-scene export gates still fail on remaining missing bindings; these
+are metadata recovery results, not successful full-map bakes or parity evidence.
+Croisement01 now has a complete browser-baked draft ZIP (1408×960, 4,812,420 bytes)
+from its saved editor scene and pinned assets. The Rust mod scanner, archive
+mount and native engine constructor load it with an empty base filesystem:
+color/depth/minimap resources, embedded editor JSON, 92 sight obstacles, one mask,
+16 door projections and 4,180 navigation-grid blocks pass. The archive contains
+no mission actors or scripts. This is a real export/load check, not actor-traversal,
+audio-playback or visual-parity certification; 102 masks remain pending.
+The full-map browser runner accepts a staged library URL. Its Sherwood run found
+that authored physical draft models omitted their part identifier; the generator
+now retains it and the staged canopy is repaired and repinned. Import validation
+remains strict. The generator also emits the unlit material required by depth
+baking. Sherwood subsequently completed a 1920×1088 browser bake (7,626,337-byte
+ZIP) and native loading without a base datadir: 127 sight obstacles, 15 door
+projections and 9,450 navigation-grid blocks. Its 166 pending masks and unfinished
+canopy appearance remain explicit gaps.
+The placement regression suite also replaces a walkway or roof-jump neighbor
+with an independently identified asset: geometry reconnects the new neighbor
+while the displaced old one remains disconnected. Existing tests separately
+cover rotated and duplicated connections; real-map actor traversal remains open.
+The browser bake acceptance test now verifies an initial/applied/reset sequence
+on one reused scene: color and depth change across a render-tile boundary, reset
+restores every pixel, and successful/failed bakes restore borrowed materials and
+scene parenting. The separate cross-language fixture checks combined patch states
+and reset through editor PNG encoding, Rust decoding and CPU composition. Native
+GPU coverage checks background color and sprite occlusion during state changes.
+These synthetic checks do not certify existing-map visual parity. The current
+renderer replaces both full textures on a state change; regional GPU updates and
+efficient cropped state rendering remain unfinished. The browser fixture also
+checks automatic region generation and cropped PNG values across a tile seam.
+
+Ground-boundary compilation now supports an explicit asset-local
+`preserveMovementBoundary` setting on a labelled ordinary surface. It retains
+the outer contour and crossing movement obstacles separately, avoiding rounding
+their implicit fractional intersections. A compiler-generated native fixture
+verifies containment and thin reachability through a narrow strip, plus blocked
+crossings of both boundaries. Receiving ownership and movement-state clipping
+subtract crossing obstacles explicitly. Enclosed walkable islands are partitioned
+into ordinary obstacles with coverage checks. This mode requires one surface per
+height plane within each region; joined pieces must all opt into preservation. The offline
+recovery flag `--preserve-ground-boundaries` enables draft boundary recovery;
+it is not the default and is not published. The Sherwood draft now exactly
+matches the reference ground walkable area after restoring its bluff as an
+independent physical receiver. Its fifteen reviewed receivers match 1,023,981
+sampled Rust queries. Equivalent evidence across all maps remains unfinished.
+
 | Original map information | Construction from the editor | Status |
 |---|---|---|
 | Background image and minimap | Render placed models/textures; downsample the minimap. | Working |
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
-| Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Planned |
-| Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions or explicit local regions spanning several planes, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and ordinary multi-plane regions tested; cross-asset multi-plane joins and full-map connectivity unfinished |
+| Projectile/view/obstacle masks and masking polylines | Rasterize asset-local coverage triangles after placement; rebuild masking boundaries, receiving layers and obstacle/state links. A depth PNG alone does **not** replace all these semantics. | Partial: explicit mask authoring, raster compilation, ZIP packaging and native state links tested; recovery/publication and visual/depth state integration remain unfinished |
+| Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions, local multi-plane regions or matching authored boundary edges across assets, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and cross-asset multi-plane joins tested; join recovery/publication and full-map connectivity unfinished |
 | Movement blockers | Transform explicit asset-local movement contours; optionally select permanent part/volume solids and intersect them with walkable surfaces. Sight states stay independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. Explicit transition references select initial/applied obstacles. | Static geometry working; sight transitions verified through native initialization, apply and reset; recovered state ownership still incomplete |
-| Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
+| Projection surfaces / elevation | Generate height planes linked to movement areas; derive receiver-crossing boundaries from all registered planes, independent of sight activation. | Partial: walking crossings verified for rotated copies and initial/applied/reset sight states; ambiguous subpixel boundaries and full-map traversal remain unfinished |
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. Asset-local transition links either trigger state changes from doors or swap door permissions. | Compiler/native links implemented; recovered ownership and coverage incomplete |
 | Building interiors | Asset-local interior definitions and entrances; matching positioned sockets with opposing directions join independent assets into shared virtual rooms. | Compiler/native tests cover separate, rotated and duplicated assemblies; all recovered room memberships match, including York's shared rooms; definitions remain unpublished; occupants are mission-owned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
-| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. Conflicting anchored receivers receive separate runtime layers. | All 148 contours across the five town drafts and Sherwood's night field compile; unrestricted query equivalence, refreshed older drafts and publication remain unfinished |
+| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
 | Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
 
 The following information belongs to **missions referencing a map**, not map
-assets or map export. A separate mission-authoring/export workflow is planned.
-Map exports neither require nor generate player spawns or NPCs.
+assets. The minimal Mission tab stores explicit authoring in the scene's separate
+`mission` field. Export includes these optional mission placements alongside the
+compiled map; scenes without them remain unpopulated. Existing preview population
+is never implicitly converted into runtime actors. Selecting a game-data mission
+explicitly imports PC spawn slots and soldiers into editable mission entries;
+other entities remain previews only. Import warnings survive saving and appear
+in the export report. Across the 39 available missions, import preserves 2,463
+soldiers and 218 spawn slots without dropped placement records; 204 slots retain
+campaign team selection instead of inventing fixed characters. This is placement
+coverage, not mission behavior parity. More complete mission authoring remains planned.
 
 | Mission information | Intended construction | Status |
 |---|---|---|
-| Player starting locations | Mission-owned placements, resolved against the referenced compiled map. Never embedded in map assets. | Planned |
-| Soldiers, civilians, targets and rescue characters | Actor assets plus editor placement, facing, profiles and initial behaviour. | Planned |
+| Player starting locations | Mission-owned placements with fixed profiles or campaign-selected slots; resolve projected coordinates, navigation sector/layer and receiving surface after map compilation. Export only as `spawn_points`, including `[]` for no PCs. | Game-data mission import, sprite palette, numeric sliders and export implemented; legacy spawn fields remain read-compatible; invalid placements warn and are omitted |
+| Soldiers | Mission-owned placement, facing, soldier profile and allegiance; resolve navigation and receiving surface after map compilation. | Game-data mission import remaps profiles and hostility into editable placements; all PC/soldier idle sprites are published; patrols, scripts, inventory and AI roles remain unsupported |
+| Civilians, targets and rescue characters | Explicit mission placement, profiles and initial behaviour. | Planned |
 | Items, bonuses and scrolls | Item assets plus placement and gameplay properties. | Planned |
 | Building occupants | Actor-to-interior associations resolved after placement. | Planned |
 | Patrol paths | Editor-authored waypoints with waits/actions, resolved against compiled navigation. | Planned |
@@ -66,8 +292,9 @@ mean all gameplay was recovered or that the assembled map compiles; drafts stay
 separate from the published asset library until their missing information is resolved.
 
 Recovery includes geometry-only assets: local collision shapes remain active
-unless explicitly replaced by authored movement contours. Mission-authored
-surface geometry is retained without map-wide projection references. Standalone
+unless explicitly replaced by authored movement contours. Preview-only part bounds
+do not create navigation or collision; those parts require separately authored
+gameplay. Standalone
 passages are assigned independently; an interior's entrances remain grouped.
 `staticGeometryDiagnostic` checks a disposable copy of the current visible
 geometry without state/population behaviours. Its success does not authorize
@@ -91,6 +318,894 @@ parity results. All nine recovered maps have now passed static construction;
 no map has yet been certified at full parity, and authored maps still require
 published gameplay definitions for their assets.
 
+Ordinary walkable surfaces can declare `navigationJoins`: pairs of local 3D
+endpoints on an outer edge, alongside an asset-local `navigationRegion` label.
+Compilation validates each edge against its surface, transforms it with the
+asset and joins only coincident, opposing boundary edges from different placements.
+The assembled region retains each receiving plane and material definition.
+Unmatched edges leave independent regions and produce a diagnostic; overlapping
+copies, multiple matches and sockets away from the surface boundary fail.
+Rotation and duplication tests preserve independent assemblies. Two separate
+assets export exactly the existing multi-plane native fixture, whose reachability
+check crosses the plane boundary without a door or lift. Packet conversion retains
+the local edge definitions without runtime sector identities.
+
+A staged Lincoln north-curtain pair uses this metadata on the east and west wall
+assets. Its complete baseline geometry is unchanged; moving either wall one pixel
+east detaches the join and increases movement areas from 113 to 114. All three
+descriptors load natively with 654 sight obstacles, 89 doors and ten jump pairs.
+The initial authored surface drafts and diagnostics are under
+`work/map-compile/lincoln-navigation-join-native`. Repeatable migration now uses
+`refinement/catalogs/lincoln-navigation-joins.json`, pinned to the source and both
+asset models. Recovery validates each named surface and source owner, requires
+one shared ordinary source movement region and checks the complete assembled seam
+before modifying any packets. Stale pins, conflicting authoring, detached edges
+and attempts to join distinct source regions fail. Source indices remain confined
+to the migration recipe/report; generated asset definitions contain local edges
+and local region labels only.
+
+From `level-editor`, regenerate the current Lincoln drafts with:
+
+```sh
+node --max-old-space-size=1536 pipeline/src/recover-asset-gameplay.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/lincoln.rhlos-map.json \
+  --source library/game-data/Data/Levels/Lincoln.rhp.json \
+  --mask-definitions refinement/catalogs/lincoln-masks.json \
+  --navigation-definitions refinement/catalogs/lincoln-navigation-joins.json \
+  --out work/map-compile/lincoln-navigation-join-recovery
+```
+
+Freshly recovered definitions reproduce the previous baseline exactly and both
+independent wall moves pass native construction again. Those diagnostics are under
+`work/map-compile/lincoln-reviewed-navigation-native`. The definitions remain
+unpublished; recovery of the other maps' joins is unfinished. A full-edge candidate
+audit found no exact Derby seam in the tested drafts; boundary/height differences
+still require authoring work. This does not certify full-map connectivity or actor
+traversal on recovered maps.
+
+`pipeline/src/verify-reviewed-navigation-recovery.ts` checks the recovered packet
+and compiler candidate against every reviewed edge definition, revalidates pins
+and source ownership, compiles the baseline, then moves each owner independently.
+It writes native descriptors for successful cases and retains placement failures;
+any failure leaves `complete: false` and returns a nonzero exit status. Existing
+success manifests are invalidated before inputs are read. This checks assembly
+and detachment, not full source-map topology or actor traversal. For example:
+
+```sh
+node --max-old-space-size=1536 pipeline/src/verify-reviewed-navigation-recovery.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/lincoln.rhlos-map.json \
+  --source library/game-data/Data/Levels/Lincoln.rhp.json \
+  --recovery work/map-compile/lincoln-navigation-join-recovery \
+  --navigation-definitions refinement/catalogs/lincoln-navigation-joins.json \
+  --out work/map-compile/lincoln-navigation-cli-native
+```
+
+Nottingham's `refinement/catalogs/nottingham-navigation-joins.json` supplies four
+exact seams in three groups across seven assets: south gate/tower/curtain wall 2,
+the sloped curtain walls 3/4, and the southwest curtain's north/south segments.
+Its recovered baseline preserves all geometry and bindings after remapping sector
+identities and projection-array order. Drafts are under
+`work/map-compile/nottingham-navigation-join-recovery`. The baseline and six
+independent one-pixel westward moves construct natively, with 114 movement areas,
+741 sight obstacles, 172 doors and 38 jump pairs at baseline.
+
+The north segment of the southwest curtain still fails movement checks in either
+direction because the neighboring stair's inside endpoint loses its receiving
+surface. Wall 4 also cannot move east within the existing export frame. Both
+directional verifier manifests remain incomplete under
+`work/map-compile/nottingham-reviewed-navigation-native` and
+`work/map-compile/nottingham-reviewed-navigation-west-native`. The seven successful
+westward/baseline construction cases are retained separately under
+`work/map-compile/nottingham-navigation-construction-native`, with the excluded
+placement failure recorded explicitly. These definitions remain unpublished.
+The full-edge audit also found eleven candidate edges in York. Leicester,
+Sherwood and the three crossing maps had no matches in the tested drafts. This
+audit does not cover partial-edge overlaps or certify that unmatched regions
+should remain disconnected.
+
+York's `refinement/catalogs/york-navigation-joins.json` recovers three reviewed
+groups across six assets: castle east round tower/great hall, cathedral precinct
+terrain/stone causeway, and the west precinct footbridge/city wall. Their combined
+baseline retains all geometry and bindings after sector identity remapping:
+192 movement areas, 1,373 sight obstacles, 254 doors and 72 jump pairs. Drafts are
+under `work/map-compile/york-reviewed-join-recovery`; the verifier output is under
+`work/map-compile/york-selected-navigation-native`. Five independent one-pixel
+eastward moves pass compilation. Moving the causeway fails its doorway's outside
+receiving-height check (157.9875 authored versus 158.0735 on the neighboring
+slope), so the placement manifest remains incomplete. The baseline and five
+successful moves load natively; their construction manifest explicitly records
+the excluded failure in `work/map-compile/york-navigation-construction-native`.
+
+Seven other candidate York groups remain unreviewed. Applying all ten groups
+changed movement areas from 192 to 195 and projection/sight records from 1,373 to
+1,330. Isolated probes show three groups change motion topology, while four change
+projection partitions and associated references. Exact edge coincidence alone
+therefore does not establish complete region ownership or equivalent gameplay.
+The probes and comparisons remain under `work/map-compile/york-navigation-group-probes`.
+These differences need comparison against intended source topology; they are not
+automatically improvements or regressions. No York join definitions are published,
+and full-map connectivity/state/actor traversal remain unverified.
+
+`pipeline/src/compare-projection-coverage.ts` compares the union of receiving
+polygons on the compiler's fixed coordinate grid, grouped by exact top/bottom
+planes, receiving motion area, flags and ordered material definitions. It resolves
+rebuilt motion/material indices, including blocker constructor slots, and rejects
+ambiguous or invalid receiving references. It preserves differences in height,
+materials or coverage even when record counts happen to agree. Tests distinguish
+an equivalent quad subdivision from a missing triangle and changed receiving rules.
+This comparison excludes overlapping-plane priority, non-projection geometry,
+state references and actor traversal.
+
+The isolated York inner-east curtain join reduces projection records by 25 while
+preserving every compared coverage group exactly. Its non-projection data also
+matches after motion/interior reference remapping, and both variants load natively
+with 192 movement areas, 254 doors and 72 jump pairs. The native probes are under
+`work/map-compile/york-inner-wall-partition-native`. Native receiving queries now
+expose a real elevation difference despite the exact coverage comparison: 51,381
+half-pixel samples include 28,285 receiving points, of which 28,268 differ by up to
+0.000015258789 in height. Coverage and material selection match. Comparing the
+baseline with itself gives zero differences. The native loader constructs planes
+from the first three polygon vertices, so a different subdivision can change
+float32 arithmetic even for mathematically identical planes. The join remains
+outside the reviewed catalog. This exposed the need to preserve authored receiving
+planes independently of subdivision and to verify receiving priority and traversal.
+
+Receiving materials now support ordered asset-local `planePoints`. One-time
+recovery copies the three plane-defining anchors into each owned surface;
+compilation transforms them with the asset and carries them unchanged through
+material clipping as `projection_plane`. Native loading validates thin, planar
+receivers and uses those anchors for top/bottom height evaluation. Assets without
+this metadata retain polygon-derived planes. Tests cover clipping, translation,
+rotation, duplicated placements, invalid anchors and native/shipping round-trips.
+The binary shipping schema advances to datadir 19 / mission 10; older binary
+bundles must be regenerated. Existing source files and hackable JSON without the
+optional field retain their loading behavior.
+
+York was recovered again into `work/map-compile/york-plane-anchor-recovery` and
+both variants compiled into `work/map-compile/york-plane-anchor-native`. The same
+51,381 native queries now have zero coverage, material or elevation differences.
+This fixes the observed float32 subdivision mismatch, without accepting a height
+tolerance. Exact coverage grouping still detects approximately 2.777463 square
+pixels assigned to different ordered plane anchors, even though those flat planes
+give identical sampled native heights. Full receiving-priority and traversal
+verification is still required; the candidate remains outside the reviewed catalog
+and the regenerated definitions remain unpublished.
+
+The receiving-plane migration was also checked across all nine source maps.
+`work/map-compile/all-plane-anchor-native/diagnostics.json` records nine successful
+native constructions. `pipeline/src/compare-receiving-plane-anchors.ts` compares
+ordered anchor triples at float32 bit precision, including the export-frame
+offset, and reports receivers without anchors separately. Its baseline audit
+(`anchor-roundtrip.json` in the same directory) finds all 698 explicit receiver
+triples unchanged: Croisement01 27, Croisement02 21, Croisement03 14, Derby 78,
+Leicester 63, Lincoln 118, Nottingham 106, Sherwood 17 and York 254. This checks
+anchor values, not whether the correct source receiver owns each point.
+
+That baseline also contained 413 elevated receivers using polygon-derived planes and default
+material 0. These are generated fallback coverage outside the explicit material
+supports; they need separate coverage/ownership review. Their total projected
+area is not uniformly negligible: approximately 4,744.89 pixels squared in
+Leicester, 3,501.57 in Sherwood, 1,331.40 in Lincoln and 735.89 in Derby. Passing
+construction and anchor-value checks therefore does not establish full receiving
+coverage or material parity. All recovered definitions remain unpublished.
+
+The compiler no longer fills unsupported portions of a merged movement boundary
+with default-material receivers when explicit receiving supports are present.
+Implicit default coverage is restricted to the surfaces that actually author it.
+This preserves openings such as the Sherwood platform hole, where the reference
+receiving polygons provide no receiver. An exported synthetic platform fixture
+verifies the same behavior through native queries: no receiver in the opening,
+with elevation preserved on its surrounding edges.
+
+Recompilation into `work/map-compile/receiving-gap-native` removes 412 unsupported
+receivers across the nine maps. All nine descriptors construct natively; their
+non-sight geometry is unchanged after remapping interior constructor references,
+and all 698 anchored receivers are unchanged. That diagnostic retained one
+unanchored receiver on Derby's `derby-second-drawbridge`, covering 731 square pixels.
+These checks still do not certify whole-map
+receiving priority, source coverage or actor traversal.
+
+Further inspection found that last receiver was incorrectly inferred from an
+editor preview bounding box, whose asset metadata explicitly says it has no sight
+association. Recovery now creates no walkable surface from preview projection
+placeholders. Compilation also excludes preview bounds from automatic part
+collision, while explicit asset surfaces, passages and volumes remain usable.
+Referencing a preview box as a gameplay obstacle requires an authored volume
+instead. The bridge's actual state geometry and behavior still need asset authoring;
+removing the fabricated surface does not complete that work.
+The batch under `work/map-compile/preview-bounds-native` passes native construction
+for all nine maps. Derby now has 60 movement areas, 348 sight records, 70 doors and
+two jump pairs; the other eight compiled geometries are unchanged. No unanchored
+receivers remain in this recovered static batch. This does not certify the
+unrecovered state geometry or publication readiness.
+
+`pipeline/src/inventory-patch-dependencies.ts` audits shared sight, mask and door
+references across supplied patches and flags sight changes that activate receiving
+projection surfaces. It keeps each patch and initial/applied role distinct, checks
+for stale sight indices, and distinguishes masks by layer plus index. It does not
+assign asset ownership, recover motion changes or import mission actors/scripts.
+
+The authoring inventory in `work/map-compile/mission-map-effects.json` covers all
+39 retained mission files and records hashes of each mission and its map source.
+Derby's three missions all link both drawbridge patches to initial sight obstacle
+267; the second additionally activates projection 268 and binds doors 37/38.
+Obstacle 267 lies at the first bridge, so assigning both geometries to the second
+asset would break independent placement. This shared dependency needs an explicit
+map/mission ownership decision in the implementation, not an inferred asset merge.
+The second bridge's visual elevation also differs between mission variants (1 vs
+110), and its old preview source hash no longer matches the current JSON. No state
+recipe has been approved from that stale pin.
+
+Leicester's map patches activate projections 389, 384 and 390. Native interchange accepts projection obstacles
+in initial/applied sight lists, with the same missing-reference and duplicate-control
+validation as other obstacles. Runtime tests cover activation, swapping and reset:
+collision follows activation, while elevation/material lookup retains all registered
+receivers, including inactive ones, and navigation storage remains unchanged.
+Assets can now link a walkable surface to a local part or volume with `projectionVolume`, replacing
+its generated thin receiver with that volume's full geometry, thickness, flags and
+material links. Existing initial/applied sight lists control its activation. Tests
+cover movement, rotation, duplication, export into the native fixture, and native
+top/underside collision plus opaque-ray blocking through activation and reset.
+Missing links, mismatched heights, disjoint walking contours and multiple receiving
+areas are rejected. Navigation can extend beyond its receiver without inventing
+extra receiving coverage, matching their independent authored boundaries.
+Overlapping physical/generated receivers require explicit
+volumes on both surfaces, avoiding ambiguous overlap ordering.
+
+One-time recovery now links uniquely owned, state-controlled projection surfaces
+to their existing physical parts or local volumes. Across all nine source maps,
+the three affected map-patch receivers are Leicester 384, 389 and 390. Fresh
+Leicester recovery in `work/map-compile/projection-volume-recovery/leicester`
+retains their ordered float32 vertices, top/bottom heights, physical flags and
+default materials exactly. Compiled receiver indices 93, 56 and 243 respectively
+bind their owning drawbridges' applied sight states. The diagnostic in
+`work/map-compile/projection-volume-native` constructs successfully in Rust and
+applies/resets all five recovered Leicester transitions, checking sight activation,
+door rights and movement state restoration. This is not actor-traversal or visual
+parity: the full scene still rejects unsupported visual states, 450 masks remain
+unrecovered, and these candidates remain unpublished. Mission-carried projection
+effects and shared controllers still need separate ownership and recovery work.
+Physical receiving-plane validation now uses the first three ordered volume
+vertices, retaining later vertex heights instead of requiring the whole volume
+top to be planar. The authored walking surface must still agree with that plane;
+degenerate first triples and height mismatches remain errors.
+
+An all-map candidate audit in `work/map-compile/static-receiver-audit/audit.json`
+found 557 static surface links whose uniquely owned physical parts exactly match
+source float32 vertices and flags; 32 other surfaces lack that ownership/geometry
+evidence. These are proposed links, not published definitions. Croisement03's 14
+links compile and construct natively as 30 movement areas, 106 sight obstacles,
+15 doors and 10 jump pairs. The other eight candidate maps remain rejected:
+Croisement01/02, Leicester, Lincoln, Nottingham and Sherwood have physical
+receivers spanning multiple generated movement areas; Derby and York first fail
+on overlapping receiving-material priority. Fixing these requires navigation and
+overlap authoring, not duplicating a physical obstacle across areas or flattening
+its geometry. Native construction does not yet prove receiving-query, visual or
+actor-traversal parity for Croisement03.
+
+Receiver ownership now intersects authored walkable coverage with the compiled
+area **including holes and blockers**. Outer-boundary overlap alone incorrectly
+assigned a surrounding platform's receiver to a separate island inside its hole.
+The editor/native island fixture verifies distinct receiver references, correct
+stone/leaves material lookup, retained height and no direct walking route across
+the gap. Physical receiving footprints themselves remain intact.
+
+Recompilation in `work/map-compile/receiver-ownership-native` removes 96 wrongly
+assigned generated receiver records from the previous static diagnostics: 2 in
+Croisement01, 6 in Croisement02, 12 in Derby, 2 in Leicester, 23 in Lincoln, 1 in
+Sherwood and 50 in York. Other geometry fields outside sight/building references
+and warnings are unchanged; all nine diagnostics construct natively. A repeat of
+the physical-part candidate audit still rejects eight maps. Derby now reaches a
+real split of the east-hall receiver between two movement areas; York still first
+fails material-priority checks. These remaining errors must be resolved through
+navigation/overlap authoring before those candidate links can be published.
+
+The 14 Croisement03 links now have a repeatable one-time recovery recipe in
+`refinement/catalogs/croisement03-projections.json`. Run recovery with
+`--projection-definitions refinement/catalogs/croisement03-projections.json`.
+It validates the source/model pins, unique physical ownership, ordered float32
+geometry and flags, and material references before changing any packet. Output
+uses local part IDs; recipe source indices do not become runtime links. Stale pins,
+changed shapes, missing material definitions and duplicate recipes fail atomically.
+
+Fresh output in `work/map-compile/reviewed-projection-recovery/croisement03`
+matches the prior audited baseline. The baseline plus independent one-pixel moves
+of all 13 owning assets compile and construct natively in
+`work/map-compile/reviewed-projection-native` (14 cases). Connection counts can
+change when moved endpoints detach. These definitions are still unpublished:
+Croisement03 retains 131 unrecovered masks, two missing movement transition
+groups, and unverified visuals and actor traversal.
+
+Croisement03's upper-terrace navigation boundary now has an explicit authoring
+plane for the portion outside receiving coverage. The source-pinned recipe
+`refinement/catalogs/croisement03-transition-planes.json` selects the associated
+terrace receiver's plane for placing that changing contour only; it adds no
+walkable or receiving surface. Recovery accepts it via `--transition-planes`;
+`stage-navigation-state-assets.ts` accepts the same recipe after its ownership
+argument. Missing coverage still fails when no explicit plane is supplied.
+
+Staging created `croisement03-navigation-boundary-004` in
+`work/map-compile/croisement03-transition-plane-stage-v2`. Fresh recovery into
+`work/map-compile/croisement03-transition-plane-recovery` now has eight recovered
+movement groups and one missing group (the multi-asset sight change). The export
+in `work/map-compile/croisement03-transition-plane-native` retains exactly the
+previous sight geometry, flags and material links, with regenerated area references.
+All eight recovered transitions pass native apply/reset state checks. Masks,
+shared state ownership, navigation coverage, visuals and actor traversal still
+require verification before publication or a full-parity claim.
+
+The remaining Croisement03 movement group now has one physical asset owner.
+`refinement/catalogs/croisement03-state-assembly.json` groups complete obstacle
+parts 102–105 into `croisement03-southwest-state-assembly`; one map patch enables
+all four, and no other map patch controls them. The canonical staging tool retains
+the complete model resources and part geometry in a common movable frame.
+The staged library is `work/map-compile/croisement03-state-assembly-stage` and
+fresh recovery is `work/map-compile/croisement03-state-assembly-recovery`.
+
+All nine map movement groups now recover for this scene. The baseline and a
+one-pixel eastward assembly move preserve the four parts' exact ordered float32
+vertices and flags, and both pass native apply/reset checks for all nine transitions
+in `work/map-compile/croisement03-state-assembly-native`. The assembly waypoint
+moves with its geometry. This verifies movement/sight state binding only: patch 8
+also controls layer-0 masks 122–124 (global mask records 128–130), which remain
+unrecovered, along with visual states. The candidates remain unpublished and do
+not yet certify actor traversal or full patch/map parity.
+Mission-carried records also include traps, hiding places and
+York gate effects; their presence in a mission file does not establish permanent
+map ownership. The earlier recovered transition counts cover map-source recovery,
+not this additional inventory. No mission population or scripts were added to maps.
+
+The ignored native test
+`recovered_projection_partitions_preserve_sampled_runtime_queries` reads a
+`ROBIN_PROJECTION_COMPARISON` manifest with `before`/`after` descriptor paths and
+`cases` containing `before_sector`, `after_sector`, `layer` and inclusive
+`bounds: [min_x, min_y, max_x, max_y]`. It queries the runtime receiver, elevation
+and material at integer and half-pixel positions, writes a sibling `.report.json`
+file, and fails on any difference. This is a sampled check, not continuous-space
+or actor-traversal certification. The York manifest is `projection-comparison.json`;
+`projection-self-comparison.json` supplies the passing control.
+The east bridge terrace candidate instead changes material bindings across
+1.366211 square pixels. The riverside wall and middle outer bastion candidates
+retain smaller nonzero coverage differences; no tolerance was used to accept them.
+Detailed comparisons are under `work/map-compile/york-navigation-group-probes/verified-coverage-*.json`.
+
+The native compiler interchange accepts typed mask bitmaps with character and
+projectile polylines, view flags and regenerated sight-obstacle references.
+Mask-state transitions reference the compiled array; loading rebuilds the native
+per-layer mask references, including interleaved input layers. Mask-only transitions
+can initialize, apply and reset without mission actors. Invalid type combinations,
+missing layers/obstacles, malformed bitmap rows and multiply controlled masks are
+rejected before loading can skip a mask and shift the references. The editor's
+binary-silhouette encoder has shared fixtures checked by the native decoder,
+including partial bytes, transparent rows and runs longer than one control byte
+can represent. Incompressible rows exceeding the format's byte limit require
+narrower bake tiles and fail explicitly. This establishes the interchange and
+encoding, not full-map mask parity.
+
+Assets can now define local coverage triangles, a receiving-surface anchor,
+character/projectile masking boundaries, view flags and local obstacle IDs.
+Compilation transforms this geometry, rasterizes binary coverage in 1024-pixel
+tiles and regenerates front masking polylines, preserving concave vertical steps.
+Character boundaries use projected coordinates; projectile boundaries use world
+XY, with obstacle links supplying altitude tests. Explicit triangles preserve
+cutouts and can include multiple surfaces; they are not inferred from a bounding
+box or an unchanged screen bitmap. Local initial/applied mask IDs bind every
+generated tile independently for each placed copy. Tests cover movement,
+elevation, rotation, duplication, holes, wide-mask seams, packet conversion and
+ZIP retention. An editor-generated fixture verifies native coverage, masking
+rules and apply/reset behavior without source-level files or mission actors.
+Existing map assets still need recovered/authored coverage and boundaries;
+automatic extraction from textured meshes, visual-state resources and coordinated
+depth-buffer changes remain unfinished. Assets can explicitly declare
+`maskOcclusionNodes` for parts whose complete sprite occlusion is controlled by
+their typed masks. Color baking retains those parts; depth baking omits only
+their geometry and renders the surfaces behind them. Other parts retain their
+depth contribution. This prevents static mesh depth from overriding mask
+deactivation for the declared parts. It requires complete authored coverage:
+the compiler does not infer this declaration from a partial mask set. Existing
+assets have not yet been certified or opted in, and visual-state resources still
+need integration, so this does not establish full-map mask parity.
+The browser GPU test verifies identical color pixels, exposed underlying ground
+depth for a declared part, and unchanged depth for an unrelated part. Unit tests
+also verify declaration validation, packet conversion and visibility restoration
+after a failed bake.
+
+The Derby southwest postern is not yet eligible for mask-controlled depth. Its
+other linked masks, 67/68, lack 72/98 pixels of mesh support (14/19 interior).
+The coverage audit reports 11/18 separate connected repair regions, including a
+33-pixel gap at `[471,2319,484,2326]` and a 32-pixel gap at
+`[581,2469,591,2480]` (exclusive upper bounds). Adding the postern's collision
+volume surfaces in a diagnostic probe still leaves 70/7 pixels unsupported.
+Masks 70/71 remain fully supported. No depth declaration has been added to this
+asset; completing two masks does not certify its other parts.
+
+```sh
+node pipeline/src/audit-mask-surfaces.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/derby.rhlos-map.json \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --asset derby-southwest-postern --masks 67,68,70,71 \
+  --out work/map-compile/postern-mask-coverage.json
+```
+
+The one-time bitmap recovery helper strictly decodes source scanlines and merges
+coverage into nonoverlapping screen-space rectangles without filling cutouts.
+`node --max-old-space-size=1536 pipeline/src/audit-mask-bitmaps.ts library/game-data/Data/Levels/*.rhp.json`
+(from `level-editor`) verifies every pixel after reconstructing those rectangles.
+All 3,027 masks across the nine source maps pass. Only 363 have obstacle links;
+these are altitude-test references, not sufficient evidence of visual ownership.
+The rectangles are intermediate authoring data, not asset geometry: ownership,
+intersection with actual asset surfaces, local 3D coordinates, masking boundaries
+and state bindings still need recovery before publication.
+
+Surface lifting now clips this intermediate coverage against explicitly supplied
+owner mesh triangles, splits overlaps where their depth order changes, and
+stores only the frontmost surface in asset-local coordinates. It rejects coverage
+outside the mesh instead of extrapolating height. Tests cover sloped faces,
+cutouts, crossing surfaces, duplicate faces and foreground islands. This helper
+is used by explicit reviewed recipes in the batch asset migration; these
+synthetic tests alone do not certify existing-map mask recovery.
+The mesh reader handles indexed/unindexed triangles and nested transforms in a
+selected model part. Skinned/animated geometry and blended materials reject
+until their state or coverage is explicitly handled. Surface clipping
+uses fixed-point polygon operations; recovery then rerasterizes with the map
+compiler and requires exact source pixel coverage, allowing partially covered
+edge cells only when their pixel samples match. Four Derby probes (mask records
+15, 27, 67 and 93) still fail coverage against their obstacle-linked candidate
+assets' published meshes. They are not recovered or published as gameplay masks.
+Those four candidates lack 175, 323, 72 and 332 covered pixels respectively;
+the gaps include interior pixels, so accepting boundary rounding alone is
+insufficient. Reviewed cottage associations also require geometry work.
+
+Cutout (`MASK`) materials can now supply physical alpha coverage to reviewed
+recovery and `audit-mask-surfaces.ts`. The reader decodes pinned asset textures,
+clips mesh triangles in UV space against nearest-sampled base-level alpha, and
+interpolates the original surface positions and vertex alpha. Uniform material
+alpha and degenerate UV mappings are supported. Opaque provenance atlases remain
+opaque; foliage's explicitly declared vertex ownership channel does not multiply
+physical opacity. Tests cover holes, cutoff equality, sloping geometry, vertex
+alpha, degenerate UVs and the foliage metadata contract.
+UVs outside the unit square, texture transforms, linear magnification and blended
+materials still reject; mipmap/minification silhouettes are not certified by this
+base-level authoring geometry.
+
+The central Sherwood oak now passes through the alpha-aware support audit:
+`work/map-compile/sherwood-central-oak-alpha-support.json`. Its cutout mesh expands
+to 660,698 triangles. Of seven nearby mask probes, record 150 has complete support
+for all 375 pixels; records 32/34/62/70/151/153 still lack coverage. This probe does
+not establish ownership or recover a complete mask definition. Subsequent asset
+review places record 150 on the central platform's lower ladder, not the tree.
+The platform mesh still misses 146 of its 375 pixels (24 interior pixels); records
+151 and 153 also lack platform coverage. Do not recover these masks onto the
+overlapping tree. The reviewed mask total remains 72. Reviewed recovery now discards mesh triangles outside the
+union of the requested masks' projected bounds before expanding texture alpha.
+For these seven probes it reduces the candidate geometry from 660,698 to 3,327
+triangles (99.5%) with identical complete support/gap reports, recorded in
+`work/map-compile/sherwood-central-oak-alpha-bounded-support.json`. Accepted texels
+also merge regardless of stored alpha when vertex alpha is uniform; varying
+vertex alpha retains distinct clipping thresholds. Full-tree silhouette hashes
+remain identical at baseline and 45-degree rotation. This does not simplify or
+alter the published tree model. A fresh Croisement03 recovery also produces
+identical gameplay candidates for all 93 assets, including its recovered mask
+and state geometry (`work/map-compile/croisement03-bounded-mask-recovery`).
+Broader tree recovery and visual filtering
+fidelity remain unfinished.
+
+Sherwood recovery now restores three omitted physical ladder volumes (97/98/101)
+into the central-oak and ladder-oak platform assets. Their authored local volumes
+also supply receiving geometry, preserving thickness and ordered height planes.
+Lift connections explicitly select their local traversal surface, so two ladders
+can share a part frame without ambiguous bindings; volume clearance IDs are also
+independent. Clearance subtraction uses fixed-point clipping for near-coincident
+edges that otherwise fail to close a polygon.
+
+`work/map-compile/sherwood-ladder-volume-recovery` validates all 81 asset drafts.
+The baseline and central-platform translation construct native maps with 29 areas,
+294 sight obstacles, 15 doors and one jump pair. The ladder-oak platform also
+compiles independently when translated 100 units away, or one unit together with
+its separate oak asset. Across all four cases the three restored volume shapes
+and flags match the source at float32 precision, and all four lift endpoint sets,
+directions, types and lock rules match after translation. See
+`work/map-compile/sherwood-ladder-volume-native` and its generator
+`work/map-compile/verify-sherwood-ladders.mjs`.
+
+The one-unit platform-only move still fails: isolating collision for each of the
+81 assets identifies the unmoved oak as the only owner whose collision removal
+makes it pass. Its recovered openings lie on the original traversal planes; they
+remain with the tree when the ladder moves. This is a cross-asset collision and
+clearance limitation, not missing ladder metadata. Do not erase neighbouring
+collision to force a successful export. Native passage callbacks pass for all
+12 directed lift endpoint pairs in each of the four successful scenes (48 pairs),
+with a test actor entering and leaving the expected sector and layer. These checks
+do not simulate approach routing, authorization or climb animation, and do not
+certify full traversal or map parity. Recovery now inventories every sight record lacking a
+physical asset owner: Sherwood retains record 13 (referenced by mask 76), plus
+166 unrecovered masks, one light region and five sound sources. Counts of owned
+sight records establish metadata presence only, not geometric fidelity.
+
+The same passage-callback check passes across the nine earlier static drafts in
+`work/map-compile/receiver-ownership-native`: Derby 32 directed pairs, Leicester
+38, Lincoln 24, Nottingham 92, York 170 and the older Sherwood draft two. The
+three crossing drafts contain no recovered lifts, so they exercise no callbacks.
+The updated Sherwood cases above cover its additional restored ladders.
+
+`work/map-compile/all-sight-owner-audit/audit.json` inventories all nine source
+maps against their pinned assets and current explicit ownership declarations.
+Only two source sight records still have no physical asset owner: Derby 35
+(referenced by mask 6) and Sherwood 13 (referenced by mask 76). Both are solid,
+opaque and mouse-active and neither belongs to a state patch. The other seven
+inventories have no missing owner, but that does not prove the owned geometry is
+equivalent, correctly grouped, published or complete in other gameplay features.
+This audit omits mask recovery and is not a publication candidate. Wychford has
+no corresponding source map for this comparison.
+
+Visual inspection identifies both missing records as separate canopies, not
+non-rendering pieces of neighbouring buildings: Derby's small canvas shelter
+beside the lower west curtain and Sherwood's thatched preparation-table canopy.
+The reviewed `derby-obstacle-drafts.json` and `sherwood-obstacle-drafts.json`
+recipes pin their source data and record that ownership. Run
+`pipeline/src/author-obstacle-drafts.ts --source LEVEL_JSON --recipe RECIPE_JSON
+--out NEW_DIRECTORY` to author independent assets with local physical volumes
+and visible volume-preview meshes. These are explicitly unfinished appearance
+drafts; they contain no mission actors, invented navigation or source-map lookup.
+
+The staged `derby-canopy-stage` and `sherwood-canopy-stage` scenes under
+`work/map-compile` reopen successfully and recover 42/82 asset definitions with
+zero unowned sight records. Baseline and 100-unit canopy translations match each
+restored volume's ordered vertices and flags at float32 precision and construct
+native maps (`canopy-draft-native`): Derby has 60 areas, 337 sight obstacles,
+70 doors and two jump pairs; Sherwood has 29/295/15/1. This does not certify the
+other geometry or promote these drafts to published complete assets.
+
+Roof-volume geometry alone still lacks 87 mask pixels for Derby record 6 and
+1,311 for Sherwood record 76, including support poles and silhouette details.
+The `derby-canopy-mask-audit.json` and `sherwood-canopy-mask-audit.json` reports
+retain these gaps; neither mask is recovered. Textures and appearance completion
+remain required. Saving/reopening also now restores an empty resource list for
+scene assets whose descriptor omits that optional field, avoiding a validation
+failure after compact serialization removes the redundant saved list.
+
+Canopy drafts now accept explicitly authored visual support posts beneath the
+roof. The posts are model children in the same local asset frame and add no
+gameplay collision. Derby's visible front post reduces mask 6's unsupported
+pixels from 87 to 32 (no interior gaps); Sherwood's three visible posts reduce
+mask 76's gaps from 1,311 to 805 (381 interior pixels). These measurements are in
+`derby-canopy-pole-mask-audit.json` and `sherwood-canopy-post-mask-audit.json`
+under `work/map-compile`. Remaining thatch, roof-edge and timber detail gaps
+still require geometry authoring; neither mask is recovered yet.
+`verify-canopy-drafts.mjs --posts` verifies the complete compiled gameplay output
+is unchanged for both maps at baseline and after moving each canopy 100 units.
+The newer scenes are `derby-canopy-pole-stage` and `sherwood-canopy-post-stage`;
+textures and completed appearances remain unfinished.
+
+Asset character/projectile boundaries can now be explicitly open, independently
+of one another; existing authored boundaries remain closed by default. This
+preserves source polylines without inventing a closing edge across a concavity.
+Monotone open lines retain vertical endpoint steps; other placements recompute
+their front envelope. The bitmap audit also verifies all 5,166 nonempty source
+polylines across the nine maps are reproduced point-for-point. This verifies the
+boundary representation only, not their receiving elevation or asset ownership.
+
+`recover-occlusion-mask.ts` combines verified coverage with explicitly supplied
+boundary heights, a receiving anchor and local obstacle ownership. It emits an
+asset-local definition without source layer/obstacle indices or bitmap data.
+Character heights lift projected points; projectile heights preserve world XY.
+Tests recompile every supported flag combination unchanged and verify movement,
+elevation and independent authoring data. Missing height/ownership evidence is
+rejected. The batch migration still needs reviewed inputs for existing masks;
+this authoring function does not certify their recovery or state links.
+
+Patch mask references now use the correct `{layer, index}` schema, with indices
+local to each layer. Parsing rejects dangling/flat references. State-link recovery
+resolves these into recovered asset-local IDs, refusing missing owners, duplicate
+state IDs or implicit cross-asset coordination. Tests cover interleaved source
+layers and independent links after asset duplication. All 518 state references
+across the nine source maps resolve; none reuses a mask within/across patches.
+This does not mean those masks have recovered coverage or published state links.
+
+Reviewed mask migration now accepts state-controlled masks only when the whole
+patch mask set belongs to one asset and one recovered local transition. It writes
+the local IDs into that transition's initial/applied mask lists after geometry
+recovery succeeds. Missing masks, competing controllers and cross-asset ownership
+remain errors. Tests cover both phases, duplicate transition discovery and invalid
+ownership; the mesh-backed migration test also exercises a controlled mask.
+When a reviewed set has no movement changes or door links, recovery can create
+its local mask/sight transition directly. Every referenced sight obstacle must
+belong to the same asset. Unrecovered movement or door behavior is an error;
+this path cannot silently replace either with a mask-only state.
+
+Croisement03's staged southwest assembly owns all three applied masks of patch 8
+(global records 128–130; layer-local records 122–124), but its mesh lacks support
+for 981, 803 and 5 covered pixels respectively, including 661 and 520 interior
+pixels in the first two masks. The reproducible `audit-mask-surfaces.ts` report is
+`work/map-compile/croisement03-state-assembly-mask-audit.json`. These masks need
+authored surface geometry and remain unrecovered; state ownership alone does not
+establish mask parity. The reviewed static-mask total remains 64.
+
+Croisement03 also has one recovered changing mask: western platform record 126,
+with all 2,592 pixels supported by `croisement03-group-062`. The pinned recipe in
+`refinement/catalogs/croisement03-masks.json` uses the platform's 82.00001-unit
+receiving elevation and binds its initial cover to local `movement-change-5`.
+Baseline and a one-unit asset move preserve exact coverage, masking rules and
+transition links; baseline non-mask geometry is unchanged. Drafts are under
+`work/map-compile/croisement03-controlled-mask-recovery`, and diagnostics under
+`work/map-compile/croisement03-controlled-mask-native`. Both scenes pass native
+apply/reset checks for all nine transitions, now including mask activation and
+unchanged unrelated masks. The map still has 130 unrecovered masks. This brings
+reviewed recovery at that stage to 65 masks across seven maps, including 64 static masks;
+publication, receiving-layer fidelity and changing visual/depth integration remain
+unfinished.
+
+Derby's west tower now contributes two applied masks (records 200/201, with
+36,837/8,192 pixels), as one local mask-only transition. Leicester's great keep
+contributes initial roof mask 436 and its local sight obstacle 375 as one
+mask/sight transition, retaining three local roof-obstacle mask links. Both use
+their authored receiving floors for character thresholds and preserve projectile
+world XY. These additions bring reviewed recovery to 68 masks: 64 static and
+four changing masks across seven maps. Derby has nine reviewed masks and 227
+remaining; Leicester has seventeen reviewed masks and 449 remaining.
+Drafts and baseline/moved diagnostics are under
+`work/map-compile/{derby,leicester}-controlled-mask-{recovery,native}`. Derby's
+baseline and six independently moved assets pass exact mask and native state
+checks; Leicester's baseline and eight independently moved assets do likewise.
+Visual patch effects, complete receiving-layer fidelity and publication are still
+unfinished; these checks do not certify full map parity.
+
+Nottingham adds two complete prison-door mask swaps: upper prison records
+365/366 (1,444/1,812 pixels) and southwest prison records 407/408 (2,422/338 pixels).
+Both pairs bind to existing asset-local door-triggered sight transitions. Upper
+prison character thresholds use its 250.001-unit platform; southwest thresholds
+receive on ground. The updated pinned mask catalog verifies twenty source masks
+at baseline and after fifteen independent asset moves, with 507 masks remaining.
+Drafts and diagnostics are under `work/map-compile/nottingham-controlled-mask-recovery`
+and `work/map-compile/nottingham-controlled-mask-native`.
+All sixteen descriptors pass native apply/reset checks. The diagnostic additionally
+passes a test actor through each mask-controlled door in both directions, checking
+destination sector/layer and the triggered mask/sight changes. These are passage
+callback checks, not approach routing, lock-authorisation or animation playback.
+Reviewed recovery now totals 72 masks across seven maps: 64 static and eight changing.
+
+The nine-map changing-mask support audit is recorded in
+`work/map-compile/controlled-mask-support-summary.json`. It found complete mesh
+support for the recovered Derby, Leicester, Nottingham and Croisement03 sets,
+plus five Lincoln candidates requiring ownership review. Support from terrain
+alone does not assign a building mask to that terrain. The audit is incomplete
+for textured-alpha tree meshes, some terrain frame selections and non-rendering
+frames; it also filters candidate names and bounding boxes. Its zero-candidate
+results therefore do not establish missing geometry or absence of recoverable masks.
+
+`pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
+checks from a scene, pinned library, recovery packets and source-pinned recipes.
+It compares exact covered pixels, flags, both optional polylines and obstacle-link
+counts, rejecting ambiguous matches rather than choosing one. A source mask
+may compile into multiple bitmap tiles. Their coverage must form
+an exact disjoint union with consistent layer and obstacle links, and every
+compiled mask must be accounted for by a reviewed recipe. Each owning asset
+then moves independently; bitmap bytes, dimensions, translated boundaries and
+compiled obstacle links must remain exact. A failed run invalidates the previous
+manifest, records placement errors and exits unsuccessfully. For recovered
+changing masks it also checks complete initial/applied mask sets against exactly
+one compiled transition, before and after movement. These are geometry/state
+diagnostics, not ownership, receiving-layer, visual or full-gameplay certificates.
+For example, from `level-editor`:
+
+```sh
+node --max-old-space-size=1536 pipeline/src/verify-reviewed-mask-recovery.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/derby.rhlos-map.json \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --recovery work/map-compile/derby-hall-mask-recovery \
+  --mask-definitions refinement/catalogs/derby-masks.json \
+  --out work/map-compile/reviewed-mask-verification/derby
+```
+
+The six-map static batch verifies its 64 reviewed masks and 45 independent asset
+moves. All 51 baseline/moved descriptors load natively. Adding the latest masks
+leaves baseline non-mask geometry unchanged. Outputs are under
+`work/map-compile/reviewed-mask-verification/<map>`. This broader check caught a
+fractional-anchor regression on Derby's postern: mask receiver elevation now uses
+the authored floating-point position, while polygon membership uses the movement
+grid. A sloped fractional-anchor regression test protects this distinction.
+The earlier tile-aware verifier rerun is under `work/map-compile/tile-mask-verification`;
+all 61 then-reviewed source records pass and all 48 native-tested descriptors are unchanged.
+The current batch also uses that verifier, including three additional Lincoln masks.
+Horizontal/vertical multi-tile tests reject missing pixels, overlaps and mixed
+bindings. All ten oversized source bitmaps also pass a format-only split/reassembly
+check (`work/map-compile/oversized-mask-roundtrip.json`): Derby 129/168/172/173,
+Leicester 24, Lincoln 268 and Nottingham 126/127/449/504. This does not recover
+their asset ownership, geometry, receiving surfaces or state bindings.
+
+Croisement01 has one reviewed static mask in
+`refinement/catalogs/croisement01-masks.json`: record 25 (6,258 pixels), owned
+by `croisement01-group-007`. Its projectile boundary follows scenery part 074;
+character threshold heights follow the owning assembly's sloped part 007.
+The receiving anchor is on adjacent navigable terrain. Coverage and both open
+boundaries match exactly, including after moving the assembly one pixel east.
+Both scenes load natively, and baseline non-mask geometry matches the jump-anchor
+diagnostic. Drafts and native checks are under `work/map-compile/croisement01-mask-recovery`
+and `work/map-compile/croisement01-mask-native`. There are 102 unrecovered masks;
+complete asset coverage, mask-controlled depth and publication remain unfinished.
+
+Seven real static masks are recovered for Derby: southwest postern records
+70 and 71, with 385 and 884 covered pixels, and upper gatehouse record 105,
+with 4,124 covered pixels, plus lower east/west curtain records 39/44 with
+5,753/8,112 covered pixels. The curtain masks have no obstacle links; their
+inner-parapet coverage is fully supported by the respective wall meshes and
+their receivers use each wall's own flat 150.001-unit navigation surface.
+East hall records 153/154 add 4,394/4,604 pixels of projectile-only roof-end
+coverage. Their boundaries follow the hall's roof geometry, with receiving
+anchors inside adjacent reconstructed ground; neither has obstacle links.
+Other fully supported unlinked candidates still require ownership review;
+several keep masks have support from multiple overlapping assets.
+Record 105 is not referenced by any patch; the
+gatehouse's separate changing masks still require state recovery. The reviewed recipe is
+`refinement/catalogs/derby-masks.json`; pass it to `recover-asset-gameplay.ts` with
+`--mask-definitions`. Source and model hashes pin the authoring evidence. The
+migration checks source receiving layers/elevations, local obstacle ownership and
+exact mesh-backed coverage, and rejects changing masks until their state recovery
+is supplied. All seven definitions compile from asset data only and preserve pixel
+coverage and character/projectile boundaries when their owning asset moves one pixel east.
+Native construction verifies their bitmap coverage and layer registration. The
+baseline and all five independently moved scenes load natively. Baseline non-mask
+geometry is unchanged. Updated drafts are under
+`work/map-compile/derby-hall-mask-recovery`, with native descriptors under
+`work/map-compile/derby-hall-mask-native`. Derby still has 229
+unrecovered masks; neither the complete asset nor map is publication-certified.
+
+Leicester has sixteen reviewed static masks in
+`refinement/catalogs/leicester-masks.json`. Projectile-only records 288 (church
+side tower, 20,011 pixels) and 415 (great keep, 4,552 pixels) are joined by five
+character/projectile/view masks: northeast gabled house 120 (4,433 pixels), south
+stilt shed 182 (1,184 pixels), and great keep 399/402/404 (2,570/2,590/3,323 pixels).
+The keep's character boundaries receive on its flat 140.001-unit surface; the
+shed's boundary heights follow its own sloped surface. The house uses ground.
+Nine additional unlinked masks belong to the village houses: northeast gabled
+house 122/123/124 (621/265/897 pixels), northeast longhouse 132/133 (539/271),
+north village cottage 141/155 (4,167/476), mill north cottage 154 (432), and mill
+south cottage 166 (2,135). These receive on ground. Records 123 and 132 are
+view-only and correctly export without character or projectile boundaries.
+All sixteen preserve exact coverage, flags, open boundaries and local obstacle
+links after each asset moves one pixel east. Native loading passes for the
+baseline and all eight independently moved scenes; baseline non-mask data matches
+the same-library jump-anchor diagnostic. Moving the tower detaches one jump pair
+and its gate. Updated drafts are under `work/map-compile/leicester-village-mask-recovery`,
+with native diagnostics in `work/map-compile/leicester-village-mask-native`.
+Leicester still has 450 unrecovered
+masks; these assets do not have complete mask coverage or mask-controlled depth enabled.
+
+A broader unlinked static-mask support audit is recorded in
+`work/map-compile/<map>-unlinked-mask-candidates.json`. It found 13 supported
+records on Croisement01, none on Croisement02/03, 9 on Derby, 75 on Leicester,
+157 on Lincoln, 44 on Nottingham, 1 on Sherwood and 140 on York. These are
+candidate counts, including overlapping terrain/building support and already
+recovered records; they do not establish ownership or parity. The audit excludes
+patch-controlled masks and name-filtered terrain/ground/region assets. It also
+records unsupported transparent meshes and missing or non-rendering frames
+(6/6/4 errors on the crossings, 5 on Leicester and 16 on Sherwood). Those cases
+remain unassessed, rather than being counted as evidence of absent coverage.
+
+Nottingham's reviewed recipe (`refinement/catalogs/nottingham-masks.json`)
+recovers sixteen static masks: west green shop 52/55 (2,523/1,862 pixels), upper red
+house 103 (4,428 pixels), and village small hut 210 (6,932 pixels), plus eleven
+unlinked records: east boarded house 21/22 (12,351/917), northeast timber house
+94 (562), north dormer house 79 (1,042), south gate house 47 (32,663), southwest
+wall house 75 (1,269), upper green house 109 (1,189), upper west lean-to 112
+(1,494), village east cottage 138 (683), small hut 211 (5,852), and village mill
+155 (4,112). These receivers are ground-level. North stone house 78 adds 948
+pixels receiving on its own flat 66.957-unit landing. All coverage and boundary rules
+match exactly and follow independent one-pixel asset moves. Native loading passes
+for the baseline and thirteen moved scenes. Non-mask geometry matches the current
+jump-anchor diagnostic; sound sources match the previous same-library mask
+baseline. Four jump-zone receiving references differ from that older baseline
+because of the already verified owner-anchor fix, with polygons and helper rules
+unchanged. Some moved jump connections detach. Updated drafts and native checks
+are under `work/map-compile/nottingham-landing-mask-recovery` and
+`work/map-compile/nottingham-landing-mask-native`. There are 511 unrecovered
+Nottingham masks; complete asset coverage and mask-controlled depth remain pending.
+
+Moving the north stone house 32 pixels west also preserves its mask exactly and
+loads natively (`work/map-compile/nottingham-landing-west-native`). A 32-pixel
+east move exposed a neighboring mask receiver covered by movement collision.
+Mask compilation now retains a uniquely identified authored receiving layer
+under such exclusions, while requiring actual asset surface support and retaining
+strict walkability checks for doors/jumps. The compiler change leaves the complete
+baseline unchanged. The east move gets past the mask check but still fails because
+the moved house's door is outside walkable ground; that placement is not certified.
+
+Lincoln's reviewed recipe (`refinement/catalogs/lincoln-masks.json`) recovers four
+masks: keep 390 (16,407 pixels), lower east curtain 192 (4,910), west south curtain
+203 (4,652) and northeast square tower 207 (11,503). Their character thresholds use
+the owning asset's flat receiving plane: 800.00104, 350.001, 350.001 and 415.001
+units respectively, including where thresholds extend beyond navigation. Anchors
+are inside both the owning recovered surface and the source receiving layer;
+the split east curtain uses its own surface component. Bitmap coverage remains
+entirely mesh-supported. Coverage, boundaries and obstacle links match exactly
+before and after moving each owner independently one pixel east. All five scenes
+load natively, and baseline non-mask geometry is unchanged. Current drafts and
+native checks are under `work/map-compile/lincoln-curtain-mask-recovery` and
+`work/map-compile/reviewed-mask-verification/lincoln`.
+There are 424 unrecovered Lincoln masks.
+
+Annex view-only mask 398 matches all 7,593 pixels at baseline, but remains outside
+the reviewed recipe: moving its owner one pixel east makes the annex stair's lower
+endpoint disagree with the neighboring slope's height by approximately 0.121 units.
+The receiving slope belongs to another asset. Endpoint validation correctly
+rejects the traversal connection after this placement.
+The failed placement diagnostic is retained under
+`work/map-compile/lincoln-raised-mask-native` with `complete: false`.
+
+York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers twenty static
+masks: scaffolded corner house 79/86 (2,777/747 pixels), southwest square corner house
+201 (392), central south golden timber house 227/238 (2,126/5,856), southeast lane
+eastern timber house 269 (687), south gate lane front timber house 280 (1,036),
+and outer east wall stair passage 164 (7,305), plus twelve town-house records:
+southwest square rear house 202/215 (421/2,097), west house 204/218 (298/515),
+narrow gable house 205/207 (8,244/1,752), east timber house 213 (355), southwest
+lane west jettied house 295 (685), north courtyard house 297 (820), market southwest
+east timber house 325 (310), and southwest market northwest house 353/354
+(2,239/1,078). Record 204 preserves its character/view rules without inventing a
+projectile boundary. Mask 269 receives at ground level;
+164 uses its owning passage's flat 160.001-unit plane, including the character
+threshold beyond navigation. Mask 86 has no character threshold and receives on
+the owning house's flat 152.001-unit platform. The remaining receivers use the
+flat 90.00101-unit town surface. All twenty match in the baseline and after independent one-pixel
+asset moves. Native loading passes for the baseline and all fourteen moved scenes.
+Adding the town-house masks leaves baseline non-mask geometry unchanged. Updated drafts and
+native checks are under `work/map-compile/york-town-mask-recovery` and
+`work/map-compile/york-town-mask-native`. York still has 808 unrecovered masks.
+These assets have incomplete mask coverage and do not enable mask-controlled
+depth. None of these maps is certified for complete gameplay or publication.
+
+The scaffolded-house movement check exposed a landing anchor selected from a
+neighboring asset's portion of a shared jump zone. Recovery now intersects the
+unblocked landing region with the owning asset's receiving footprints before
+choosing an anchor. It selects a point on the integer movement grid before
+evaluating elevation, avoiding fractional-point/rounded-point slope mismatches.
+Zone polygons, jump edges and helper rules are preserved. York's baseline now
+uses a corrected receiving-sector reference for one zone; all other compiled
+fields remain unchanged. Moving the scaffolded house detaches two jump pairs
+and their gates without invalidating its neighbor's remaining landing anchor.
+All nine maps retain all 173 recovered pairs, pass static compilation, and load
+natively in the jump-anchor regression batch. Updated York recovery is under
+`work/map-compile/jump-anchor-recovery/york`, with baseline/moved native checks
+under `work/map-compile/york-jump-anchor-native`. Traversal fidelity and complete
+map publication remain separate requirements.
+
+Recovery discards faces outside a mask's bounds before fitting their depth
+planes. This avoids numerical failures from unrelated nearly edge-on faces
+without relaxing planarity or coverage checks for contributing surfaces.
+
+`pipeline/src/audit-mask-surfaces.ts` checks pixel support for an explicitly
+selected asset and mask indices. It pins source/model/scene hashes, reports missing
+pixel counts and repair bounds, and checks whether every mask in each affected
+state set was selected and supported. This is geometry evidence only, not ownership
+or gameplay certification. Recovery now checks this support before expensive
+surface clipping and reports interior gaps separately from silhouette edges.
+
+The Derby upper gatehouse state set (patch 3, records 217–229) is not recoverable
+from its current mesh: 217/218/219/221/223/224/225/226 lack respectively
+362/960/219/565/121/70/65/206 covered pixels. Every failing record includes interior
+gaps. Records 220/222/227/228/229 have full pixel support, but this does not justify
+publishing a partial state set. Repair the asset geometry or add reviewed local
+occlusion surfaces before recovering that state. The reproducible audit is:
+
+```sh
+node pipeline/src/audit-mask-surfaces.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/derby.rhlos-map.json \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --asset derby-upper-gatehouse \
+  --masks 217,218,219,220,221,222,223,224,225,226,227,228,229 \
+  --out work/map-compile/gatehouse-mask-state-audit.json
+```
+
+A separate probe adding the same asset's existing obstacle-volume faces closes
+record 225's pixel gap, but seven other records still have missing interior
+coverage. Those volumes therefore cannot complete the state set either; no
+supplemental surfaces or partial state bindings have been published.
+
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
 Receiving footprints retain material across blocked portions omitted from walking
@@ -113,14 +1228,116 @@ regions instead of discarding a polygon whose signed area cancels. Nottingham's
 hidden prison part retains its gameplay frame and passes the static check.
 
 Sound recovery attaches global emitters to terrain and local emitters only when
-their complete geometry has one containing asset part. Ambiguous/unowned sources
+their complete geometry has one containing asset. Overlapping parts within that
+asset use a stable local frame; containment spanning different assets remains
+ambiguous. Ambiguous/unowned sources
 remain explicit gaps; they are not silently attached to terrain. Shared audio
 samples are referenced from the base installation, rather than bundled in the ZIP.
 
-Light recovery preserves projection priority when resolving receiving heights.
-The latest all-map pass recovers 24 of 149 light/shadow regions into asset-local
-drafts. The other 125 need ownership review or splitting across receiving planes;
-they are not silently assigned to terrain. These drafts remain unpublished.
+Leicester's west moat tower owns source records 12/13 and its southeast cottage
+owns record 15 despite overlapping part footprints. All three compile exactly;
+moving either asset independently by one pixel preserves the corresponding
+emitter displacement and all acoustic parameters. Native construction passes for
+the baseline and both moved scenes (85 areas, 503 sight obstacles, 105 doors,
+23 jump pairs). Baseline non-sound geometry is unchanged. This staged recovery
+accounts for 10 of 24 Leicester sound sources; 14 remain unresolved.
+
+Reviewed environmental lines can also be authored as independent sound-region
+assets with a non-rendering gameplay frame. This is an explicit asset-authoring
+step, not an automatic fallback for unowned emitters. Derby's west and north edge
+emitters (source records 4/5) are authored this way by
+`refinement/catalogs/derby-ambient-sounds.json`. The authoring command checks the
+source hash and writes standalone descriptors, empty frame models, identical
+runtime derivatives with hash receipts, and pinned placement references;
+compilation reads only those assets. Catalog publication preserves the
+non-rendering gameplay-frame marker and acoustic definitions.
+
+```sh
+node pipeline/src/author-ambient-sound-assets.ts \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --recipe refinement/catalogs/derby-ambient-sounds.json \
+  --map Derby --out work/map-compile/ambient-authoring-library
+```
+
+The staged scene `ambient-authoring-library/derby-ambient.rhlos-map.json` reopens
+with the two new assets. Both sound definitions compile exactly, including
+polylines, delays, attenuation, altitude and ambience. Moving the west zone 50
+pixels east changes only its emitter geometry. Native construction checks sample
+selection, preserved source handles, polylines and delay parameters before/after
+the move. This composed Derby diagnostic accounts for 5 of 12 sound sources;
+seven remain unresolved. Assets and the composed diagnostic remain staged, not
+published as a complete map. Recovery recognizes the placed sound-region assets,
+matches their compiled definitions to exactly one unclaimed source each, and
+preserves their asset-local definitions. Duplicate or mismatched sources fail
+instead of being counted twice. The integrated Derby report contains 43 assets
+and seven pending sound sources.
+
+Additional source-pinned ambient recipes cover Croisement03's north edge,
+Leicester's northwest edge, and Nottingham's north and northwest edges:
+`croisement03-ambient-sounds.json`, `leicester-ambient-sounds.json`, and
+`nottingham-ambient-sounds.json` under `refinement/catalogs/`. These four
+air-altitude environmental lines have standalone local frames. Their authored
+scenes reopen with pinned descriptors and retain the input scenes' state metadata.
+Static diagnostic exports preserve every source field and pass native loading
+before and after moving each region independently by 50 pixels. Non-sound
+compiled geometry stays identical for each move. All four asset definitions and
+runtime derivatives also pass offline publication staging.
+
+The staged boundary-sound recovery accounts for 1/6 Croisement03, 11/24 Leicester,
+and 6/24 Nottingham emitters. Five, thirteen and eighteen respectively remain
+unresolved. These checks do not establish complete map parity or publication:
+changing geometry, masks, lighting and remaining emitter ownership still have
+separate outstanding requirements.
+
+Light recovery preserves projection priority and fits receiving planes from the
+leading three vertices. Elevated light contours may extend outside navigation
+when their intersecting receivers agree on one plane, including raised terrain
+on layer zero. A non-walkable receiving-footprint notch does not establish a
+ground plane; uncovered potentially walkable portions still require a valid
+plane, including areas opened by state changes. Ownership can span several parts
+of one asset, but their combined footprints must cover the entire light polygon,
+including its interior; enclosed gaps and competing asset owners remain errors.
+The previous all-map pass recovered 35 of 149 light/shadow regions into asset-local
+drafts, including six additional regions on Leicester's keep, west wing and moat
+towers. All 35 exported contours and ambience masks match source records, and
+the previously recovered regions remain covered. Light regions
+also resolve onto stair/lift traversal surfaces; a native test verifies ambience
+filtering on the traversal layer without affecting the ground layer or door links.
+All nine static diagnostics constructed successfully. The other 114 regions then needed
+receiving-geometry fixes, ownership review or multi-plane authoring; they are not
+silently assigned to terrain. These drafts remain unpublished.
+
+Splitting multi-plane contours introduced rounding errors in all eleven current
+candidates, including loadable York 12/14 descriptors. Recovery now preserves the
+complete integer contour and records asset-local receiving anchors independently
+of its reference plane. Compilation copies that contour to each resolved layer,
+deduplicating repeated anchors on the same layer. Surface partitions establish
+ownership and locate anchors; their fractional cut vertices are not exported.
+The strict piecewise recovery helper still rejects contour changes after rounding.
+
+York regions 12/14 now recover to the west-town terrain asset with exact original
+contours on layers 30/68 and 30/92 respectively. This raises the recovery evidence
+to 37/149 regions; 112 remain pending. The native diagnostic checks contour
+registration and activation for ambience masks 1, 2 and 4. Updated Leicester,
+Lincoln and York drafts are in `work/map-compile/receiver-light-recovery`, with
+descriptors in `work/map-compile/receiver-light-native`. Independent receiver
+movement and duplicate-layer handling pass compiler tests. Moving the large York
+terrain asset alone by one pixel merges a bridge passage's two areas. Unrestricted,
+non-clickable passages can now carry `allowContinuous` in their asset definition:
+they remain ordinary doors while their areas are distinct and are omitted with a
+diagnostic when both endpoints share one area. Recovery sets this flag only when
+both sets of access rules are unrestricted and no patch refers to the door.
+Interactive, restricted and state-controlled doors cannot be omitted this way;
+remaining door/state indices are rebuilt after omission. York's original-placement
+output remains identical, including all door references.
+
+The independent terrain move now passes that bridge check but fails another
+passage's receiving-height check: its outside endpoint is at height 46.2952 while
+the receiving slope at the moved position is 47.8476. This is retained as an error;
+independent full-scene terrain movement is still not verified.
+Translating the entire York scene one pixel east preserves both regions' exact
+contours and ambience on both receiving layers; that check preserves existing
+connections and does not replace the independent terrain-movement check.
 
 Jump recovery produces asset-local drafts for all 173 pairs across nine maps.
 `compare-jump-geometry.ts` verifies exact endpoint coordinates, polygon boundaries,
@@ -204,8 +1421,10 @@ Static merging preserves component annotations, translates declared bounds and
 namespaces appearance bindings without changing their resolved behavior. Its GLB
 writer retains near-identity transforms so binary round trips meet the existing
 world-transform tolerance. These assets and gameplay definitions remain staged.
-Sherwood's two camp-hut declarations distinguish the walls and doorway from the
-separately editable roofs. All five non-lift doors and five shared interiors now
+Sherwood's two camp-hut declarations bind entrances to their wall frames within
+the current grouped hut assets, including their roofs. Two treehouse declarations
+keep the central-west and west rooms with their huts rather than the overlapping
+oak/platform assets. All five non-lift doors and five shared interiors now
 match the reference geometry/rules. Missing ladder ownership and other navigation
 gaps remain separate from this door comparison.
 Lincoln declarations attach the hall-terrace gate and western-tower passage to
@@ -309,7 +1528,7 @@ Ambiguous matches and conflicting jump rules still fail. A ten-pixel move also
 intersects a neighboring stairway and fails the existing traversal-connectivity
 check; this verification does not establish arbitrary-placement or full visual parity.
 
-The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
+The earlier twenty-one-transition recovery batch passed native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve
 to a unique surface at the authored height. Doors resolve their optional receiving
@@ -321,9 +1540,11 @@ Diagnostic batches fail if any map fails or no maps are exported. Each run inval
 the previous manifest and removes each map's stale output before attempting recovery;
 native checks reject failed entries instead of silently skipping them. A successful
 batch still proves only the explicitly checked static geometry and state behavior.
-Croisement03's remaining elevated navigation-only change has approximately 24.49
-square pixels inside its movement area but outside every receiving surface. This
-requires explicit asset authoring; recovery must not silently invent a receiving height.
+Croisement03's elevated navigation-only change has approximately 24.49 square
+pixels inside its movement area but outside every receiving surface. The reviewed
+transition-plane recipe described above now supplies its boundary height without
+adding receiving coverage. Its later southwest assembly recovery brings that
+map's movement-group recovery to nine of nine; mask and visual state remain incomplete.
 `omittedMovementTransitions` makes missing transition definitions explicit
 in the static diagnostic and prevents it from certifying full compilation.
 Ground recovery uses fixed-point polygon operations and reports reconstruction
@@ -371,3 +1592,1643 @@ jump corridor prevents that assignment. Split-asset ownership uses each actual
 part footprint, allowing an edge to span multiple planes of one asset while
 rejecting gaps between them. York's staged stone-shop roof resolves the final two
 pairs. Recovery coverage is not a connectivity parity proof.
+
+The physical-volume audit also checks whether visual component bounds preserve
+the shared sight footprint and ordered bottom/top planes. Twenty-six split
+records across Lincoln, Nottingham, Sherwood and York differ in footprint or
+height; these are not certified equivalent merely because every record has an
+asset owner. The audit is `work/map-compile/sight-partition-audit.json`.
+
+York record 650 is wholly owned by the dedicated west-market shared occlusion
+asset. Its five visual component bounds add about 1,154 square game units and
+change the height planes. A reviewed `physical_volume_sources` declaration now
+restores one asset-local volume and disables collision from the component bounds.
+Recovery checks source/model hashes and exclusive ownership of every physical
+part; receiving geometry or material regions require separate authoring. The
+compiler reads only the resulting local definition, which moves with the asset.
+The visual model remains intact. Other split records span separate assets and
+still require ownership and geometry work; they cannot use this whole-asset fix.
+
+`work/map-compile/york-whole-volume-recovery` retains the twenty reviewed masks.
+The baseline and translated drafts reproduce the shared volume's ordered points
+and flags at engine precision and construct 192 movement areas, 1,197 sight
+obstacles, 254 doors and 72 jump pairs in Rust. Duplicating the complete asset
+retains the first volume and adds exactly one independently translated volume;
+the resulting 1,198-obstacle draft also constructs in Rust. Unit tests cover
+rotation and duplication through the recovery-to-compiler path.
+This is scoped geometry validation;
+808 York masks and other previously listed gaps remain pending. No asset or map
+is certified or published by this recovery.
+
+Nottingham's front-market record 12 now has an explicitly reviewed partition
+recipe in `refinement/catalogs/nottingham-market-volume-partitions.json`.
+`pipeline/src/author-volume-partitions.ts` verifies source, model and descriptor
+hashes, assigns every owner once, and writes independent draft descriptors. It
+preserves the outer contour and constant bottom/top heights while removing the
+east-green stall's extra collision across a notch. The four original meshes and
+all other physical parts remain unchanged. Sloped, receiving, material-linked,
+mask-linked and changing volumes require separate authoring and are rejected.
+
+The reopened overlay is `work/map-compile/nottingham-market-volume-stage-v3`;
+its recovered definitions are in `nottingham-market-volume-recovery`. The four
+compiled pieces differ from the reference footprint by 0.000056 square game
+units under fixed-point clipping, compared with roughly 2,512 extra square units
+before correction. All bottom heights are exactly zero and top heights match at
+engine precision. The baseline constructs 114 areas, 671 sight obstacles, 172
+doors and 38 jump pairs in Rust. Each stall also compiles and constructs when
+independently moved one unit east, with the other three volumes unchanged.
+Those movements separate navigation sockets and therefore change connection
+counts; they are placement checks, not baseline connectivity parity claims.
+Trial translations of 100 units east/south blocked nearby entrances and were
+rejected without suppressing collision. These separated-volume drafts did not
+establish sight-query equivalence across partition seams; see the assembly check
+below. Visual parity and publication remain unverified. These drafts
+retain sixteen reviewed static masks; 507 Nottingham masks remain pending in
+this recovery. The diagnostic manifest is `nottingham-market-volume-native`.
+
+Native ray checks confirmed that an artificial partition face blocks a ray whose
+endpoints are both inside the shared volume, while the complete volume leaves it
+clear. Asset parts now support directed, local `sight_join_edges`. Compilation
+joins matching placed edges only for compatible flat, static volumes; unmatched
+edges leave independent pieces. Ambiguous matches, overlapping pieces, holes,
+different flags/heights, or receiving/material/mask/state links are rejected.
+Movement geometry stays owned by each asset. Sight references on unrelated masks
+and transitions are rebuilt after joining, and duplicated or moved assets match
+only their current geometric neighbors. No map identifiers or source indices
+participate in seam matching.
+
+The Nottingham authoring recipe now emits these seams. The reopened
+`nottingham-market-volume-seams-stage` overlay and its `-seams-recovery` definitions
+compile the four touching stalls into one volume with the reference vertices at
+engine precision. The baseline constructs 114 areas, 668 sight obstacles, 172
+doors and 38 jump pairs. Four independently moved drafts also construct, leaving
+669 or 670 sight volumes as their seams separate. The native
+`recovered_sight_assembly_preserves_native_ray_queries` diagnostic compares 100,000
+deterministic rays against the reference volume, including impact presence,
+coordinates and ray parameter; all match exactly. Its input is
+`nottingham-market-volume-seams-native/sight-query-case.json` under
+`work/map-compile`. This verifies sampled queries against this assembled volume,
+not full-scene impact ordering, all placements, visual behavior or map parity.
+
+The southwest parapet's flat record 219 uses a second reviewed partition recipe,
+`refinement/catalogs/nottingham-southwest-parapet-volume-partitions.json`. Its north
+and south assets now meet at the true bend, retain the southern inner corner and
+have exactly ground-level bottoms. Their former component bounds added about
+9,470 square game units and raised the bottoms by 0.00035–0.00044 units. The new
+assembled footprint has zero difference under the clipping audit, and its eight
+vertices match the reference at engine precision. Another 100,000 native sight
+and impact queries match exactly.
+
+`stage-volume-partitions.ts` stages draft descriptors in a new library overlay,
+preserving model/resource paths and unchanged files. It verifies draft hashes,
+input model/descriptor pins and the asset index, rejects conflicting per-instance
+collision overrides, updates scene/index hashes and reopens the compact scene.
+Its tests verify unchanged source files and model bytes, reload fidelity, stale
+pin rejection, override rejection and exclusive creation of the output directory.
+
+The combined market/parapet overlay is `work/map-compile/nottingham-parapet-volume-stage`;
+recovery and native diagnostics use the matching `-recovery` and `-native`
+directories. The baseline constructs 114 areas, 667 sight obstacles, 172 doors
+and 38 jump pairs. Moving both wall assets and the attached southwest stair one
+unit west also constructs, with 171 doors and 37 jump pairs as external sockets
+separate. After correcting comparison of equivalent receiving planes, moving only
+the north wall east now reaches the separate stair's unsupported landing check;
+moving it west also leaves that landing unsupported. Those failures remain
+explicit. This does not certify arbitrary detached wall/stair placements,
+receiving-surface parity, appearance or publication.
+
+York records 213 and 876 now have reviewed partition recipes in
+`york-arcade-volume-partitions.json` and
+`york-precinct-parapet-volume-partitions.json`. Each follows the existing component
+seam, projected onto the exact outer contour. Record 213 restores ground-level
+bottoms beneath the arcade/gallery volume instead of the roughly 89.9-unit gap
+in component bounds. Record 876 restores the bastion's inner arc instead of
+filling it, and corrects its slightly negative bottoms and raised top. Both retain
+independent assets and assemble only when their local seams coincide.
+
+The combined overlay is `work/map-compile/york-flat-volume-stage`, with definitions
+in `york-flat-volume-recovery` and diagnostics in `york-flat-volume-native`.
+It also retains the earlier correction for record 650. The baseline constructs
+192 movement areas, 1,195 sight obstacles, 254 doors and 72 jump pairs. Each of
+the four assets also constructs after an independent one-unit eastward move,
+with 1,196 sight obstacles. Moving the arcade house separates two external door
+and jump connections; the other three tested placements retain baseline counts.
+Each assembled volume reproduces its reference vertices at engine precision and
+passes 100,000 exact native sight/impact comparisons. The twenty reviewed York
+masks remain present; 808 masks and the other listed gaps remain pending.
+These are draft geometry/query checks, not publication or complete map parity.
+
+Some scene-pinned York assets are absent from the older palette index. Partition
+staging now registers those verified descriptors in the new overlay's index;
+duplicate entries or conflicts with existing scene pins still fail. Tests verify
+that the source index remains unchanged. Five of the twenty-six audited split
+records now have correction drafts; the other twenty-one remain uncorrected in
+that audit, including receiving volumes and more complex ownership cases.
+
+Lincoln records 99 and 110 now have reviewed recipes in
+`lincoln-southeast-parapet-volume-partitions.json` and
+`lincoln-south-parapet-volume-partitions.json`. The existing turret/curtain and
+bastion/curtain seams coincide with boundary vertices, so each asset retains an
+exact portion of the contour and explicit local joining edges. Record 99 now
+runs from ground to 363.001 instead of component bounds at 350–380. Record 110
+runs from ground to 340.001 instead of bottom 320 and mismatched tops 355/364.
+Their assembled reference vertices match at engine precision, and each passes
+100,000 exact native sight and impact comparisons.
+
+The overlay is `work/map-compile/lincoln-parapet-volume-stage`; recovery uses the
+matching `-recovery` directory and retains four reviewed masks, with 424 still
+pending. The baseline constructs 113 areas, 567 sight obstacles, 89 doors and 10
+jump pairs. All four assets independently moved one unit east now compile and
+construct in Rust. The corner turret produces 569 sight obstacles; the other
+three produce 568, with unchanged door/jump counts throughout. The complete
+successful batch is `lincoln-parapet-volume-native`. The baseline-only query
+inputs are also retained under `lincoln-parapet-volume-baseline-native`.
+Visual parity and publication remain unresolved. Seven of the twenty-six audited
+split records had correction drafts at this stage; the stacked-volume work below
+brings that count to nine.
+
+Receiving-material conflict checks compare the native binary32 height-plane
+coefficients after winding correction, rather than requiring identical anchor
+coordinates. Moving a flat surface can change its anchors without changing its
+runtime plane. The compiler retains authored anchors and still rejects different
+materials or coefficients, including signed-zero differences. Regression tests
+cover these distinctions; 10,000 deterministic flat/sloped triangles matched Rust
+initialization bit-for-bit using `editor_receiving_plane_coefficients_match_native_initialization`
+and `ROBIN_PROJECTION_PLANE_CASES`. This fixes the false Lincoln conflicts without
+claiming complete receiving coverage, traversal or map parity.
+
+To reproduce the coefficient comparison, run
+`node --test shared/src/native-projection-plane.test.ts` from `level-editor` with
+`ROBIN_PROJECTION_PLANE_CASES` set to an absolute output JSON path. Then use the
+same environment variable from the repository root with
+`cargo test -j 1 -p robin_engine --lib editor_receiving_plane_coefficients_match_native_initialization -- --ignored --nocapture`.
+
+Lincoln records 104 and 127 now have reviewed stacked partitions in
+`lincoln-door-turret-east-volume-partitions.json` and
+`lincoln-door-turret-west-volume-partitions.json`. Existing component ownership
+places the curtain-wall fill below height 320 and the separate cone turret above
+it. Each piece retains the complete ordered concave footprint, with wall collision
+from ground to 320 and turret collision from 320 to 373.001. This restores missing
+ground-level collision and removes the enlarged component footprints. Visual
+meshes remain unchanged; their appearance is not certified by this correction.
+
+Asset parts opt into whole horizontal joins through `sight_join_caps`. The compiler
+assembles matching top/bottom faces only when footprints, native heights and flags
+agree, preserving the outer contour and removing the internal face. Detached
+pieces remain independent. Mixed edge/cap joins, ambiguous placements and linked
+receiving/material/mask/state volumes remain rejected. Authoring requires complete
+height coverage without gaps or overlap. Regression tests exercise rotated stacks,
+copies, detached caps and invalid definitions.
+
+The recipes apply sequentially to `lincoln-parapet-volume-stage`, first producing
+`lincoln-door-turret-east-draft`/`-stage`, then `lincoln-door-turret-west-draft` and
+the combined `lincoln-door-turret-volume-stage`. Recovery and native diagnostics
+use the combined name with `-recovery` and `-native`. The baseline reconstructs
+both volumes' ordered vertices and flags at engine precision, and each passes
+100,000 exact native sight/impact ray comparisons. Native construction passes for
+the baseline (113 areas, 565 sight obstacles, 89 doors, 10 jump pairs), the wall
+moved one unit east (114/567/89/10), and the turret independently moved one unit
+east (113/567/89/10). Four reviewed masks remain recovered, with 424 masks pending.
+Nine of the twenty-six audited split records now have correction drafts; seventeen
+remain. Publication, full state behavior, visual and actor traversal parity are
+still incomplete.
+
+Sherwood record 24 now has explicit physical ownership in
+`sherwood-ladder-oak-physical-owner.json`. Its single four-point trunk volume was
+previously expanded into 38 component obstacles: four tree components and 34
+ladder-platform components. `author-owned-volume.ts` restores the complete ordered
+trunk volume on the oak's trunk frame and marks the other 37 parts with
+`collision: "none"`. Their meshes, editor bounds and visual provenance remain
+intact. This is independent of the ladder platform's own traversal geometry and
+volume 101. Source/model/descriptor hashes and an exhaustive component list guard
+the one-time authoring step; linked or receiving volumes require separate migration.
+Compiler validation rejects mask, state, material, receiver or movement links to
+disabled component collision.
+
+The input is `sherwood-canopy-post-stage`. Its stale palette descriptor hashes are
+reconciled against the checked scene pins in an isolated `sherwood-owner-input-stage`
+overlay; the source library remains unchanged. The corrected definitions and scene
+are in `sherwood-ladder-oak-owner-draft` and `sherwood-ladder-oak-owner-stage`.
+Matching `-recovery` and `-native` directories contain the recovered candidates and
+native diagnostics. Baseline construction has 29 areas, 258 sight obstacles, 15
+doors and one jump pair. Moving the oak 100 units east, the ladder independently
+100 units east, or both together also constructs, with unchanged door/jump counts.
+The trunk's ordered vertices and flags match at engine precision; 100,000 native
+sight/impact comparisons match exactly. The recovery still has 166 pending masks,
+one shadow region and five sound sources. No Sherwood masks are certified here.
+Ten of the original twenty-six split records now have correction drafts; sixteen
+remain, alongside publication, visuals, states and traversal verification.
+
+Sherwood record 102 now has a reviewed physical owner in
+`sherwood-central-treehouse-physical-owner.json`. Its six-point concave hut body,
+including the doorway notch, spans heights 284.001–351.001. The complete volume
+belongs to the treehouse's first wall-plank frame. Ninety-three other wall planks
+and twenty-two platform rails, posts, rungs and braces retain their visuals with
+collision disabled. The separate platform retains its walking surfaces and
+traversal volumes 97/98; the treehouse retains its interior entrance.
+
+Apply `author-owned-volume.ts` to `sherwood-ladder-oak-owner-stage` using this recipe,
+then stage into `sherwood-central-treehouse-owner-stage`. The corresponding
+`-draft`, `-recovery` and `-native` directories contain authoring output, recovered
+candidates and native checks. Baseline construction has 29 areas, 143 sight
+obstacles, 15 doors and one jump pair. Moving the treehouse one unit east, the
+platform independently one unit east, or both together 100 units east preserves
+those counts and constructs successfully. All 48 directed lift callbacks across
+the four cases preserve sectors/layers. Record 102 also passes 100,000 exact native
+sight/impact comparisons. Recovery still has 166 missing masks, one shadow region
+and five sound sources.
+
+All 127 source Sherwood obstacle records now have exact ordered vertex/flag matches
+at binary32 precision in the baseline. Sixteen additional records are non-solid,
+non-opaque receiving surfaces. This does **not** prove full-scene collision parity:
+`recovered_scene_preserves_native_sight_and_impact_queries`, using the baseline
+`sight-scene.json` through `ROBIN_SIGHT_SCENE_CASE`, finds zero sight differences but
+1,298 impact-position differences across 200,000 deterministic solid/opaque
+queries. The compiler changes the order of 126 of the 127 matched records; native
+impact grouping depends on candidate order. A diagnostic-only control,
+`sight-scene-ordered-control.json`, changes only the compiled obstacle order to
+match the source order and produces zero differences across the same 200,000
+queries. This confirms the ordering cause; it is not a compiler fix or an allowed
+source-dependent export path. The diagnostic deliberately remains
+failing for this export. It compares full obstacle lists without a fast-find grid,
+and does not certify receiving layers, mouse selection, materials or actor routing.
+Eleven of the twenty-six audited split records have correction drafts; fifteen
+remain. The ordering correction below addresses the demonstrated impact gap.
+
+`AssetGameplay.sightOrder` now maps local part/volume IDs to explicit query
+precedence. Offline recovery writes this metadata into each asset candidate;
+compilation reads only these asset definitions. It orders the final physical
+volumes after assembly and rebuilds every mask and initial/applied sight-state
+reference. Joined pieces must agree on explicit precedence. Equal values retain
+placement order, while unranked authored volumes retain their relative order
+after ranked volumes. Movement and duplication carry the metadata with the asset.
+
+The corrected Sherwood candidates are in `sherwood-ordered-owner-recovery`, with
+compiled diagnostics in `sherwood-ordered-owner-native`. The actual compiler output
+now passes the same 200,000 whole-scene solid/opaque queries with zero sight or
+impact differences, without diagnostic reordering. Baseline and all three moved
+treehouse/platform cases construct 29 areas, 143 sight obstacles, 15 doors and
+one jump pair in Rust. Tests also cover remapping masks/state links, stable ties,
+invalid asset references and conflicting assembly precedence. This closes the
+observed full-list impact-order gap; fast-find-grid candidate behavior, material
+ties, receiving geometry, visuals and full actor traversal still need verification.
+
+The metadata migration also validates and compiles for all nine maps with source
+level data. `work/map-compile/query-order-recovery/validation.json` records their
+input libraries and zero invalid candidates. Local priority counts are
+Croisement01 85, Croisement02 150, Croisement03 106, Derby 271, Leicester 392,
+Lincoln 474, Nottingham 565, Sherwood 127 and York 993. These count independently
+authored physical pieces before assembly. Compiled static drafts are in
+`work/map-compile/query-order-native`; Wychford remains outside this source-backed
+verification. All nine drafts pass native geometry construction with their rebuilt
+mask and state references. This migration does not certify the other maps' remaining geometry,
+state, mask or full-scene query differences.
+
+Sherwood's scene-query diagnostic now also constructs native fast-find grids.
+`sherwood-ordered-owner-native/sight-grid-scene.json` supplies 30×17 map cells
+(1920×1088 game units), plus the source and compiled conventional layer counts.
+Each obstacle is registered with its ground bounds and optional receiving layer;
+the native grid adds its normal padded rows and special layers. Across 200,000
+solid/opaque segment queries, 164,460 produce nonempty candidate lists. Ordered
+candidate lists and resulting impact positions match exactly. The same run also retains the full-list sight/impact
+comparison. This verifies obstacle indexing and candidate order for the sampled
+Sherwood rays, not navigation graph connectivity, mask queries, mouse selection,
+material ties, receiving-height queries, world-boundary exits or complete fast-find-grid parity.
+
+Sherwood's reviewed `refinement/catalogs/sherwood-projections.json` now restores
+14 physical receiving-volume links. The offline recovery validates unique ownership,
+ordered binary32 geometry, flags and model/source pins before replacing generated
+receivers with asset-local volume references. Traversal receivers 97, 98 and 101 were
+already linked. Ground bluff 111 remains excluded because its surface spans two
+compiled receiving areas. The compiler still consumes only the scene and assets.
+The candidates in `work/map-compile/sherwood-physical-receiver-recovery` compile to
+129 sight volumes instead of 143. Baseline, treehouse-only move, platform-only move
+and combined move all construct natively with 29 areas, 15 doors and one jump pair.
+
+The native projection diagnostic now accepts a source geometry fixture through
+`before_proto`, supports different compiled layer numbers, and reports differences
+per sector pair with the selected obstacle indices. Comparing the 14 restored
+receivers in `work/map-compile/sherwood-physical-receiver-native` samples 701,438
+integer/half-pixel positions: seven cases match exactly; the other seven have
+19,664 coverage differences and 27 height differences (maximum 1.9894714), with
+zero material differences. That batch fails the parity assertion.
+All differences belong to source receiving area 31, which that batch
+splits across bridge/platform areas. Samples cover each receiver's bounding rectangle,
+so differences can include neighboring receivers in the shared source area; these
+counts are not a count of missing physical polygons. The recovered boundaries have
+gaps and height offsets at bridge landings, preventing exact 3D edge joins without
+further navigation authoring. This is partial receiving recovery, not full map parity
+or publication of the asset definitions.
+
+The ignored native test accepts optional `grid_size`, `source_layers` and
+`compiled_layers` alongside its `source`/`compiled` obstacle arrays through
+`ROBIN_SIGHT_SCENE_CASE`. Grid sizes are in 64-unit cells, not pixels. It also
+requires nonempty candidate lists to ensure the grid path is exercised.
+
+The subsequent `sherwood-navigation-joins.json` recipe restores the complete
+treehouse movement contour as seven asset-local planar pieces, retaining all three
+holes and the independent receiving footprints. Six explicit bridge/platform seams
+join those pieces. An eighth existing surface shares its owner's local region.
+Ordinary sockets still require coincident 3D edges by default; an asset may explicitly
+allow a maximum height step via `navigationJoinHeightTolerance`. Both sides must
+permit the step and their projected endpoints must coincide. Same-side overlaps,
+ambiguous matches and same-owner joins remain errors. These Sherwood seams allow
+four game units (largest authored endpoint step 3.6302); moving a socket away
+detaches its navigation region. Receiving heights and geometry are not flattened.
+
+Reviewed recovery can now replace a surface's movement contour while retaining its
+height plane. It generates owned collision clearances from the restored contours
+before other geometry recovery; the compiler needs no source map. The authored
+piece union exactly reproduces the source movement polygon and its holes before
+compilation. In `work/map-compile/sherwood-navigation-native`, all 701,438 native
+receiving samples now match exactly: zero coverage, height or material differences.
+Baseline and treehouse-only movement construct 23 areas; central-platform-only and
+combined movement construct 24. All four have 129 sight volumes, 15 doors and one
+jump pair. The first compiled connected movement contour had 36.4714285714
+square game units of symmetric difference in seven small boundary regions.
+
+Clearance precision recovery now removes that discrepancy. Offline recovery retains
+fractional clearance intersections, and the compiler clips those intermediate cutouts
+before rounding the final movement boundaries. Straight-edge cleanup of generated
+boolean output tolerates two fixed-point clipping units, preventing numerical noise
+from turning a redundant intersection into a whole-pixel kink. Authored surface
+validation remains strict. The platform-92 recipe also removes a rounded intersection
+that extended its redundant movement surface into a source movement hole.
+The rebuilt `sherwood-navigation-native` baseline has zero polygon symmetric
+difference for this connected region: the same 66 outer vertices and all three holes.
+The 701,438 sampled native receiving queries still match exactly. Ground bluff 111,
+other navigation areas, full actor traversal, visuals and publication remain open;
+this does not certify full map parity.
+
+The precision change was also applied through fresh recovery of all nine maps in
+`work/map-compile/clearance-precision-recovery`: every asset candidate validates,
+and all nine static exports in `clearance-precision-native` construct in Rust.
+The resulting area counts are 46/32/30 for the crossings, 60 Derby, 82 Leicester,
+112 Lincoln, 114 Nottingham, 29 Sherwood and 198 York. This broad batch uses the
+existing query-order authoring configuration, without the separate Sherwood physical
+receiver/navigation recipes. Counts changed on several maps, including three extra
+York receiving records; those topology changes still require source comparisons.
+Native construction is a regression check, not a full parity certificate. The
+dedicated Sherwood navigation batch additionally passes all 48 directed lift callbacks.
+
+Ground decomposition now retains the fixed-point clipping grid instead of snapping
+terrain and asset-owned blockers separately. Recovered ground definitions explicitly
+set `preserveMovementPrecision`; the compiler combines their fractional boundaries
+before snapping the final movement regions. Existing asset definitions keep their
+previous rounding behavior unless they opt in. Near-collinear clipping noise is
+removed before storing ground rings, without rounding their remaining coordinates.
+Sherwood's offline ground decomposition error falls from 479.3164548 to about
+0.00004992 square game units. The dedicated `sherwood-ground-precision-native`
+baseline reduces separate flat-ground areas from eleven to four and reduces their
+polygon difference against the source ground minus its raised footprint from
+442.8548631 to 78.9977270 square game units. Combining the compiled flat ground and
+the bluff's two sloping pieces still leaves 73.6571309 square units of difference
+against the complete source ground area and four disconnected components. This does
+not yet connect the river bluff or permit its physical receiver link. The treehouse
+region remains geometrically exact and all 701,438 native receiving samples still
+match. These are unpublished recovery candidates, not a full-map parity result.
+
+Fresh all-map recovery in `work/map-compile/ground-precision-recovery` reduces the
+ground-decomposition difference below 0.0006 square units on eight maps. Croisement01
+improves from 1023.3774 to 66.4752 square units but retains a larger discrepancy.
+All candidates validate and all nine static descriptors in `ground-precision-native`
+construct in Rust: 40/20/19 areas for the crossings, 60 Derby, 68 Leicester,
+108 Lincoln, 103 Nottingham, 22 Sherwood and 190 York. These counts use the broad
+authoring configuration without the dedicated Sherwood receiver/navigation recipes.
+The dedicated Sherwood variants construct 16 areas at baseline/treehouse-only move
+and 17 for platform-only/combined moves; all four retain 129 sight obstacles,
+15 doors, one jump pair and passing directed lift callbacks. Recovery error and
+successful construction do not establish final navigation or full gameplay parity.
+
+Croisement01's remaining 66.4752-square-unit ground-recovery discrepancy came from
+reconstructing exclusions as the complement of already clipped free space. A second
+boolean operation erased a narrow corridor between overlapping exclusions. Recovery
+now clips the authored exclusion contours directly to the ground boundary before
+transferring asset-owned cutouts. Its decomposition difference is now 0.0001773
+square units. A reduced regression with three overlapping triangular exclusions
+checks this case; the previous complement reconstruction lost about 23.15 square
+units in that fixture. The fix changes offline asset authoring, not the compiler's
+source-data isolation or the separation between maps and missions.
+
+The fresh `work/map-compile/ground-exclusions-recovery` batch has valid asset
+candidates and ground-decomposition differences below 0.0006 square units for all
+nine maps. All nine static descriptors in `ground-exclusions-native` compile and
+construct in Rust. Croisement01 now constructs 41 areas instead of 40; the other
+eight area counts are unchanged from the ground-precision batch. This verifies
+offline decomposition and native loading, not complete final navigation parity or
+publication of the recovered definitions.
+
+### Preserved ground-boundary recovery draft
+
+The opt-in `--preserve-ground-boundaries` authoring path retains one outer
+movement envelope per source area. It transfers only authored obstacle coverage
+to placed assets, including portions crossing the envelope, and stores remaining
+exclusions in the terrain asset. Export still reads only asset metadata.
+Compound exclusions are partitioned with a symmetric-difference check. Recovery
+can split nearly touching fractional holes before assembly; final obstacle
+partitioning does not add fractional movement vertices. A regression covers a
+hole that triangulation previously filled silently.
+
+The dedicated `sherwood-boundary-native` draft loads in Rust at the baseline and
+three independent treehouse/platform placements. Its baseline outer ground
+contour matches all 115 authored vertices exactly. All 701,438 receiving queries
+still match coverage, height and material. This draft is **not an improvement in
+overall ground coverage yet**: flat-ground symmetric difference is about 204.26
+square map units versus about 79.00 in the preceding precision draft, after
+accounting for the separately recovered raised bluff. Merging overlapping
+exclusions before integer rounding remains unresolved. This mode stays opt-in;
+the recovered definitions are not published or parity-certified.
+
+The `ground-boundary-recovery` batch produces valid asset definitions for all
+nine maps. Its `ground-boundary-native` export batch remains incomplete: Lincoln
+and Nottingham fail the obstacle-partition coverage guard (about 25,600 and 357
+square units respectively), and York reports a disconnected garden-wall lift
+assembly. The three crossing maps, Derby, Leicester and Sherwood compile.
+These failures are retained in the full diagnostic manifest; they are not
+converted into successful empty geometry or omitted from the batch result.
+The six successful exports also construct in Rust. The separately labelled
+`ground-boundary-successful-native` subset records that loader check without
+marking the nine-map batch complete. A source-contour diagnostic produces about
+100.92 square units of error from union-and-rounding alone, before asset ownership
+splits or physical collision cuts; obstacle-intersection preservation therefore
+needs its own treatment in addition to the outer-boundary work.
+
+The Lincoln and Nottingham partition failures above were subsequently traced to
+false differences from fixed-point XOR on coincident triangle edges around
+narrow holes. Partition verification now unions the triangles and compares
+coverage with the floating-point polygon operation, retaining the real
+nearly-touching-hole failure regression. The reduced integer regression has zero
+symmetric difference and introduces no fractional vertices. Both fresh exports
+in `ground-boundary-partition-native` construct in Rust: Lincoln has 82 areas,
+565 sight obstacles, 89 doors and 10 jump pairs; Nottingham has 102 areas,
+667 sight obstacles, 172 doors and 38 jump pairs. This resolves those two export
+failures, without certifying their map fidelity. York's lift failure and the
+overlapping-obstacle rounding differences remain unresolved.
+
+### Explicit empty movement ownership
+
+Boundary recovery now retains an explicit empty `movementBlockers` list when
+an asset footprint overlaps the ground envelope but owns no authored exclusion.
+Omitting that field enables model-derived movement collision, which had clipped
+York's garden-wall stair into disconnected pieces. Empty authored ownership
+keeps sight geometry intact and prevents that unintended fallback.
+
+The fresh `york-boundary-empty-native` draft compiles and constructs 178 areas,
+1,198 sight obstacles, 254 doors and 72 jump pairs in Rust. All 170 directed lift
+passage callback checks pass; approach routing and animation remain separate
+checks. The dedicated `sherwood-boundary-empty-native` baseline and three moved
+treehouse/platform cases compile as well. Its outer ground contour remains exact;
+flat-ground difference is about 185.70 square units, down from 204.26 but still
+above the earlier precision draft. Boundary recovery remains opt-in and the
+definitions remain unpublished.
+
+The regenerated `ground-boundary-empty-recovery` batch has valid candidates for
+all nine maps. All nine `ground-boundary-empty-native` descriptors now compile
+and construct in Rust, including York. The complete static-loading manifest
+therefore supersedes the earlier three export failures; it does not certify
+navigation fidelity, missing visual/state coverage, or publication.
+
+### Independent exclusion contours
+
+Preserved movement boundaries now accept `holeContours` alongside their holes;
+explicit asset movement blockers can carry matching `movementContour` labels.
+Labels identify fragments that should be unioned after placement and before
+integer rounding. Different labels retain separate obstacle contours, preserving
+their implicit fractional intersections. Labels are shared authoring metadata,
+not runtime sector indices; recovery namespaces them by the terrain asset.
+Unlabelled exclusions retain their existing union behavior. Moving a fragment
+uses its transformed local geometry and does not restore its earlier placement.
+
+The compiler-generated native overlap fixture verifies both a reachable strip
+and an obstruction that disappear when overlapping contours are merged and
+rounded together. Recovery retains each exclusion's separate ownership cuts in
+the opt-in boundary mode. In the dedicated `sherwood-contour-native` draft,
+flat-ground difference initially decreased from about 185.70 to 115.42 square
+units. Fragment assembly now matches nearby endpoints within clipping-grid noise
+before unioning same-labelled pieces, and removes microscopic backtracking spikes
+before integer rounding. This removes the remaining 14.5 square units of assembly
+kinks: comparison against independently rounded complete contours now has zero
+difference. The roughly 100.92 square units from the separately represented sloped
+bluff remain. Boundary recovery cannot yet replace the default or claim full-map
+fidelity. Publication remains unfinished.
+
+All nine fresh `ground-contours-recovery` candidate sets validate, and all nine
+`ground-contours-native` descriptors compile and construct in Rust. Their area,
+sight, door and jump counts match the preceding empty-ownership batch. The
+dedicated Sherwood treehouse/platform placement cases also compile. These checks
+establish export/loading and the targeted overlap behavior, not full-map parity.
+
+Regression tests also retain small holes in state-dependent movement blockers
+and material receivers. Two simplification callbacks previously received the
+ring's array index as a distance tolerance, unintentionally erasing those holes;
+they now use the strict default tolerance. Assembly tests cover reordered input,
+rotation, separate labels and detached pieces, without modifying source geometry.
+The nine-map compilation and native construction checks pass again after these
+fixes, as do all four dedicated Sherwood placement cases.
+The dedicated baseline also matches all 701,438 sampled Rust receiving queries
+across the fourteen reviewed physical receivers: no height, material or coverage
+differences. This comparison does not include the unresolved bluff receiver.
+
+### Receivers independent of movement boundaries
+
+Asset gameplay now supports `projectionReceivers`: each binding names a local
+physical part/volume and a local 3D navigation anchor. The anchor selects one
+unblocked ordinary navigation area after placement. Its elevation belongs to
+that area's walking plane, independently of the receiver's physical top plane.
+The binding generates no walking polygon or terrain cutout. Movement collision
+remains separately controlled by the asset's movement definitions.
+
+The compiler-generated `asset-anchored-receiver` fixture loads in Rust with one
+uninterrupted ground area, while the physical slope supplies elevation through
+native receiving queries. Editor tests move, rotate and duplicate the receiver
+without changing ground navigation, and reject dangling or conflicting links.
+Offline authoring packets preserve these bindings as independent asset metadata.
+
+The offline `--ground-receivers` recipe now migrates the Sherwood bluff into this
+representation. It verifies source/model pins, unique physical ownership, ordered
+binary32 geometry and flags, and a static unblocked ground anchor before writing
+asset-local metadata. Recovery retains the full ground movement area instead of
+subtracting the receiver footprint or generating replacement walking surfaces.
+
+In `sherwood-anchored-ground-native`, the outer ground contour matches all 115
+vertices and an independent polygon comparison reports zero walkable-area
+difference. This resolves the previous approximately 100.92-square-unit error.
+All 1,023,981 sampled Rust receiving queries across fifteen physical receivers,
+including the bluff, match height, material and coverage. The baseline constructs
+11 areas, 127 sight obstacles, 15 doors and one jump pair. The four treehouse
+placement cases and a 50-unit bluff translation compile successfully.
+All five descriptors construct in Rust, and all 60 directed lift passage
+callbacks retain their expected sector and layer. These callbacks do not test
+actor approach routing or traversal animations.
+
+This is targeted ground/receiving evidence, not full-map certification. The draft
+still has 166 pending masks, one light region and five sound sources, and full
+actor traversal, related receiving anchors and publication remain unfinished.
+
+### Ground receiver recovery across maps
+
+Pinned recipes now cover 33 uniquely owned physical receivers: Croisement03 (3),
+Leicester (5), Lincoln (19), Sherwood (1) and York (5). Nottingham's two candidate
+receivers have no unblocked integer anchor inside their footprints and remain
+unmigrated. Export resolves feature anchors at a bound receiver's elevation while
+retaining the same navigation sector; a regression checks a sloped passage and
+rejects an elevated anchor outside the receiver footprint.
+
+The nine-map `ground-receivers-native` batch compiles and constructs in Rust.
+Leicester's five migrated receivers match all 6,180,807 sampled native height,
+material and coverage queries. The comparison harness now creates empty tenant
+records only for actual buildings, excluding standalone door groups. These are
+test-harness mission records, not content added to exported maps.
+
+Restoring receiver footprints also requires restoring ground collision clearance
+coverage. Without that, nearby physical parts introduce blocked ground despite
+the shared navigation binding. After this correction, the
+`ground-receivers-clearance-native` comparison reports:
+
+| Map | Matching static ground areas | Remaining walkable-area difference |
+| --- | --- | --- |
+| Croisement03 | 1/1 | 0 |
+| Derby | 4/4 | 0 |
+| Leicester | 10/10 | 0 |
+| Lincoln | 8/8 | 0 |
+| Nottingham | 9/9 | 0 |
+| Sherwood | 1/1 | 0 |
+| York | 7/7 | 0 |
+
+This compares polygon coverage, allowing removal of collinear vertices. It covers
+all 40 static ground areas exactly; Croisement01/02 have no areas meeting this
+static-ground filter. Stateful navigation and other layers require separate
+verification. Only Lincoln and York have been regenerated with the clearance
+correction in this batch; the other maps retain their earlier receiver drafts.
+Map publication, stateful navigation and full gameplay parity remain unfinished.
+
+The remaining York slivers came from rounding generated collision contacts lying
+outside a ground envelope. Preserved-boundary compilation now tests overlap
+before rounding, removing clipping-grid noise from fractional contacts with the
+same tolerance used by generated motion cleanup. Complete integer contours keep
+their implicit fractional intersections. Regression tests distinguish outside
+contacts, one-grid-unit noise and genuine inward overlap. The resulting nine-map
+batch constructs in Rust and passes all 368 directed lift passage callbacks;
+this checks sector/layer changes, not actor approach routing or animations.
+
+The earlier `ground-receivers-native` Lincoln draft also completed all 19,052,393
+receiving queries with zero height, material or coverage differences. That query
+result belongs to the saved draft before the clearance/contact fixes; current
+ground coverage is verified separately by the comparison above.
+On the updated clearance/contact batch, York's five migrated receivers pass
+2,358,053 queries, Croisement03's three pass 54,507, and Sherwood's bluff passes
+322,543, all with zero height, material or coverage differences.
+
+### State-dependent movement contours
+
+Preserved movement areas now retain complete initial/applied obstacle contours,
+including parts crossing the outer boundary or permanent exclusions. They still
+require genuine overlap with walkable coverage before allocating a state pair.
+Other receiving-plane partitions retain their existing clipping behavior.
+The compiler-generated `asset-preserved-state-boundary` fixture verifies a narrow
+fractional route in Rust through the initial, applied and reset states.
+
+This removes three measured contour discrepancies: Croisement02 patch 6's
+applied blocker (about 0.494 square units), Croisement03 patch 0's initial blocker
+(about 9.489), and Croisement03 patch 5's applied blocker (about 0.102).
+The first independent state-coverage comparison found matching initial and
+applied blocker coverage for 12 of 21 recovered movement-transition records on
+matching source-area envelopes. The shared-receiver recovery below raises that
+to 19 of 21; two still need comparison across separately compiled area partitions.
+Six additional source
+movement transitions remain unrecovered: five span assets, and one lacks an
+explicit owner. These are not covered by the 40-area static-ground result.
+
+All nine current draft exports apply and reset their 50 compiled transitions in
+the Rust diagnostic, including door-only transitions. That verifies exported
+bindings and runtime state changes; it does not prove coverage of missing source
+transitions or equivalence of the remaining movement geometry.
+
+### Shared receivers on stateful ground
+
+Ground receiver authoring now accepts a persistent movement area with changing
+obstacles, provided the selected anchor lies outside every initial and applied
+obstacle. State geometry beneath these physical receivers is recovered on the
+shared ground navigation plane; receiving height and material remain attached to
+the physical volume. No source lookup is added to compilation.
+
+The pinned Croisement01 and Croisement02 ground-receiver catalogs recover 15 and
+8 receivers respectively. Croisement02 receiver 136 uses a nearby asset-local
+navigation anchor outside its footprint, verified free in every movement state.
+Recovered drafts compile from scenes and asset candidates alone.
+All 13 recovered movement transitions across these two drafts now have identical
+initial and applied blocked coverage on matching movement envelopes, removing
+all four previously measured state differences and three envelope mismatches.
+The Rust diagnostic applies and resets all 13 successfully.
+Both drafts also construct native geometry. The initial permanent-coverage check
+found about 31.028 square units of difference in Croisement02; the precise
+ownership extraction below removes that difference.
+
+This evidence is limited to recovered transitions. Each crossing map still has
+one transition spanning assets that is not recovered. At that stage, Croisement03
+and Nottingham each retained one unmatched recovered movement envelope and six
+source transitions were missing; the current combined counts are at the top of
+this document. The new catalogs and candidates do not
+constitute published asset definitions or full map certification.
+
+### Precise ownership extraction for shared contour edges
+
+The one-time recovery command supports `--precise-ground-ownership` alongside
+`--preserve-ground-boundaries`. It preserves floating intersections while
+splitting contours among assets, postponing grid rounding until compilation.
+Repeated extraction-grid operations previously separated coincident ownership
+edges and produced whole-pixel kinks when the fragments were reassembled.
+The recovery report records whether this mode was used; exported assets require
+no special runtime mode and no source lookup.
+
+Both crossing drafts use this option. Their matching ground envelopes now have
+zero permanent-coverage difference, while all 13 recovered movement transitions
+retain exact initial/applied blocked coverage. Native receiving scans pass
+5,806,347 queries for Croisement01 and 3,759,568 for Croisement02 with zero height,
+material or coverage differences. The latter includes the previously missing
+receiver 136; before binding it, the scan found 540 coverage and three height
+differences around that receiver.
+
+This extraction mode is opt-in, not a globally certified replacement for the
+fixed-grid authoring path. Trials on other maps exposed near-coincident polygon
+failures and a Sherwood contour discrepancy; those maps retain their existing
+recovery mode. The default compiler algorithm is unchanged. Neither these scans
+nor the permanent-ground comparisons cover unrecovered transitions,
+visual states, all traversal behavior, or asset publication.
+Re-running the default recovery path for all nine source-backed maps produces
+valid candidates and native geometry; its 40 previously verified static ground
+areas remain geometrically exact.
+
+### Combined Croisement03 state and ground recovery
+
+The newer state-assembly scene must be retained when recovering ground metadata.
+The older `projection-material-library` scene lacks the terrace navigation asset
+and southwest state assembly, so reusing it loses two already recovered movement
+groups. The current combined recovery uses the staged scene documented above,
+the committed `croisement03-navigation-ownership.json` catalog, and separate
+ground/elevated receiver catalogs. `croisement03-elevated-projections.json`
+contains the eleven elevated entries; the three ground receivers must not also
+be assigned replacement walking surfaces by the older fourteen-entry recipe.
+
+From `level-editor`, recover the combined candidate with:
+
+```sh
+node pipeline/src/recover-asset-gameplay.ts \
+  --library work/map-compile/croisement03-state-assembly-stage \
+  --map work/map-compile/croisement03-state-assembly-stage/scenes/croisement03.rhlos-map.json \
+  --source library/game-data/Data/Levels/Croisement03.rhp.json \
+  --out work/map-compile/croisement03-combined-recovery \
+  --ownership refinement/catalogs/croisement03-navigation-ownership.json \
+  --transition-planes refinement/catalogs/croisement03-transition-planes.json \
+  --projection-definitions refinement/catalogs/croisement03-elevated-projections.json \
+  --ground-receivers refinement/catalogs/croisement03-ground-receivers.json \
+  --mask-definitions refinement/catalogs/croisement03-masks.json \
+  --navigation-definitions refinement/catalogs/croisement03-navigation-joins.json \
+  --preserve-ground-boundaries --require-movement-coverage
+```
+
+`--require-movement-coverage` checks that every source movement group produced
+an asset definition before creating output. The older scene fails this check
+with two missing transitions. The report records whether this gate was requested;
+passing it does not certify masks, visuals or complete transition behavior.
+
+The combined baseline and an independent one-pixel assembly move both construct
+in Rust and apply/reset all nine transitions. The moved assembly preserves its
+four ordered physical shapes and flags and moves its waypoint. Seven ground
+transition records have exact initial/applied coverage on matching source
+envelopes; the two elevated transitions still require comparison across their
+separate compiled areas. The static ground envelope remains exact. The candidate
+still has 130 pending masks, six pending sound sources and unverified visual and
+actor-traversal behavior, and remains unpublished.
+The combined fourteen-receiver scan runs 792,816 native queries and finds 32,104
+coverage differences around terrace receivers 52–54, which share one source
+movement area but remain separate compiled areas. No height or material differences
+occur where both sides return coverage. Eleven receiver cases (including all
+three ground receivers) have zero differences; the terrace needs explicit
+navigation assembly before its receiving behavior can be certified.
+
+### Croisement03 terrace navigation assembly
+
+`croisement03-navigation-joins.json` partitions the complete terrace movement
+boundary between the terrace and its two access slopes. The placed polygons
+reconstruct that boundary exactly. Asset-local edge sockets join only when their
+projected endpoints coincide; the reviewed endpoint height steps stay below two
+units at the west seam and four at the east seam. Receiving volumes and their
+height/material definitions remain independent of the walking partition.
+
+Transition fragments can now use `movementContour` labels to rejoin before final
+integer rounding. Recovery supplies these labels and retains fractional movement
+coordinates. Labels remain scoped to the placed transition and initial/applied
+state, and distinct contours retain independent intersections. This removes the
+8.5-square-unit terrace blocker discrepancy caused by separately rounded pieces.
+
+The draft under `work/map-compile/croisement03-terrace-native` has matching initial
+and applied coverage for eight of its nine transitions, including the terrace,
+and retains exact static ground coverage. The fourteen-receiver native scan now
+passes all 792,816 queries with zero coverage, height or material differences,
+removing the 32,104 differences reported above. All nine transitions apply/reset
+in the baseline, southwest-assembly move, and independent 20-unit eastward moves
+of either access slope. Each detached slope keeps its physical receiver and
+becomes a separate navigation area. Actor approach/traversal, the other elevated
+transition's area coverage, visual states and publication remain unverified.
+
+### Complete Croisement03 movement boundaries
+
+Reviewed navigation recovery now also accepts a single physical owner with an
+explicit planar boundary and no join sockets. This covers walking regions that
+extend outside their receiving footprint without inventing additional receiving
+geometry or a second owner. Model/source pins and local-plane validation remain
+required, and a single entry without a boundary or with a join socket fails.
+
+The navigation catalog restores the western platform's complete boundary and
+the seven other single-receiver elevated boundaries. All eleven source movement
+areas now have exactly one matching compiled envelope and zero difference in
+permanent walkable coverage; the compiled baseline has no extra movement areas.
+All nine transitions match both initial and applied obstacle coverage on those
+envelopes. The fourteen-receiver scan still passes 792,816 native queries with
+zero differences after the boundary restoration.
+
+The baseline and the three moved/detached diagnostic scenes construct in Rust
+and apply/reset all nine transitions. These checks establish geometry and state
+binding fidelity for this draft, not complete gameplay parity. Actor routing and
+traversal, masks, visual states, environmental sounds, and publishing the combined
+asset definitions remain outstanding.
+
+### Nottingham northern facade state assembly
+
+`nottingham-state-assembly.json` assigns the four facade parts controlled by one
+movement change to a single movable asset. Static splitting retains their complete
+mesh subtrees, exact small transforms and component provenance, while recalculating
+partition bounds. Declared owners cannot overlap and component references cannot
+cross partitions. The remaining house structures retain their door ownership and
+static mask support through `nottingham-state-ownership.json` and
+`nottingham-state-masks.json`.
+
+The staged scene is `work/map-compile/nottingham-state-assembly-stage`; recovery
+uses those two catalogs, `nottingham-ground-receivers.json`, preserved ground
+boundaries and the complete movement-coverage gate. The resulting candidate is
+`work/map-compile/nottingham-state-assembly-recovery`. Compilation reads only
+that scene and the recovered asset definitions.
+
+The baseline and a one-pixel assembly move construct in Rust with 101 movement
+areas, 666 sight obstacles, 172 doors and 38 jump pairs. Both apply/reset all nine
+compiled transitions (two movement changes and seven door-only changes). The four
+changing physical shapes retain their ordered vertices and flags, and their
+waypoint follows the assembly. Source movement change 10 has exactly matching
+initial and applied blocked coverage. Both movement changes are recovered, but
+change 9 still needs navigation-boundary assembly before an envelope comparison
+can pass.
+
+The sloped receiver 168 stays attached to the shared ground navigation region.
+Its Rust comparison passes 67,521 queries with zero height, material or coverage
+differences. All twenty compiled mask records are unchanged from the preceding
+draft. This does not recover the facade change's visual masks 378–384: 507 masks,
+23 shadow regions and 18 sound sources remain pending in this candidate. Actor
+traversal, visual-state fidelity and asset publication also remain unverified.
+
+### Nottingham courtyard receiving assembly (movement fidelity pending)
+
+`nottingham-state-navigation.json` partitions the courtyard and raised entry
+walkway among their five physical surfaces. The four stair surfaces belong to
+one asset and share a local region; only the three courtyard/stair boundary
+edges need cross-asset sockets. The eastern seam allows an endpoint height step
+below six units, and the other two allow less than one. These tolerances affect
+socket matching only; the physical receiving planes retain their original values.
+`nottingham-state-projections.json` binds all five physical volumes directly to
+their surfaces, replacing synthesized receiving geometry.
+
+The combined draft adds both catalogs to the northern facade recovery above.
+Artifacts are under `work/map-compile/nottingham-state-navigation-recovery` and
+`work/map-compile/nottingham-state-navigation-native`. Its six-receiver Rust scan
+(the courtyard five plus ground receiver 168) passes 2,170,166 queries with zero
+height, material or coverage differences. All twenty compiled masks remain
+unchanged.
+
+This is not movement parity. The courtyard's free coverage differs by about
+7.921 square units initially and 17.748 after its change. The source keeps a
+permanent obstacle crossing the outer boundary as a separate contour; this draft
+clips it into the outer boundary and rounds intersections. Small extra corners
+also appear along the raised walkway. Exact separate-contour handling across
+joined navigation pieces is still needed. The overall verified transition count
+therefore remains unchanged.
+
+Recovery now rejects a join height tolerance without sockets before producing
+asset packets, rather than emitting a packet that later fails gameplay validation.
+
+### Preserved contours across joined navigation pieces
+
+Compilation can now join pieces that all declare `preserveMovementBoundary`.
+It assembles the outer boundaries separately from blocked contours. A cutout that
+extends into a neighboring surface does not block a route that surface opens.
+State contours retain their implicit outer-boundary intersections while excluding
+neighboring pieces on other height planes. Mixed preserved/non-preserved pieces
+remain an explicit error.
+
+Focused regressions cover crossing outer contours, another surface opening a
+cutout, and state changes restricted to their own height plane. The experimental
+Nottingham output under `work/map-compile/nottingham-state-navigation-native-preserved`
+constructs in Rust. Its courtyard envelope and both changing-state coverages match,
+but permanent free coverage differs by about 158.446 square units in both states.
+The ground transition's full free coverage also differs by one square unit, even
+though its changing obstacle coverage matches. These are broader comparisons than
+the changing-contour check alone. Neither difference is accepted as parity, and
+the committed authoring catalogs do not yet enable this experimental mode.
+
+Reviewed navigation recovery now accepts an explicit `preserveMovementBoundary`
+setting alongside authored vertices. Clearance recovery subtracts exclusion
+contours geometrically instead of assuming they are interior holes, and removes
+floating contact slivers below its geometric tolerance while retaining subpixel
+openings. The full-contour Nottingham draft now produces valid asset definitions
+under `work/map-compile/nottingham-state-contours-recovery`.
+
+That draft initially failed compilation: unioning nearly coincident cutout edges near
+projected coordinates (696.9921, 1191.7559) fails to close a polygon ring. The
+compiler reports the error; no rounded replacement or incomplete export is emitted.
+The independent-contour change below resolves this compilation failure.
+
+### Independent exclusion contours
+
+Unlabelled exclusions now remain independent through normalization. Testing
+containment against any of them already represents their union; merging them
+first introduced unnecessary fractional vertices and could fail on nearly
+coincident edges. Explicitly labelled fragments still reassemble as one contour.
+Joined regions also preserve each cutout against free coverage from other pieces
+without subtracting its own free coverage again.
+
+The experimental recipe `nottingham-state-contours.json` retains complete permanent
+contours and enables boundary preservation. It replaces the navigation recipe in
+the courtyard recovery command; the other ownership, mask, ground-receiver and
+physical-projection recipes remain the same. Both baseline and moved facade
+exports compile and apply/reset all nine transitions in Rust. Both source movement
+changes now have matching envelopes and changing-obstacle coverage in both states.
+Permanent free coverage still differs by about 12.898 square units in the courtyard
+and one square unit on the ground. Neither difference is accepted as full parity.
+The six-receiver scan still passes all 2,170,166 Rust queries with zero height,
+material or receiving-coverage differences; all twenty compiled masks are unchanged.
+
+The default nine-map compilation regression also passes, and all forty previously
+verified static ground areas retain zero coverage difference. These checks do not
+cover the three missing transitions, complete traversal, visual data or publication.
+
+### Exact Nottingham ground coverage and redundant fragments
+
+The combined Nottingham recovery now uses `--precise-ground-ownership` with
+`--preserve-ground-boundaries`, `--require-movement-coverage`, and the
+`nottingham-state-contours.json` navigation recipe. This removes the one-square-unit
+ground gap: both initial and applied full walkable coverage match exactly.
+Candidates and diagnostics are under `work/map-compile/nottingham-precise-contours-recovery`
+and `work/map-compile/nottingham-precise-contours-native`.
+
+The compiler also discards a fractional cutout already entirely covered by a
+complete integer exclusion in the same contour group, before rounding can expand
+it beyond that exclusion. A regression covers both input orders and verifies that
+a fragment extending outside the exclusion is retained. This removes a spurious
+corner near the courtyard's southern obstacle. Its remaining permanent-coverage
+difference is about 11.614 square units in each state, concentrated at stair seams.
+Both movement envelopes and changing-state contours still match exactly; neither
+this improvement nor the exact ground region certifies full map parity.
+The baseline and moved facade still apply/reset all nine compiled transitions.
+The six-receiver Rust scan passes 2,170,166 queries with zero differences, all
+twenty mask records are unchanged, and the nine-map regression retains exact
+coverage for its forty checked static ground regions.
+
+### Complete Nottingham stateful walkable coverage
+
+Reviewed navigation boundaries already carry explicit blocked contours. Their
+one-time clearance recovery now clears derived solid slices across the entire
+authored outer boundary, including those exclusions. The explicit contours remain
+blocked; duplicate rounded collision slices no longer add false stair seams.
+Physical volumes and their collision away from the reviewed surfaces remain intact.
+
+The combined precise draft now has zero full walkable-coverage difference for both
+Nottingham movement changes, initially and after application. Both outer envelopes
+and changing-obstacle coverages also match exactly. The independent twenty-unit
+stair move retains all four physical shapes and flags and separates their shared
+receiving region from the courtyard. Baseline, moved facade and moved stairs all
+construct in Rust and apply/reset all nine compiled transitions. Their native
+area counts are 95, 95 and 96 respectively; each retains 172 doors and 38 jump pairs.
+The six-receiver Rust scan passes all 2,170,166 queries with zero height, material
+or receiving-coverage differences, and all twenty compiled mask records are unchanged.
+
+Re-running Croisement03 recovery with this change retains exact permanent coverage
+for all eleven movement regions and exact initial/applied changing coverage for all
+nine transitions. Nottingham still has 507 unrecovered masks, 23 shadow regions,
+18 sound sources, and unverified actor traversal and visual-state behavior. These
+drafts remain unpublished and are not certified at full map parity.
+
+### Complete crossing-map movement state ownership
+
+`croisement01-state-assembly.json` groups the two physical parts of its missing
+change, and `croisement02-state-assembly.json` groups the four parts of its missing
+change. Each set has one shared state controller and no other controlling change.
+Staging retains exact mesh content, transforms and collision shapes and reopens
+the pinned scenes. The committed `croisement01-navigation-ownership.json` and
+`croisement02-navigation-ownership.json` retain the other asset-local navigation
+state owners.
+
+Recovery uses each new staged scene, its ownership and ground-receiver catalogs,
+and `--preserve-ground-boundaries --precise-ground-ownership --require-movement-coverage`.
+Croisement01 also retains its existing mask catalog; Croisement02 has no reviewed
+mask catalog yet. Staged libraries, candidates and native diagnostics use the
+`work/map-compile/croisement01-state-assembly-*` and
+`work/map-compile/croisement02-state-assembly-*` prefixes.
+
+All six Croisement01 transitions and all nine Croisement02 transitions now recover.
+For all fifteen, the baseline envelopes, permanent coverage and initial/applied
+full walkable coverage match exactly. Both maps construct in Rust and apply/reset
+every transition in baseline and one-pixel assembly-move variants. The moved parts
+retain exact ordered physical vertices and flags, and their waypoints follow them.
+The native exports contain respectively 8/5 movement areas, 92/154 sight obstacles,
+16/5 doors and 13/4 jump pairs.
+
+Comparison with the previously scanned drafts confirms unchanged ordered physical
+sight geometry, receiving planes, materials, masks, receiving layers and initial
+receiving-region coverage for all 22/12 receivers. This is a structural regression
+check, not a new native query scan. Croisement01 still has 102 pending masks;
+Croisement02 has 142 pending masks and five sound sources. Visual state masks,
+complete actor traversal and publication remain outstanding.
+
+### York market movement-state assembly
+
+`york-state-assembly.json` stages the 47 rendered market parts controlled by one
+shared state change. Static structural parts remain in separate remainder assets.
+`york-state-ownership.json` moves the two additional non-rendering volumes to the
+same assembly while retaining the other explicit volume, door and interior owners.
+The stage preserves model content and transforms and reopens its pinned scene.
+
+`york-state-ground-receivers.json` binds seventeen physical receivers to their
+shared ground regions, including twelve on the stateful market region. Their
+physical heights and materials remain independent of navigation. Without these
+bindings, separate receiving footprints incorrectly replaced large portions of
+the ground movement envelope. Recovery also uses the unchanged York mask catalog,
+`--preserve-ground-boundaries --precise-ground-ownership --require-movement-coverage`.
+Use `work/map-compile/york-state-assembly-stage` for the library/scene and
+`work/map-compile/york-state-ground-recovery` for the combined candidate output.
+
+The baseline market envelope, permanent coverage and full initial/applied walkable
+coverage now match exactly. All eight ordinary ground regions retain exact
+envelopes and permanent coverage; the two lift regions are outside that comparison.
+The baseline and one-pixel assembly move preserve all 39 initial and 10 applied
+physical shapes and flags, including the non-rendering volumes. The waypoint moves
+with the assembly. Both exports construct 161 movement areas, 1,180 sight obstacles,
+254 doors and 72 jump pairs in Rust and apply/reset all six compiled transitions
+(one movement change and five door-only changes).
+
+Native receiving checks cover 168 windows around every receiver vertex and reviewed
+navigation anchor: 433,568 queries have zero height, material or coverage differences.
+This is targeted sampling, not a full-footprint scan. All twenty existing mask
+contents remain unchanged, with layer indices rebuilt for the new topology; complete
+mask-layer/visual fidelity remains unverified. The candidate still has 808 pending
+masks, sixteen shadow regions and eight sound sources. Actor traversal, visual state
+assets and publication remain outstanding. Completing movement-state ownership
+does not certify any map at full gameplay parity.
+
+### Complete crossing-map environmental sound definitions
+
+`croisement02-ambient-sounds.json` authors five independent acoustic regions;
+the sixth emitter already belongs to a visual asset. The expanded
+`croisement03-ambient-sounds.json` authors all six regions. Each recipe pins the
+source document for one-time authoring. Generated definitions store emitter
+geometry in asset-local coordinates, together with sample IDs, timing, falloff,
+volume, acoustic altitude and ambience filters. Compilation needs only the
+placed assets and scene, not the extraction source.
+
+The combined stages in `work/map-compile/crossing-sound-library/{croisement02,croisement03}`
+extend the latest movement-assembly scenes and reopen their pinned documents.
+Recovery retains the movement coverage gate, ground receivers and, for
+Croisement03, the terrace navigation joins, transition planes, projections and
+mask definitions. Both reports now have zero pending sound sources; their
+142/130 pending masks remain unchanged.
+
+Both baselines reproduce all six source emitters exactly and retain identical
+non-sound geometry to their preceding movement drafts. Eleven additional
+exports move each newly authored region independently by 50 pixels: the selected
+emitter follows its placement and all non-sound compiled geometry stays identical.
+All thirteen exports load and construct in Rust, including sound sample selection,
+emitter handles, spatial geometry and delay settings. Every export also applies
+and resets all nine compiled transitions. These diagnostics are in
+`work/map-compile/crossing-sound-native`; they do not verify audible playback,
+complete visual state fidelity or a published ZIP round trip. Neither map is
+certified or published at full parity.
+
+### Derby, Leicester and Sherwood environmental regions
+
+The expanded Derby and Leicester ambient catalogs and new
+`sherwood-ambient-sounds.json` define respectively nine, fourteen and five
+independently placed sound regions. These emitters have no containing visual
+asset; existing uniquely owned and global emitters retain their previous owners.
+The regions preserve full polylines, including points beyond the map boundary,
+and retain sample, delay, falloff, volume, altitude and ambience settings.
+
+Combined candidates in `work/map-compile/town-forest-sound-recovery` recover all
+12/24/8 emitters with zero pending sound ownership. Their libraries extend the
+Derby canopy-pole stage, Leicester projection/material stage and Sherwood central
+treehouse stage, retaining ground receiver definitions and Sherwood navigation
+joins/projections. The recovered scenes pass the movement coverage gate. Pending
+masks remain 227/449/166 and shadow regions 24/23/1, respectively.
+
+The native construction diagnostic accepts an optional `ambience` value on each
+manifest result, applied only to its test mission. This permits checking sound
+filtering under each ambience bit without adding mission settings to map exports.
+
+All 44 baseline emitter records match exactly. Moving each of the 28 new regions
+by 50 pixels moves only that emitter; non-sound geometry stays identical both
+across these variants and against the preceding map drafts. The 31 exported
+descriptors in `work/map-compile/town-forest-sound-native` pass 52 Rust construction
+cases: baseline maps under all eight ambience bits, plus the moved-region exports.
+These check required sample selection, emitter handles, shape and delay settings.
+All compiled transitions also apply/reset successfully (Derby two, Leicester
+six, Sherwood zero). Audible playback, publication and full ZIP round-trip
+parity remain unverified.
+
+### Nottingham environmental regions
+
+`nottingham-ambient-sounds.json` now defines twenty independent sound regions,
+including the two previously authored northern boundary lines. The eighteen new
+regions have no containing visual asset; the other four emitters retain their
+existing asset owners. Several independent emitters use the same sample ID, so
+comparisons retain record multiplicity and full geometry rather than treating
+sample IDs as unique emitter identifiers.
+
+`work/map-compile/nottingham-sound-library/nottingham` extends the current
+movement-assembly scene, retaining its existing sound pins. Combined recovery
+uses the state ownership, state mask, ground receiver, state projection and
+complete state contour catalogs with precise ground ownership and the movement
+coverage gate. The report in `work/map-compile/nottingham-sound-recovery/nottingham`
+has zero pending sound sources; 507 masks and 23 shadow regions remain pending.
+All 24 baseline emitter records match exactly, and non-sound geometry is identical
+to the preceding precise-contour draft.
+
+The native batch in `work/map-compile/nottingham-sound-native` contains 22 exports:
+the baseline, twenty independent 50-pixel region moves, and a duplicated emitter
+whose sample is also used by other regions. All variants preserve non-sound
+geometry; duplication adds exactly one correctly placed emitter. Twenty-nine Rust
+construction cases pass, including the baseline under all eight ambience bits.
+Every case also applies and resets all nine compiled transitions. The geometry
+remains 95 movement areas, 659 sight obstacles, 172 doors and 38 jump pairs.
+Audible playback, visual completeness, publication and ZIP round trips are still
+outstanding; this does not certify full map parity.
+
+### Lincoln and York independent environmental regions
+
+`lincoln-ambient-sounds.json` defines seven independent regions and
+`york-ambient-sounds.json` defines six. These emitters have no containing visual
+asset. The remaining four ambiguous emitters have not been assigned arbitrarily:
+Lincoln sources 1/13 overlap the west tower/hillside and great hall/plateau;
+York sources 12/20 overlap a house/raised terrain and market frontage/shared
+volume/raised terrain. They still require explicit asset ownership.
+
+The combined stages in `work/map-compile/lincoln-york-sound-library` retain
+Lincoln's door-turret volume scene and York's market movement assembly scene.
+Recovery uses their mask and ground-receiver definitions; York also retains
+its state ownership catalog and precise ground ownership. Both pass the
+movement coverage gate. Reports in `work/map-compile/lincoln-york-sound-recovery`
+now recover 12/14 Lincoln and 21/23 York emitters, with exactly those four
+ownership gaps. Pending masks remain 424/808 and shadow regions 25/16.
+
+All recovered emitter records match exactly, including repeated sample IDs.
+Thirteen independent 50-pixel moves affect only the selected sound region.
+Non-sound geometry also matches the preceding Lincoln ground-receiver and York
+state-ground drafts exactly. Fifteen exports in
+`work/map-compile/lincoln-york-sound-native` pass 29 native construction cases,
+including both baselines under all eight ambience bits. These are partial
+sound-definition checks, not audible playback or full-map parity certification.
+All nine Lincoln and six York compiled transitions also apply/reset successfully
+in every case. Publication and complete ZIP round trips remain outstanding.
+
+### Explicit building-owned environmental sounds
+
+Ownership catalogs now accept `sound_sources` declarations with a source record,
+asset, node and review reason. Recovery validates the complete pinned sound record,
+requires exactly one placed frame, and rejects duplicate declarations or conflicts
+with independently authored sound assets. Only the localized emitter definition
+is written into the asset gameplay packet; compilation does not read the catalog
+or extraction source.
+
+`lincoln.json` attaches the tower and hall emitters to those building assemblies.
+`york-state-ownership.json` attaches the two remaining emitters to the jettied house
+and visible market-frontage house. These are explicit authoring decisions: their
+underlying terrain and shared volumes retain separate ownership. Combined reports
+in `work/map-compile/declared-sound-recovery` now recover all 14 Lincoln and 23 York
+emitters with zero pending sound sources. Baseline non-sound geometry is unchanged.
+
+Six diagnostics in `work/map-compile/declared-sound-native` cover both complete
+baselines and four acoustic probes using building frames translated by 50 pixels.
+All emitter values match, with only the selected emitter moving. Twenty Rust
+construction cases pass, including both baselines under all eight ambience bits.
+The moved acoustic probes retain baseline physical geometry and do not establish
+full-building relocation parity. Moving the entire Lincoln west tower by 50 pixels
+detaches its elevated door from its walkable landing; full compilation correctly
+rejects the missing exterior surface instead of inventing a connection.
+
+The ownership tests cover changed source records, duplicate claims, global sources,
+missing/ambiguous frames and empty review reasons. Complete visual assets,
+valid relocated traversal assemblies, publication, audible playback and ZIP round
+trips remain outstanding.
+
+The consolidated `work/map-compile/complete-sound-definition-audit.json` compares
+the complete emitter-record multisets for all nine source-backed staged maps:
+Croisement01/02/03 2/6/6, Derby 12, Leicester 24, Lincoln 14, Nottingham 24,
+Sherwood 8 and York 23. All 119 records match exactly, including duplicate sample
+IDs. This closes staged sound-record coverage, not playback, publication or
+Wychford authoring. Other map compilation categories remain incomplete.
+
+### Independently authored environmental lighting fields
+
+`author-light-region-assets.ts` builds invisible light-region assets from a
+hash-pinned recipe. Contours and any receiving anchors are stored in asset-local
+coordinates with their ambience filter. Their runtime definitions contain no
+source-layer lookup. A `light_sources` ownership declaration pins the complete
+source record and resolves exactly one placed asset frame during one-time
+recovery; duplicate claims, changed records and missing/ambiguous frames fail.
+
+Sherwood's western night field spans multiple structures and terrain with no
+single containing visual asset. `sherwood-light-regions.json` authors it as an
+independent region, and `sherwood-light-ownership.json` retains the existing
+Sherwood ownership declarations while adding its explicit lighting owner.
+Generate the asset with:
+
+```sh
+node pipeline/src/author-light-region-assets.ts \
+  --source library/game-data/Data/Levels/Sherwood.rhp.json \
+  --recipe refinement/catalogs/sherwood-light-regions.json \
+  --map Sherwood --out work/map-compile/sherwood-light-stage
+```
+
+The staged scene extends the latest Sherwood sound library with the emitted
+`light-region-assets.json` fragment and reopens its pinned assets. Recovery uses
+the explicit light ownership catalog plus the existing ground receiver,
+navigation join and projection definitions, with the movement coverage gate.
+`work/map-compile/sherwood-light-recovery` now has zero pending shadow regions
+and sound sources. Its 166 pending masks remain unfinished.
+
+The baseline and a 50-pixel region move in `work/map-compile/sherwood-light-native`
+reproduce the complete contour and ambience exactly. All non-light geometry and
+metadata, including the eight sound emitters, are unchanged. Native light queries
+pass for both exports under ambience bits 1, 2 and 4. Unit tests cover independent
+movement/duplication, invisible geometry and rejected ownership declarations.
+This verifies an environmental field, not baked image lighting, rendered visual
+parity, publication or a complete ZIP round trip.
+
+### Elevated lighting fields with incomplete physical coverage
+
+Lighting fields retain a complete 2D contour on their resolved navigation layer;
+the contour need not be physically supported at every point. Field recovery now
+uses supported interior anchors when an elevated contour extends beyond physical
+receiving coverage. It never invents a ground plane for that uncovered portion.
+Strict per-plane recovery still rejects missing elevated geometry, and field
+recovery fails if it cannot establish receiving anchors. Ownership checks retain
+the full contour footprint so uncovered margins do not silently acquire an owner.
+
+The geometry-only audit in `work/map-compile/light-field-audit.json` now preserves
+147 of 148 complete contours across Derby (26), Leicester (30), Lincoln (30/31),
+Nottingham (24) and York (37). Lincoln source 11 still fails with a degenerate
+height plane. This audit does not assign owners or prove compiled receiving-layer
+equivalence for every field; the earlier per-map pending reports remain in force.
+
+`derby-light-regions.json` authors the previously rejected west-steps night field
+(source 4). Its asset in `work/map-compile/derby-light-field-stage` compiles alongside
+the existing Derby gameplay definitions. The complete contour and ambience match;
+its source layer 1 resolves to rebuilt layer 23, whose receiving plane matches the
+step plane. The diagnostic in `work/map-compile/derby-light-field-native` contains
+three light regions and preserves all non-light geometry and metadata. Native
+queries pass under ambience bits 1, 2 and 4. This is one additional compiled field,
+not a fully recovered or published Derby map.
+
+### Receiving planes survive tiny light-field intersections
+
+Field recovery now carries each physical receiving plane through clipping instead
+of reconstructing it from a clipped triangle. Very small valid triangles can fall
+below the plane solver's nondegeneracy threshold even when their original support
+has a well-defined plane. Their coverage and receiving anchors are retained;
+the fix does not discard pieces or simplify the light contour.
+
+The regression test includes a tiny receiving triangle whose vertices cannot
+independently define a stable plane. Its field still preserves the full contour
+and the correct elevated anchor. The geometry-only audit now succeeds for all
+148 contours across Derby, Leicester, Lincoln, Nottingham and York, including
+Lincoln source 11. This supersedes the one remaining geometry error above;
+ownership and compiled receiving-layer validation are still incomplete overall.
+
+`lincoln-light-regions.json` authors that previously failing elevated field into
+`work/map-compile/lincoln-light-field-stage`. It compiles alongside the complete
+Lincoln sound definitions into `work/map-compile/lincoln-light-field-native`, with
+seven light contours and unchanged non-light data. The added contour and ambience
+match exactly, with source layer 2 resolved to rebuilt layer 10. Native light
+queries pass under ambience bits 1, 2 and 4. Publication and full map/ZIP parity
+remain outstanding.
+
+### Complete Derby light-region definitions
+
+The combined Derby stage now retains eight building-owned regions and eighteen
+independent environmental fields. `derby-light-regions.json` contains the eighteen
+field recipes; `derby-light-ownership.json` retains Derby's existing ownership
+definitions and pins their explicit field owners. The reopened scene in
+`work/map-compile/derby-light-stage` extends the complete sound stage. Recovery in
+`work/map-compile/derby-light-recovery` has zero pending shadow regions or sound
+sources; 227 masks and visual patch definitions remain unfinished.
+
+Combining all regions exposed two anchor issues. Recovery now excludes permanent
+movement obstacles when choosing field anchors. Compilation also retains fractional
+positions for light layer-selection anchors: rounding a valid interior anchor can
+move it outside a narrow contour or receiving surface. The exported contour vertices
+remain quantized. Regression tests cover both cases, and geometry recovery still
+preserves all 148 contours in the five-map audit.
+
+The export in `work/map-compile/derby-complete-light-native` contains all 26 source
+outlines and ambience filters with no extra outline. These produce 30 runtime
+regions: source region 16 spans five rebuilt receiving layers. The per-source
+layer mapping is recorded in `source-light-mapping.json`. All non-light geometry
+and metadata match the prior sound-complete draft. Native construction and light
+queries pass for all 30 runtime contours under ambience bits 1, 2 and 4.
+
+This establishes complete staged contour coverage and successful native queries
+on the emitted layers. It does not yet establish source-versus-compiled lighting
+equivalence for every actor position, rendered appearance, publication or ZIP
+round-trip parity.
+
+### Derby source-defined lighting query comparison
+
+The native diagnostic
+`recovered_lights_match_source_queries_on_shared_walkable_coverage` compares
+source contour membership against the compiled engine's actual light queries.
+Its `ROBIN_LIGHT_COMPARISON` manifest specifies source/compiled layer pairs and
+their common navigation coverage, excluding permanent obstacles. It samples an
+integer/half-pixel grid under ambience bits 1, 2 and 4 and writes a query report.
+
+Derby's `work/map-compile/derby-complete-light-native/light-query-comparison.json`
+has thirty nonempty query windows covering the full bounds of the relevant source
+and compiled contours, expanded by two pixels. The windows include potentially
+unwanted light from other source layers sharing a rebuilt layer; candidate windows
+without common walkable coverage are recorded separately. All 4,177,323 query
+evaluations match. Counts include repeated positions across windows and ambiences.
+Changing one exported field's ambience in a separate negative-control descriptor
+produces 305,058 differences, confirming that the comparison detects a real error.
+
+This adds positional evidence beyond matching contour records. It uses the known
+light-layer mappings and common navigation domains, so it does not certify missing
+walkable coverage, unmapped layer pairs, altered placements, mission transitions
+or rendered appearance. Full-map publication and ZIP round trips remain unfinished.
+
+### Complete Nottingham light-region definitions
+
+`nottingham-light-regions.json` authors nineteen independent environmental fields;
+five additional regions remain building-owned. `nottingham-light-ownership.json`
+retains the movement assembly and existing ownership definitions while adding the
+explicit field owners. The reopened scene in `work/map-compile/nottingham-light-stage`
+extends the complete sound library and retains its navigation contours, physical
+projection receivers, ground receivers and reviewed mask definitions.
+
+The combined recovery in `work/map-compile/nottingham-light-recovery` has zero
+pending shadow regions or sound sources, with the movement coverage gate passing.
+All 24 light contours and ambience filters compile exactly into 24 runtime regions
+in `work/map-compile/nottingham-complete-light-native`. Non-light data matches the
+preceding sound-complete draft, including all sound emitters. The engine constructs
+the map and applies/resets all nine compiled transitions.
+
+The source-query comparison covers 24 nonempty windows on known layer pairs under
+ambience bits 1, 2 and 4. All 6,314,187 integer/half-pixel query evaluations match
+the source contours. Candidate windows without shared walkable coverage are
+recorded separately. As with Derby, this verifies mapped common navigation domains,
+not missing geometry, unmapped layer pairs, altered placements or rendered appearance.
+Nottingham still has 507 pending masks and incomplete visual patch definitions;
+publication and complete ZIP round trips remain outstanding.
+
+### Complete York light-region definitions
+
+`york-light-regions.json` authors sixteen independent environmental fields;
+twenty-one additional regions remain on existing assets. `york-light-ownership.json`
+retains the market movement assembly and complete sound ownership while adding
+the explicit field owners. The reopened scene in `work/map-compile/york-light-stage`
+extends the complete sound library and retains its reviewed ground receivers
+and mask definitions.
+
+The combined recovery in `work/map-compile/york-light-recovery` has zero pending
+shadow regions or sound sources, with the movement coverage gate passing. All
+37 source light contours and ambience filters compile exactly into 37 runtime
+regions in `work/map-compile/york-complete-light-native`. Non-light data matches
+the preceding sound-complete draft. The Rust engine constructs 161 areas,
+1,180 sight obstacles, 254 doors and 72 jump pairs, and applies/resets all six
+compiled transitions.
+
+The source-query comparison covers 37 nonempty windows on known layer pairs
+under ambience bits 1, 2 and 4. All 10,299,072 integer/half-pixel query evaluations
+match the source contours. Seven candidate windows without shared walkable
+coverage are recorded separately. This verifies mapped common navigation domains,
+not missing geometry, unmapped layer pairs, altered placements or rendered
+appearance. York still has 808 pending masks and incomplete visual patch
+definitions; publication and complete ZIP round trips remain outstanding.
+
+### Leicester light definitions and detected layer leakage
+
+`leicester-light-regions.json` authors fifteen independent environmental fields;
+fifteen additional regions recover onto existing assets. The explicit field
+owners are in `leicester-light-ownership.json`. The combined scene in
+`work/map-compile/leicester-light-stage` extends the sound-complete draft and
+retains its ground receivers and reviewed mask definitions. Recovery has zero
+pending light or sound records and passes the movement coverage gate.
+
+All 30 source contours and ambience filters compile into 34 runtime regions in
+`work/map-compile/leicester-complete-light-native`; some contours receive on
+multiple rebuilt layers. Non-light data matches the preceding sound-complete
+draft. Rust constructs 55 areas, 444 sight obstacles, 105 doors and 23 jump pairs,
+and applies/resets all six compiled transitions.
+
+**Initial lighting query parity failed (fixed below).** The source-query comparison checks 39 nonempty
+windows on known layer pairs under ambience bits 1, 2 and 4. Of 4,283,946
+integer/half-pixel evaluations, 1,436 differ. For example, at `(279, 920)` under
+ambience 4, source layer 4 is unshadowed but compiled layer 7 is shadowed. The
+compiler groups equal-height planes onto the same layer: this combines receiving
+regions from source layers 2 and 4, allowing a contour belonging to one region
+to shadow its neighbour. The contour and filter inventory is therefore complete,
+but layer allocation must preserve independently authored light receivers before
+this draft can pass. The comparison manifest and failure report retain the
+reproduction; empty shared-coverage windows are recorded separately.
+
+Leicester also retains 449 pending masks and incomplete visual patch definitions.
+These staged definitions are not published or certified, and complete ZIP round
+trips remain outstanding.
+
+### Separate light receivers on otherwise shared planes
+
+Flat light recovery now retains asset-local receiving anchors, just as multi-plane
+recovery does. A height plane alone cannot distinguish unrelated receiving regions.
+All 148 source light contours across Derby, Leicester, Lincoln, Nottingham and York
+still recover exactly with these anchors. Earlier staged packets need regeneration
+to acquire anchors for their flat fields.
+
+After assembling navigation regions, compilation separates regions that would
+otherwise receive another region's anchored light on a shared layer. Compatible
+regions keep sharing layers. Full light contours remain intact, traversal keeps
+the final reserved layer, and sector, door, projection and transition references
+are assigned after the new ordering. Unanchored planar fields can cover multiple
+resulting layers. Compiler tests cover independent coplanar receivers, a field
+covering both, and moving the asset.
+
+The refreshed Leicester draft in `work/map-compile/leicester-separated-light-native`
+retains all 30 contours and filters as 34 runtime regions. Its 37 nonempty comparison
+windows pass all 4,277,196 Rust lighting query evaluations under ambience bits 1,
+2 and 4. Restoring the leaking contour to the wrong layer in a separate negative
+control causes 704 differences, including the original `(279, 920)` failure.
+These totals count window evaluations, not unique positions; changing the layer
+partition changes overlapping windows. Coverage remains limited to mapped common
+walkable domains, not unrestricted gameplay or rendered appearance.
+
+Motion contours and obstacles are unchanged. Non-light records compare equal
+after resolving sector/layer references to their receiving geometry and sorting
+generated projection records; mask payloads compare without their rebuilt layer
+numbers. Rust still constructs 55 areas, 444 sight obstacles, 105 doors and 23 jump
+pairs and applies/resets all six transitions. This does not establish mask-layer
+or visual parity, publication, or complete ZIP round trips.
+
+### Complete Lincoln lighting and receiving-area anchor recovery
+
+`lincoln-light-regions.json` now authors eleven independent environmental fields.
+`lincoln-light-ownership.json` preserves Lincoln's existing ownership definitions
+and explicitly assigns two elevated fields to the great hall and keep, where
+their footprints also overlap the underlying plateau. Eighteen other fields
+recover onto existing assets, including the west slate tower field previously
+tested as an independent prototype. The combined stage extends the sound-complete
+library and retains its ground receivers and reviewed masks.
+
+This exposed an anchor-recovery error: an overlapping sloped projection belonging
+to another motion area supplied a terrace anchor's height. Offline light recovery
+now uses each source motion area's receiving-sector identity when selecting its
+anchor support. The emitted assets retain local coordinates, not source sector
+indices. A regression covers overlapping higher footprints, and all 148 town
+contours still recover with receiving identities enabled.
+
+`work/map-compile/lincoln-light-recovery` has zero pending light or sound records
+and passes the movement coverage gate. Its 31 contours and ambience filters
+compile into 33 runtime regions in `work/map-compile/lincoln-complete-light-native`.
+Non-light records compare equal after resolving sector/layer references to
+receiving geometry and sorting generated projection records; mask payloads
+compare without their rebuilt layer numbers.
+
+All 5,749,329 Rust lighting query evaluations match across 36 nonempty windows
+on known layer pairs under ambience bits 1, 2 and 4. Empty common-coverage windows
+are recorded separately. Rust constructs 62 areas, 541 sight obstacles, 89 doors
+and 10 jump pairs and applies/resets all nine compiled transitions. This verifies
+mapped shared walkable coverage, not missing geometry, unmapped layers, changed
+placements or rendered appearance. Lincoln still has 424 pending masks and
+incomplete visual patches; publication and complete ZIP round trips remain open.
+
+### Derby main-hall static masks
+
+`derby-masks.json` now includes the main hall's west/east gallery cover records
+134 and 135. A fresh audit of the pinned hall mesh supports every covered pixel
+of both records; neither belongs to a state patch or has obstacle links. Their
+receiving anchors select the adjacent 465.001-unit gallery platform. The east
+mask's character threshold continues that plane, and projectile thresholds retain
+the world XY datum.
+
+`work/map-compile/derby-main-hall-mask-recovery` recovers eleven mask records,
+reducing Derby's pending count from 227 to 225. In the baseline export, the two
+added records reproduce all 4,692 and 23,708 covered pixels respectively, plus
+their character/projectile polylines and application flags. Rust constructs the
+combined export's 60 areas, 337 sight obstacles, 70 doors and two jump pairs and
+applies/resets its two transitions.
+
+The initial whole-hall relocation test failed (fixed below): moving the hall by +1 X failed because
+its `light-19` anchor moves over the neighbouring sloped gallery without acquiring
+the slope's changed height (authored 495.4359517424076 versus receiving
+495.60863123076155). This failure is separate from the mask pixel comparison and
+must be resolved before claiming movable-hall parity. The baseline evidence does
+not certify mask-layer semantics, visual rendering, publication or ZIP round trips.
+
+### Finite light receiving segments for sloped attachments
+
+Asset light definitions can now include local `receiverSegments`. After placement,
+each finite segment must intersect exactly one receiving navigation sector, inside
+the light contour. Segments transform with their owning part. Missing, ambiguous,
+degenerate or coplanar attachments fail explicitly; the compiler does not perform
+an unrestricted nearest-floor search. Layer-conflict allocation also considers
+these attachments before assigning fresh sector indices.
+
+Offline recovery emits segments for sloped receivers, bounded by the receiving
+plane's heights over the source motion area's footprint. Flat receivers retain
+exact point anchors. Only local endpoint coordinates enter the asset definition.
+
+The refreshed Derby draft in `work/map-compile/derby-segment-light-recovery` now
+allows the previously failing +1 X main-hall move. Both new masks preserve every
+covered pixel and shift their boundary rules exactly; the gallery light retains
+its complete shifted contour and ambience filter on the traversal layer. Baseline
+compiled geometry matches the preceding mask draft except light-record ordering.
+Rust constructs both baseline and moved exports and applies/resets both transitions
+in each. Synthetic tests reject ambiguous/missing receivers and verify slope
+intersection and finite search bounds. This is evidence for that placement change,
+not arbitrary relocation, full rendering parity, publication or ZIP round trips.
+
+### Editor loading of generated environmental assets
+
+The earlier light/sound authoring tools emitted a bare empty node. That worked in
+compiler diagnostics, which read metadata directly, but failed the editor's
+standalone asset validation. Both generators now use a common model writer that
+emits the Z-up `map` wrapper, one identity asset group with its asset ID, and the
+declared scenery/gameplay-only frame. The asset remains invisible and contains no
+placeholder mesh.
+
+An integration test loads actual generated light and sound GLBs through
+`prepareProjectionAsset` without mocking GLB parsing, inserts them, serializes and
+reopens their editor placements, and reloads their pinned descriptors. It checks
+that their complete gameplay definitions survive, including a sloped light's
+finite receiving segment. The authoring/compiler tests continue to verify sound
+records and light contours after placement. This closes an editor insertion/reload
+gap, not map publication or in-game ZIP round-trip parity. Previously staged field
+GLBs and their saved model hashes must be regenerated together before publication.
+
+### Refreshed environmental field model libraries
+
+`work/map-compile/editor-field-model-library/<map>` now contains isolated refreshed
+libraries for all ten editor scenes. The refresh reads existing asset definitions,
+regenerates only their invisible field models with the corrected hierarchy, and
+updates model hashes in the saved scene. Descriptor bytes, gameplay definitions,
+all placements and other scene content remain unchanged. Visual asset files remain
+linked to the preceding staged libraries; these are local working libraries, not
+published self-contained packages.
+
+All 152 regenerated fields pass the actual editor asset loader with pinned model
+and descriptor hashes: Derby 27, Leicester 29, Lincoln 18, Nottingham 39, York 22,
+Sherwood 6, Croisement02 5 and Croisement03 6. Croisement01 and Wychford have no
+standalone fields to refresh. All ten saved scenes reopen with equivalent content;
+the comparison normalizes only absent versus empty resource lists. A fresh palette
+index is written for each scene's assets. The report is
+`work/map-compile/editor-field-model-library/refresh-report.json` and the local
+reproduction script is `work/map-compile/refresh-editor-field-models.mjs`.
+
+This resolves the generated-model hierarchy and pinning problem for these combined
+drafts. It does not publish the remaining recovered gameplay packets, refresh older
+flat-light definitions with new attachments, remove pending masks or visual states,
+or establish an in-game ZIP round trip.
+
+### Reopened scenes compile from embedded asset definitions
+
+`work/map-compile/embedded-gameplay-library/<map>` now embeds recovered gameplay in
+the actual asset descriptors for nine source-backed maps: Derby 69, Leicester 100,
+Lincoln 118, Nottingham 165, York 271, Sherwood 88, Croisement01 61, Croisement02 150
+and Croisement03 99. Scene descriptor hashes and palette entries are updated together.
+Placements and other scene content remain unchanged. The asset models and resources
+remain linked to the preceding staged libraries; this is not a distributable bundle.
+
+Each scene is serialized, reopened and compiled using only its pinned descriptors.
+The compiler reads neither recovery packets nor source levels. A separate comparison
+with the packet-injection workflow verifies identical static geometry under the
+current compiler. Eight outputs also match their preceding native JSON snapshots
+(with JSON's negative-zero normalization). York has an additional receiving layer
+from the newer allocation logic; its refreshed comparison passes 10,298,961 lighting
+query evaluations on mapped common walkable coverage, with zero differences.
+
+Rust loads all nine exports in `work/map-compile/embedded-gameplay-native` and
+applies/resets all 56 compiled transitions. Full-scene compilation still rejects
+Derby, Leicester, Lincoln and Nottingham because of unsupported scene state
+transitions. York, Sherwood and the three crossings pass that compiler gate, but
+the recovery inventory still records 2,953 pending masks across the nine drafts
+and incomplete visual patch definitions. Passing that gate does not certify parity.
+Wychford's gameplay definitions remain separately unfinished.
+
+Each staged library contains `gameplay-staging-report.json` with the pending
+inventory, original review issues and full-scene compiler result. The local script
+`work/map-compile/stage-derby-gameplay-definitions.mjs <map>` reproduces the staging
+and comparisons. No pending items were waived and no map is marked published or
+fully playable at parity. Visual/depth state integration, gameplay publication and
+actual in-game ZIP round trips remain outstanding.
+
+### Published keep view mask with stable appearance support
+
+Leicester's great keep now includes `keep-west-view-occlusion`, recovered from
+record 242 into its asset-local definition. All 1,814 pixels match exactly, using
+92 triangles supported by the current pinned model. Those same triangles remain
+identical across all four combinations of the keep's two appearance controls.
+This static view-only mask has no character/projectile boundaries, obstacle links
+or mask-state controls. Its receiving anchor is verified on ground.
+
+The compiled mask retains exact coverage and rules after moving the keep one pixel
+east. Baseline and moved exports pass native construction and mask verification;
+both have 55 movement areas, 444 sight obstacles, 105 doors and 23 jump pairs.
+Other baseline gameplay geometry and export warnings remain unchanged. Shared
+descriptor references in Leicester and Wychford are repinned without changing
+placements or mission content; the separate user test ZIP is unchanged.
+
+This reduces the pending inventory from 2,953 to **2,952 masks** across the nine
+recovered maps. Records 256 and 258 also reproduce their baseline coverage, but
+remain deferred because their supporting triangles change with an appearance
+state. Neither this batch nor native construction certifies full map parity.
+The recipe is `refinement/catalogs/leicester-masks.json`; recovery, appearance
+proofs and transaction backups are under
+`work/map-compile/keep-static-view-publication` and
+`work/map-compile/keep-static-view-state-proof.json`. The shared-reference repair
+backup is `work/map-compile/keep-static-view-scene-pin-repair`.
+
+### Published cottage, watermill and west-wing static masks
+
+Four more Leicester masks are authored and published from the current pinned
+models: southeast cottage 263 (823 pixels), watermill 173/174 (908/18,755 pixels),
+and west wing 239 (1,175 pixels). Together they add 21,661 exact pixels represented
+by 1,391 asset-local triangles. The cottage and watermill have no appearance
+controls; the west-wing mask has identical supporting triangles before and after
+its appearance switch. West-wing candidates 240/241 remain deferred because their
+supporting surfaces change when revealed.
+
+The three projectile/view masks retain their world-XY projectile thresholds;
+the west-wing mask is view-only. None adds character thresholds, obstacle links
+or mask-state controls. Each receiving anchor is checked against ground geometry.
+The first watermill anchor was too close to a receiving-layer edge and failed the
+independent move check. Selecting a nearby interior ground point fixes that
+binding without changing mask geometry. All four now retain exact raster coverage
+and rules after their owning asset moves one pixel east. Baseline navigation,
+sight geometry, doors, lighting, sound and export warnings remain unchanged.
+
+Only the four mask definitions are added. Five shared references are repinned:
+three in Leicester and two in Wychford. Other descriptor and scene content is
+unchanged, and all ten saved scenes reopen with valid pins. The separate user ZIP
+is untouched. This brings the unrecovered inventory to **2,948 masks**; complete
+map parity remains unverified. Baseline and all three independently moved exports
+pass native construction and mask verification. Fresh exports of all ten published
+maps also construct successfully, and all 56 switches apply and reset correctly.
+The fresh all-map descriptors are under
+`work/map-compile/published-receiver-mask-native`.
+
+The recipe is `refinement/catalogs/leicester-masks.json`. State support evidence
+is `work/map-compile/leicester-static-mask-state-proof.json`; transaction snapshots
+and four baseline/independently moved native fixtures are under
+`work/map-compile/leicester-static-mask-publication`.

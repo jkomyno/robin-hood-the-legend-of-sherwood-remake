@@ -7,12 +7,16 @@ export default function ScrubNumber(props: {
   labelExtra?: () => JSX.Element;
   value: number;
   step: number;
+  min?: number;
+  max?: number;
   onPreview: (value: number) => void;
   onCommit: (value: number) => void;
   onCancel: () => void;
 }) {
   const [preview, setPreview] = createSignal<number | null>(null);
   const [editing, setEditing] = createSignal(false);
+  const constrain = (v: number) =>
+    Math.min(props.max ?? Infinity, Math.max(props.min ?? -Infinity, v));
   let gesture: { x: number; value: number; current: number; moved: boolean } | null = null;
   function cancel() {
     if (gesture?.moved) props.onCancel();
@@ -23,10 +27,13 @@ export default function ScrubNumber(props: {
   return (
     <div
       class="meta-row scrub-number"
+      tabindex={-1}
       onDragStart={(event) => event.preventDefault()}
       title="Drag left or right to adjust; hold Shift for finer control. Click to type."
       onPointerDown={(event) => {
         if (event.button !== 0) return;
+        if (!(event.target instanceof HTMLInputElement))
+          event.currentTarget.focus({ preventScroll: true });
         gesture = { x: event.clientX, value: props.value, current: props.value, moved: false };
         event.currentTarget.setPointerCapture(event.pointerId);
       }}
@@ -36,7 +43,11 @@ export default function ScrubNumber(props: {
         if (!gesture.moved && Math.abs(delta) < 4) return;
         gesture.moved = true;
         event.preventDefault();
-        const value = Math.round((gesture.value + delta * (event.shiftKey ? 0.1 : 1)) * 100) / 100;
+        const value = constrain(
+          Math.round(
+            (gesture.value + delta * Math.min(props.step, 1) * (event.shiftKey ? 0.1 : 1)) * 100,
+          ) / 100,
+        );
         gesture.current = value;
         setPreview(value);
         props.onPreview(value);
@@ -65,20 +76,21 @@ export default function ScrubNumber(props: {
       }}
     >
       <span class="meta-key" style={{ "user-select": "none" }}>
-        {props.label}{" "}
-        {props.labelExtra?.()}
+        {props.label} {props.labelExtra?.()}
       </span>
       <input
         class="scrub-number"
         type="number"
         aria-label={props.label}
         step={props.step}
+        min={props.min}
+        max={props.max}
         value={editing() ? (preview() ?? props.value) : (preview() ?? props.value).toFixed(2)}
         onFocus={() => setEditing(true)}
         onBlur={() => setEditing(false)}
         onChange={(event) => {
           const value = event.currentTarget.valueAsNumber;
-          if (!gesture?.moved && Number.isFinite(value)) props.onCommit(value);
+          if (!gesture?.moved && Number.isFinite(value)) props.onCommit(constrain(value));
         }}
       />
     </div>

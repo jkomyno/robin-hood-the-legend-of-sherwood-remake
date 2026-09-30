@@ -1,0 +1,106 @@
+{
+  "title": "Authored fixture",
+  "map_filename": "editor-authored-fixture",
+  "spawn_points": [],
+  "walkable_polygon": [
+    [
+      0,
+      0
+    ],
+    [
+      1999,
+      0
+    ],
+    [
+      1999,
+      1999
+    ],
+    [
+      0,
+      1999
+    ]
+  ],
+  "volumes": [],
+  "asset_geometry": {
+    "motion_data": {
+      "layers": [
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  300,
+                  300
+                ],
+                [
+                  400,
+                  300
+                ],
+                [
+                  400,
+                  400
+                ],
+                [
+                  300,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": [
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      300,
+                      300
+                    ],
+                    [
+                      400,
+                      300
+                    ],
+                    [
+                      300,
+                      371
+                    ]
+                  ]
+                }
+              },
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      340,
+                      290
+                    ],
+                    [
+                      360,
+                      290
+                    ],
+                    [
+                      360,
+                      400
+                    ],
+                    [
+                      340,
+                      400
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        []
+      ],
+      "graph_bytes": []
+    },
+    "sight_obstacles": [],
+    "doors": []
+  }
+}

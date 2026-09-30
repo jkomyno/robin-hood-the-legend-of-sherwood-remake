@@ -1,0 +1,151 @@
+{
+  "review": "Market furnishings participating in one shared initial/applied state change. Non-rendering volumes 934 and 938 must be assigned to the same assembly during gameplay recovery. Static structural parts remain separate.",
+  "groups": [
+    {
+      "id": "york-market-state-assembly",
+      "parts": [
+        {
+          "obstacle": 930
+        },
+        {
+          "obstacle": 931
+        },
+        {
+          "obstacle": 932
+        },
+        {
+          "obstacle": 933
+        },
+        {
+          "obstacle": 935
+        },
+        {
+          "obstacle": 936
+        },
+        {
+          "obstacle": 937
+        },
+        {
+          "obstacle": 939
+        },
+        {
+          "obstacle": 940
+        },
+        {
+          "obstacle": 941
+        },
+        {
+          "obstacle": 942
+        },
+        {
+          "obstacle": 943
+        },
+        {
+          "obstacle": 944
+        },
+        {
+          "obstacle": 945
+        },
+        {
+          "obstacle": 946
+        },
+        {
+          "obstacle": 947
+        },
+        {
+          "obstacle": 948
+        },
+        {
+          "obstacle": 949
+        },
+        {
+          "obstacle": 950
+        },
+        {
+          "obstacle": 951
+        },
+        {
+          "obstacle": 952
+        },
+        {
+          "obstacle": 953
+        },
+        {
+          "obstacle": 954
+        },
+        {
+          "obstacle": 955
+        },
+        {
+          "obstacle": 956
+        },
+        {
+          "obstacle": 957
+        },
+        {
+          "obstacle": 958
+        },
+        {
+          "obstacle": 959
+        },
+        {
+          "obstacle": 960
+        },
+        {
+          "obstacle": 961
+        },
+        {
+          "obstacle": 962
+        },
+        {
+          "obstacle": 963
+        },
+        {
+          "obstacle": 964
+        },
+        {
+          "obstacle": 965
+        },
+        {
+          "obstacle": 966
+        },
+        {
+          "obstacle": 967
+        },
+        {
+          "obstacle": 968
+        },
+        {
+          "obstacle": 969
+        },
+        {
+          "obstacle": 970
+        },
+        {
+          "obstacle": 971
+        },
+        {
+          "obstacle": 972
+        },
+        {
+          "obstacle": 973
+        },
+        {
+          "obstacle": 974
+        },
+        {
+          "obstacle": 975
+        },
+        {
+          "obstacle": 976
+        },
+        {
+          "obstacle": 977
+        },
+        {
+          "obstacle": 978
+        }
+      ]
+    }
+  ]
+}

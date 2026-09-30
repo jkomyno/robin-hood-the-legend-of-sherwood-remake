@@ -103,6 +103,61 @@ export class MissionEntities {
   get count() {
     return this.root.children.length;
   }
+  /** Load the same decoded directional frames used by mission previews for an authored actor. */
+  static async loadCharacter(
+    root: FileSystemDirectoryHandle,
+    profile: { filename: string; profileName: string },
+    camera: MapCamera,
+    current: () => boolean = () => true,
+    directions?: number[],
+  ) {
+    const view = new MissionEntities();
+    try {
+      const frames = await view.loadFrames(
+        root,
+        profile.filename,
+        profile.profileName,
+        3,
+        camera,
+        current,
+        "character",
+        "Day",
+        directions,
+      );
+      if (!current()) throw new Error("Character sprite load superseded");
+      const frame = frames.values().next().value;
+      if (!frame) throw new Error(`No character frames for ${profile.filename}`);
+      const material = new THREE.MeshBasicMaterial({
+        map: frame.texture,
+        alphaTest: 0.25,
+        side: THREE.DoubleSide,
+      });
+      view.materials.add(material);
+      const mesh = new THREE.Mesh(frame.geometry, material);
+      mesh.name = profile.filename;
+      view.root.add(mesh);
+      view.actors.push({ mesh, frames, direction: directions?.[0] ?? 0, shadow: null });
+      return view;
+    } catch (error) {
+      view.dispose();
+      throw error;
+    } finally {
+      view.atlasImages.dispose();
+    }
+  }
+  setCharacterPose(position: THREE.Vector3, direction: number) {
+    for (const actor of this.actors) {
+      actor.mesh.position.copy(position);
+      actor.direction = direction;
+    }
+  }
+  async thumbnail(direction = 0): Promise<Blob> {
+    const frames = this.actors[0]?.frames;
+    const frame = frames?.get(direction) ?? frames?.get(-1);
+    if (!frame) throw new Error(`Missing thumbnail direction ${direction}`);
+    const canvas = frame.texture.image as OffscreenCanvas;
+    return canvas.convertToBlob({ type: "image/png" });
+  }
   update(camera: THREE.Camera, lockOrientations = false) {
     const forward = camera.getWorldDirection(new THREE.Vector3()).negate();
     const perspective = (camera as THREE.PerspectiveCamera).isPerspectiveCamera;
@@ -133,6 +188,7 @@ export class MissionEntities {
     for (const m of this.materials) m.dispose();
     for (const g of this.geometries) g.dispose();
     for (const t of this.textures) t.dispose();
+    this.atlasImages.dispose();
     this.actors = [];
   }
   private marker(label: string, position: THREE.Vector3, color: number) {
@@ -428,6 +484,7 @@ export class MissionEntities {
     current: () => boolean,
     kind: SpriteKind,
     ambiance: string,
+    requestedDirections?: number[],
   ): Promise<Map<number, SpriteFrame>> {
     let dir: FileSystemDirectoryHandle | null = null;
     let bankKey = "";
@@ -467,6 +524,12 @@ export class MissionEntities {
       throw new Error(`${filename}: incomplete 16-direction animation`);
     const frames = new Map<number, SpriteFrame>();
     for (const row of selected) {
+      if (
+        !single &&
+        requestedDirections &&
+        !requestedDirections.includes(number(row.direction, "sprite direction"))
+      )
+        continue;
       if (!current()) throw new Error("Mission load superseded");
       const frame = rows(row.frames, "sprite frames")[0];
       if (!frame) throw new Error(`${filename}: empty sprite row`);

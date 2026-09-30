@@ -1,0 +1,1217 @@
+{
+  "sound_sources": [
+    {
+      "source": 12,
+      "owner": "york-southwest-lane-west-jettied-house",
+      "node": "building-445",
+      "reason": "Attach this house-footprint emitter to the jettied house; the shared raised ground remains an independent asset.",
+      "sound": {
+        "id": 68,
+        "active": true,
+        "source_kind": 1,
+        "delayed_params": null,
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 450,
+        "polyline": [
+          [
+            757,
+            1978
+          ]
+        ],
+        "inner_volume": 80,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 4
+      }
+    },
+    {
+      "source": 20,
+      "owner": "york-west-market-frontage-gabled-house",
+      "node": "building-647",
+      "reason": "Attach the frontage emitter to the visible gabled house, independently of the shared occlusion volume and raised terrain.",
+      "sound": {
+        "id": 70,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          70,
+          110,
+          5
+        ],
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 350,
+        "polyline": [
+          [
+            348,
+            781
+          ]
+        ],
+        "inner_volume": 80,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 1
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "york-bridge-square-west-gable-house",
+      "parts": [
+        {
+          "obstacle": 111
+        },
+        {
+          "obstacle": 112
+        },
+        {
+          "obstacle": 113
+        },
+        {
+          "obstacle": 114
+        }
+      ]
+    },
+    {
+      "id": "york-bridge-square-central-timber-house",
+      "parts": [
+        {
+          "obstacle": 116
+        },
+        {
+          "obstacle": 117
+        },
+        {
+          "obstacle": 118
+        }
+      ]
+    },
+    {
+      "id": "york-west-bridge-approach-stone-shop",
+      "parts": [
+        {
+          "obstacle": 184
+        },
+        {
+          "obstacle": 185
+        },
+        {
+          "obstacle": 189
+        },
+        {
+          "obstacle": 216
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-green-timber-house-remainder",
+      "parts": [
+        {
+          "obstacle": 314
+        },
+        {
+          "obstacle": 315
+        },
+        {
+          "obstacle": 316
+        },
+        {
+          "obstacle": 317
+        },
+        {
+          "obstacle": 320
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-golden-timber-house",
+      "parts": [
+        {
+          "obstacle": 328
+        },
+        {
+          "obstacle": 335
+        },
+        {
+          "obstacle": 336
+        },
+        {
+          "obstacle": 337
+        },
+        {
+          "obstacle": 338
+        },
+        {
+          "obstacle": 339
+        },
+        {
+          "obstacle": 340
+        },
+        {
+          "obstacle": 341
+        },
+        {
+          "obstacle": 342
+        },
+        {
+          "obstacle": 343
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-narrow-arch-house",
+      "parts": [
+        {
+          "obstacle": 344
+        },
+        {
+          "obstacle": 345
+        },
+        {
+          "obstacle": 346
+        },
+        {
+          "obstacle": 347
+        },
+        {
+          "obstacle": 348
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-east-tall-square-tower",
+      "parts": [
+        {
+          "obstacle": 858
+        },
+        {
+          "obstacle": 860
+        },
+        {
+          "obstacle": 861
+        },
+        {
+          "obstacle": 862
+        },
+        {
+          "obstacle": 863
+        }
+      ]
+    },
+    {
+      "id": "york-market-state-assembly",
+      "parts": [
+        {
+          "obstacle": 968
+        },
+        {
+          "obstacle": 965
+        },
+        {
+          "obstacle": 977
+        },
+        {
+          "obstacle": 940
+        },
+        {
+          "obstacle": 941
+        },
+        {
+          "obstacle": 942
+        },
+        {
+          "obstacle": 943
+        },
+        {
+          "obstacle": 944
+        },
+        {
+          "obstacle": 945
+        },
+        {
+          "obstacle": 946
+        },
+        {
+          "obstacle": 947
+        },
+        {
+          "obstacle": 969
+        },
+        {
+          "obstacle": 963
+        },
+        {
+          "obstacle": 964
+        },
+        {
+          "obstacle": 976
+        },
+        {
+          "obstacle": 937
+        },
+        {
+          "obstacle": 950
+        },
+        {
+          "obstacle": 951
+        },
+        {
+          "obstacle": 972
+        },
+        {
+          "obstacle": 948
+        },
+        {
+          "obstacle": 960
+        },
+        {
+          "obstacle": 961
+        },
+        {
+          "obstacle": 970
+        },
+        {
+          "obstacle": 949
+        },
+        {
+          "obstacle": 962
+        },
+        {
+          "obstacle": 971
+        },
+        {
+          "obstacle": 935
+        },
+        {
+          "obstacle": 936
+        },
+        {
+          "obstacle": 956
+        },
+        {
+          "obstacle": 957
+        },
+        {
+          "obstacle": 973
+        },
+        {
+          "obstacle": 966
+        },
+        {
+          "obstacle": 967
+        },
+        {
+          "obstacle": 978
+        },
+        {
+          "obstacle": 930
+        },
+        {
+          "obstacle": 931
+        },
+        {
+          "obstacle": 932
+        },
+        {
+          "obstacle": 933
+        },
+        {
+          "obstacle": 939
+        },
+        {
+          "obstacle": 952
+        },
+        {
+          "obstacle": 953
+        },
+        {
+          "obstacle": 954
+        },
+        {
+          "obstacle": 974
+        },
+        {
+          "obstacle": 955
+        },
+        {
+          "obstacle": 958
+        },
+        {
+          "obstacle": 959
+        },
+        {
+          "obstacle": 975
+        }
+      ]
+    }
+  ],
+  "nonrendering_sources": [
+    {
+      "obstacle": 115,
+      "owner": "york-bridge-square-west-gable-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 119,
+      "owner": "york-bridge-square-central-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 190,
+      "owner": "york-west-bridge-approach-stone-shop",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 319,
+      "owner": "york-central-south-green-timber-house-remainder",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 329,
+      "owner": "york-central-south-golden-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 356,
+      "owner": "york-central-south-narrow-arch-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 859,
+      "owner": "york-precinct-east-tall-square-tower",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 934,
+      "owner": "york-market-state-assembly",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 938,
+      "owner": "york-market-state-assembly",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    }
+  ],
+  "physical_volume_sources": [
+    {
+      "obstacle": 650,
+      "owner": "york-west-market-frontage-shared-occlusion-volume",
+      "node": "building-650--component-front-shop",
+      "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+      "model_sha256": "dab0394b30c4c4472d4142f65158f9e2b8fc01532953742d88ec8002ce81ad7e",
+      "reason": "All five components belong to this dedicated shared occlusion asset. Their individual bounds change the shared footprint and bottom/top planes. Preserve the single physical volume independently of the visual components."
+    }
+  ],
+  "door_sources": [
+    {
+      "doors": [
+        32
+      ],
+      "owner": "york-south-wall-lane-timber-house",
+      "node": "building-390",
+      "reason": "The doorway and room belong to the timber house above the sloping south terrace, not to the terrain supporting it."
+    },
+    {
+      "doors": [
+        33
+      ],
+      "owner": "york-south-wall-lane-square-stone-tower",
+      "node": "building-412",
+      "reason": "The arched entrance is in the square tower's lower connecting wall component. The inside marker extends past its footprint toward the adjacent round tower; the click polygon identifies the connecting-wall doorway."
+    },
+    {
+      "doors": [
+        41,
+        42
+      ],
+      "owner": "york-southeast-lane-western-timber-house",
+      "node": "building-377",
+      "reason": "These two separate rooms belong to the western timber house and its doorway extension. Their containing terrain and the nearby eastern house do not own these entrances."
+    },
+    {
+      "doors": [
+        71,
+        72
+      ],
+      "owner": "york-west-bridge-approach-gatehouse",
+      "node": "building-176",
+      "reason": "Both entrances share the gatehouse interior: one lies at its junction with the round tower and the other lies inside the same gatehouse wall component. The tower and supporting terrace remain separate assets."
+    },
+    {
+      "doors": [
+        73
+      ],
+      "owner": "york-west-bridge-street-tall-timber-house",
+      "node": "building-195",
+      "reason": "This entrance is contained by the street-side timber house wall, not the adjoining approach house or the terrace underneath."
+    },
+    {
+      "doors": [
+        77
+      ],
+      "owner": "york-west-town-lane-narrow-timber-house",
+      "node": "building-582",
+      "reason": "The narrow timber house contains the doorway at its raised landing. The adjacent broad house and supporting town terrace are independent assets."
+    },
+    {
+      "doors": [
+        85
+      ],
+      "owner": "york-west-market-frontage-dormer-house",
+      "node": "building-630",
+      "reason": "The dormer-house wall contains this entrance at its sloped landing; the neighboring gabled house does not own this separate interior."
+    },
+    {
+      "doors": [
+        88
+      ],
+      "owner": "york-market-north-square-tower",
+      "node": "building-078",
+      "reason": "The small street-facing entrance is in the square tower. The adjoining stone house overlaps its footprint in the projection but remains a separate building."
+    }
+  ],
+  "interior_sources": [
+    {
+      "building": 10,
+      "reason": "The two courtyard lodges share one interior through the rear curtain wall. Each lodge keeps its own entrance; the wall carries the connecting passage, so moving any constituent updates room connectivity.",
+      "pieces": [
+        {
+          "owner": "york-castle-courtyard-east-lodge",
+          "node": "building-759",
+          "doors": [
+            21
+          ],
+          "joins": [
+            {
+              "point": [
+                2500,
+                858.36,
+                120
+              ],
+              "direction": [
+                -0.27,
+                -0.96
+              ]
+            }
+          ]
+        },
+        {
+          "owner": "york-castle-courtyard-rear-curtain-wall",
+          "node": "building-760",
+          "doors": [],
+          "joins": [
+            {
+              "point": [
+                2500,
+                858.36,
+                120
+              ],
+              "direction": [
+                0.27,
+                0.96
+              ]
+            },
+            {
+              "point": [
+                2370,
+                895.2,
+                120
+              ],
+              "direction": [
+                0.27,
+                0.96
+              ]
+            }
+          ]
+        },
+        {
+          "owner": "york-castle-courtyard-west-lodge",
+          "node": "building-771",
+          "doors": [
+            22
+          ],
+          "joins": [
+            {
+              "point": [
+                2370,
+                895.2,
+                120
+              ],
+              "direction": [
+                -0.27,
+                -0.96
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "building": 57,
+      "reason": "The corner shop and adjoining gabled house have one shared interior. A paired socket in their adjoining wall footprints keeps the entrances with their separate buildings and joins them only in the assembled placement.",
+      "pieces": [
+        {
+          "owner": "york-west-market-frontage-corner-shop",
+          "node": "building-619",
+          "doors": [
+            83
+          ],
+          "joins": [
+            {
+              "point": [
+                397,
+                965.5,
+                120
+              ],
+              "direction": [
+                0.24,
+                -0.97
+              ]
+            }
+          ]
+        },
+        {
+          "owner": "york-west-market-frontage-gabled-house",
+          "node": "building-626",
+          "doors": [
+            84
+          ],
+          "joins": [
+            {
+              "point": [
+                397,
+                965.5,
+                120
+              ],
+              "direction": [
+                -0.24,
+                0.97
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "light_sources": [
+    {
+      "source": 1,
+      "owner": "york-light-region-1",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              337,
+              2225
+            ],
+            [
+              257,
+              2220
+            ],
+            [
+              191,
+              2119
+            ],
+            [
+              265,
+              2032
+            ],
+            [
+              428,
+              2061
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 6,
+      "owner": "york-light-region-6",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2023,
+              1953
+            ],
+            [
+              1919,
+              2102
+            ],
+            [
+              1859,
+              2099
+            ],
+            [
+              1797,
+              1978
+            ],
+            [
+              1886,
+              1898
+            ],
+            [
+              1973,
+              1900
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 7,
+      "owner": "york-light-region-7",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2310,
+              2014
+            ],
+            [
+              2354,
+              2010
+            ],
+            [
+              2334,
+              2061
+            ],
+            [
+              2295,
+              2075
+            ],
+            [
+              2172,
+              2035
+            ],
+            [
+              2105,
+              1951
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 18,
+      "owner": "york-light-region-18",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              656,
+              654
+            ],
+            [
+              688,
+              702
+            ],
+            [
+              656,
+              767
+            ],
+            [
+              573,
+              777
+            ],
+            [
+              538,
+              707
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 20,
+      "owner": "york-light-region-20",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              1667,
+              1115
+            ],
+            [
+              1634,
+              1167
+            ],
+            [
+              1534,
+              1180
+            ],
+            [
+              1506,
+              1120
+            ],
+            [
+              1620,
+              1076
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 22,
+      "owner": "york-light-region-22",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2818,
+              1271
+            ],
+            [
+              2814,
+              1184
+            ],
+            [
+              2885,
+              1072
+            ],
+            [
+              2991,
+              1068
+            ],
+            [
+              2951,
+              1251
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 23,
+      "owner": "york-light-region-23",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2760,
+              2066
+            ],
+            [
+              2781,
+              2111
+            ],
+            [
+              2745,
+              2155
+            ],
+            [
+              2684,
+              2124
+            ],
+            [
+              2486,
+              2140
+            ],
+            [
+              2454,
+              2061
+            ],
+            [
+              2556,
+              1940
+            ],
+            [
+              2644,
+              1949
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 24,
+      "owner": "york-light-region-24",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              1943,
+              949
+            ],
+            [
+              1852,
+              918
+            ],
+            [
+              1828,
+              873
+            ],
+            [
+              1849,
+              781
+            ],
+            [
+              1932,
+              739
+            ],
+            [
+              2041,
+              809
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 25,
+      "owner": "york-light-region-25",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2194,
+              337
+            ],
+            [
+              2195,
+              387
+            ],
+            [
+              2113,
+              432
+            ],
+            [
+              1981,
+              435
+            ],
+            [
+              1952,
+              350
+            ],
+            [
+              1996,
+              310
+            ],
+            [
+              2160,
+              342
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 26,
+      "owner": "york-light-region-26",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2135,
+              1226
+            ],
+            [
+              2090,
+              1248
+            ],
+            [
+              2009,
+              1224
+            ],
+            [
+              2072,
+              1199
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 28,
+      "owner": "york-light-region-28",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              1575,
+              1920
+            ],
+            [
+              1616,
+              2003
+            ],
+            [
+              1594,
+              2046
+            ],
+            [
+              1462,
+              2039
+            ],
+            [
+              1386,
+              1965
+            ],
+            [
+              1433,
+              1909
+            ],
+            [
+              1501,
+              1892
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 29,
+      "owner": "york-light-region-29",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 1,
+        "polygon": {
+          "points": [
+            [
+              2075,
+              1206
+            ],
+            [
+              2010,
+              1226
+            ],
+            [
+              1957,
+              1113
+            ],
+            [
+              2026,
+              1093
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 30,
+      "owner": "york-light-region-30",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 2,
+        "polygon": {
+          "points": [
+            [
+              1960,
+              1118
+            ],
+            [
+              1925,
+              1082
+            ],
+            [
+              1959,
+              1024
+            ],
+            [
+              2054,
+              997
+            ],
+            [
+              2133,
+              1046
+            ],
+            [
+              2097,
+              1131
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 33,
+      "owner": "york-light-region-33",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 2,
+        "polygon": {
+          "points": [
+            [
+              2436,
+              1000
+            ],
+            [
+              2384,
+              994
+            ],
+            [
+              2362,
+              966
+            ],
+            [
+              2376,
+              941
+            ],
+            [
+              2463,
+              819
+            ],
+            [
+              2760,
+              712
+            ],
+            [
+              2861,
+              858
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 35,
+      "owner": "york-light-region-35",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 3,
+        "polygon": {
+          "points": [
+            [
+              2477,
+              745
+            ],
+            [
+              2499,
+              821
+            ],
+            [
+              2468,
+              834
+            ],
+            [
+              2444,
+              749
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 36,
+      "owner": "york-light-region-36",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 4,
+        "polygon": {
+          "points": [
+            [
+              3015,
+              754
+            ],
+            [
+              2967,
+              764
+            ],
+            [
+              2918,
+              709
+            ],
+            [
+              2858,
+              724
+            ],
+            [
+              2745,
+              594
+            ],
+            [
+              2598,
+              643
+            ],
+            [
+              2521,
+              575
+            ],
+            [
+              2640,
+              523
+            ],
+            [
+              2743,
+              484
+            ],
+            [
+              2836,
+              505
+            ],
+            [
+              2966,
+              701
+            ],
+            [
+              2998,
+              697
+            ],
+            [
+              3031,
+              714
+            ]
+          ]
+        },
+        "ambience": 6
+      }
+    }
+  ]
+}

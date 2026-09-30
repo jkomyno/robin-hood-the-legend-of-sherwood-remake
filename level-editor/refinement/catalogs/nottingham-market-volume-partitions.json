@@ -1,0 +1,35 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "obstacle": 12,
+  "review": "Four independent front-market stalls retain the shared volume's outer contour and constant heights. Existing component seams separate west green/brown near x=1634.77, brown/red at vertices 5/10, and red/east green at vertices 3/13. The east-green component previously filled the outer notch between vertices 12/13/0; that area must remain outside collision. The first seam ends on boundary edge 9 at its reviewed interpolation fraction. No linked masks, receiving area, materials or state patches reference this volume.",
+  "parts": [
+    {
+      "asset": "nottingham-market-front-west-green",
+      "node": "building-012--component-market-base-012-front-1",
+      "model_sha256": "b9b522b5d5ed62a7ece96bd307282b53be2134917c36e9d0f9e9019850d190af",
+      "descriptor_sha256": "ec0608aa028517ec175cbff0d85173dc1df349974bfd2c6340236897f5b22666",
+      "vertices": [6, 7, 8, 9, { "edge": 9, "fraction": 0.539495 }]
+    },
+    {
+      "asset": "nottingham-market-front-brown",
+      "node": "building-012--component-market-base-012-front-2",
+      "model_sha256": "fe28b9b8243a5c043d7b55eb8dfb3ba00c39c219e2ea22cea6fee9d6c5df9c7f",
+      "descriptor_sha256": "d862787b27f493a15bf0480b614dfd482f4c58e21241b16df76bae9645aa23df",
+      "vertices": [5, 6, { "edge": 9, "fraction": 0.539495 }, 10]
+    },
+    {
+      "asset": "nottingham-market-front-red",
+      "node": "building-012--component-market-base-012-front-3",
+      "model_sha256": "4a7bd8c38f34b966961195204c72c7a1dfb9e887d3cb5e061c163885411c442d",
+      "descriptor_sha256": "ff86531792a1f812e091093a6a7afc7801c5cb29bfcb37e8316ae74fa6148cb9",
+      "vertices": [3, 4, 5, 10, 11, 12, 13]
+    },
+    {
+      "asset": "nottingham-market-front-east-green",
+      "node": "building-012--component-market-base-012-front-4",
+      "model_sha256": "1180f1e0010a90fcbb531ef9f76c5a0bcbe0bc187a66ea5511aa9f57f291d607",
+      "descriptor_sha256": "a144d6d5e04fd4e0530c7d9515dd9ab2baa7c672711e17f429822ab8b0dc3d6d",
+      "vertices": [0, 1, 2, 3, 13]
+    }
+  ]
+}

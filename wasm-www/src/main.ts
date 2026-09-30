@@ -561,6 +561,9 @@ function installRpcClient(wasm: RobinWasmModule): RobinRpc {
 
 
 main().catch((e: unknown) => {
+    // Navigation deliberately cancels boot work. Preserve unrelated errors,
+    // including AbortErrors from operations we did not cancel ourselves.
+    if (bootAbort.signal.aborted && e === bootAbort.signal.reason) return;
     const msg = e instanceof Error ? e.message : String(e);
     // eslint-disable-next-line no-console
     console.error(msg);

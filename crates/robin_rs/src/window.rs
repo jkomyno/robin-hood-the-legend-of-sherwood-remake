@@ -370,10 +370,7 @@ enum HostMsg {
     /// [`SurfaceConfiguration`] are computed on the main thread and
     /// pushed through.  The game side calls `surface.configure` to
     /// apply.
-    Resized {
-        width: u32,
-        height: u32,
-    },
+    Resized { width: u32, height: u32 },
     SurfaceReady {
         /// Native: the surface is created on the main/event-loop thread
         /// (see [`AppHandler::send_recreated_surface`]) and shipped here;
@@ -405,6 +402,10 @@ pub(crate) struct ReadyWindow {
     pub instance: Arc<wgpu::Instance>,
     pub surface: wgpu::Surface<'static>,
 }
+
+/// What `on_window_ready` ships to the game side: the ready window, or the
+/// main-thread surface-creation error.
+pub(crate) type PreparedWindow = Result<ReadyWindow, String>;
 
 /// Process-wide handle on the live winit [`Window`].  Populated when
 /// the OS window is created so the game thread can reach the window
@@ -914,8 +915,8 @@ pub struct AppHandler {
     /// Sender the handler pushes events into.
     events_tx: async_channel::Sender<HostMsg>,
     cmd_rx: async_channel::Receiver<HostCmd>,
-    /// User callback that gets the bare winit `Window` once the OS
-    /// window is up.  All wgpu init happens on the game side, async.
+    /// User callback that prepares the window surface on the event-loop thread
+    /// before handing off asynchronous adapter/device initialization.
     on_window_ready: WindowReadyFn,
     /// Process-wide wgpu instance, created on the main/event-loop
     /// thread. Shared with the initial bring-up in the `on_window_ready`
@@ -1429,8 +1430,8 @@ impl ApplicationHandler for AppHandler {
         self.window = Some(window.clone());
         GAME_WINDOW.set(window.clone());
 
-        // Hand the bare window to the game future.  All wgpu init
-        // (`request_adapter`, `request_device`) happens *async* on the
+        // Prepare the surface here, then hand it to the game future.
+        // `request_adapter` and `request_device` happen *async* on the
         // game side: on wasm those futures genuinely yield to the JS
         // event loop, and `pollster::block_on` would deadlock on the
         // condvar wait.  Native runs the same async init on its
@@ -1685,7 +1686,7 @@ where
     // created on the main thread (see `ReadyWindow`).  Adapter/device
     // init happens *async* on the game side so the wasm executor can
     // yield while `request_adapter` etc. resolve.
-    let (window_tx, window_rx) = async_channel::unbounded::<ReadyWindow>();
+    let (window_tx, window_rx) = async_channel::unbounded::<PreparedWindow>();
     let event_loop_proxy = event_loop.create_proxy();
 
     // Single process-wide instance, created on the main/event-loop thread.
@@ -1695,20 +1696,19 @@ where
     let instance_for_handler = instance.clone();
 
     let on_ready: WindowReadyFn = Box::new(move |w: Arc<Window>| {
-        // Main thread: surface bring-up. See `ReadyWindow`.
-        let surface = match instance.create_surface(w.clone()) {
-            Ok(surface) => surface,
-            Err(e) => {
-                tracing::error!("wgpu surface creation on main thread failed: {e}");
-                return;
-            }
-        };
-        report_window_send(window_tx.try_send(ReadyWindow {
-            window: w,
-            // Fn closure: clone per invocation (Android re-invokes on resume).
-            instance: instance.clone(),
-            surface,
-        }));
+        // Main thread: surface bring-up. See `ReadyWindow`. A failure is
+        // shipped to the game side so startup fails with an exit code
+        // instead of waiting forever for a window.
+        let ready = instance
+            .create_surface(w.clone())
+            .map(|surface| ReadyWindow {
+                window: w,
+                // Fn closure: clone per invocation (Android re-invokes on resume).
+                instance: instance.clone(),
+                surface,
+            })
+            .map_err(|e| format!("create_surface: {e}"));
+        report_window_send(window_tx.try_send(ready));
     });
 
     let logical_w = width;
@@ -1719,8 +1719,16 @@ where
     let lifecycle_for_game = lifecycle_autosave_requested.clone();
 
     #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
-    let mut handler =
-        AppHandler::new(title, width, height, visible, events_tx, cmd_rx, on_ready, instance_for_handler);
+    let mut handler = AppHandler::new(
+        title,
+        width,
+        height,
+        visible,
+        events_tx,
+        cmd_rx,
+        on_ready,
+        instance_for_handler,
+    );
 
     // Spawn the game.
     //
@@ -1777,11 +1785,11 @@ where
     }
 }
 
-/// Game-side startup: wait for `resumed()` to ship the bare winit window and
-/// bring up wgpu on it. Failures are logged here; `None` means the caller must
+/// Game-side startup: wait for `resumed()` to prepare the window surface and
+/// bring up its adapter/device. Failures are logged here; `None` means the caller must
 /// publish a failing exit code.
 async fn await_game_window(
-    window_rx: async_channel::Receiver<ReadyWindow>,
+    window_rx: async_channel::Receiver<PreparedWindow>,
     logical_w: u32,
     logical_h: u32,
     events_rx: async_channel::Receiver<HostMsg>,

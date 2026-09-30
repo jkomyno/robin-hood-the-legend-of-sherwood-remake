@@ -1,0 +1,196 @@
+{
+  "title": "Authored fixture",
+  "map_filename": "editor-authored-fixture",
+  "spawn_points": [],
+  "walkable_polygon": [
+    [
+      0,
+      0
+    ],
+    [
+      1999,
+      0
+    ],
+    [
+      1999,
+      1999
+    ],
+    [
+      0,
+      1999
+    ]
+  ],
+  "volumes": [],
+  "asset_geometry": {
+    "motion_data": {
+      "layers": [
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  300,
+                  300
+                ],
+                [
+                  390,
+                  300
+                ],
+                [
+                  390,
+                  400
+                ],
+                [
+                  300,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": []
+          },
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  410,
+                  300
+                ],
+                [
+                  500,
+                  300
+                ],
+                [
+                  500,
+                  400
+                ],
+                [
+                  410,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": []
+          }
+        ],
+        []
+      ],
+      "graph_bytes": []
+    },
+    "movement_transitions": [
+      {
+        "id": "hut-a/hut/barriers",
+        "has_appearance": true,
+        "waypoint": [
+          320,
+          320
+        ],
+        "sector": 0,
+        "layer": 0,
+        "active": true,
+        "definitive": false,
+        "apply_polygon": {
+          "points": []
+        },
+        "no_apply_polygon": {
+          "points": []
+        },
+        "motion_changes": []
+      }
+    ],
+    "sight_obstacles": [
+      {
+        "points": [
+          {
+            "x": 340,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 340,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          }
+        ],
+        "projection_area": null,
+        "solid": true,
+        "opaque": true,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      }
+    ],
+    "doors": [
+      {
+        "door_type": 0,
+        "active": true,
+        "locked_pc": false,
+        "unlockable": false,
+        "locked_npc_villain": false,
+        "locked_npc_civilian": false,
+        "locked_pc_after_patch": false,
+        "unlockable_after_patch": false,
+        "locked_npc_villain_after_patch": false,
+        "locked_npc_civilian_after_patch": false,
+        "door_sector": {
+          "points": [
+            [
+              390,
+              340
+            ],
+            [
+              410,
+              340
+            ],
+            [
+              410,
+              360
+            ],
+            [
+              390,
+              360
+            ]
+          ]
+        },
+        "point_out": [
+          380,
+          350
+        ],
+        "sector_out": 0,
+        "layer_out": 0,
+        "point_mid": [
+          400,
+          350
+        ],
+        "point_in": [
+          420,
+          350
+        ],
+        "sector_in": 1,
+        "layer_in": 0
+      }
+    ]
+  }
+}

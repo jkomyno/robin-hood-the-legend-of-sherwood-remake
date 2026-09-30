@@ -1,0 +1,71 @@
+{
+  "source_sha256": "1658cd3c148ed45c78dbee42a2e06883fb02e5d7c709af1876a027b00be77c4a",
+  "entries": [
+    {
+      "source": 0,
+      "id": "croisement03-south-ambient-zone",
+      "name": "Croisement03 south ambient zone",
+      "origin": [
+        743,
+        822,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 1,
+      "id": "croisement03-central-ambient-zone",
+      "name": "Croisement03 central ambient zone",
+      "origin": [
+        1126,
+        659,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 2,
+      "id": "croisement03-northeast-ambient-zone",
+      "name": "Croisement03 northeast ambient zone",
+      "origin": [
+        1349,
+        201,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 3,
+      "id": "croisement03-west-ambient-zone",
+      "name": "Croisement03 west ambient zone",
+      "origin": [
+        350,
+        657,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 4,
+      "id": "croisement03-north-ambient-zone",
+      "name": "Croisement03 north ambient zone",
+      "origin": [
+        168,
+        135,
+        0
+      ],
+      "review": "A two-point air-altitude acoustic line follows the north boundary (y=46..135); author as an independent environmental region."
+    },
+    {
+      "source": 5,
+      "id": "croisement03-east-ambient-zone",
+      "name": "Croisement03 east ambient zone",
+      "origin": [
+        1503,
+        469,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    }
+  ]
+}

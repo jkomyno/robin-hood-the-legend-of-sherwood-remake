@@ -30,7 +30,7 @@ test('diagnostic submission checks receipt and refuses failed requests', async (
     await assert.rejects(submitDiagnostic(body, async () => Response.json({ schema_version: 1, report_id: 'wrong' }, { status: 202 })), /Invalid report receipt/);
 });
 
-test('browser diagnostics warn on resize notices, retain failures and retry on reconnect', async t => {
+test('browser diagnostics skip resize notices, retain failures and retry on reconnect', async () => {
     const { JSDOM } = await import('jsdom');
     const { installDiagnostics } = await import('./diagnostics.ts');
     const dom = new JSDOM('<button id="report-bug"></button><dialog id="bug-report-dialog"><form id="bug-report-form"><textarea id="bug-report-description"></textarea><p id="bug-report-status"></p><button id="bug-report-send"></button><button id="bug-report-close"></button></form></dialog>', { url: 'https://game.test/' });
@@ -50,12 +50,10 @@ test('browser diagnostics warn on resize notices, retain failures and retry on r
     try {
         const queue = diagnosticQueue(new IDBFactory());
         const reporter = installDiagnostics(queue);
-        const warning = t.mock.method(console, 'warn', () => {});
         const resizeMessage = 'ResizeObserver loop completed with undelivered notifications.';
         dom.window.dispatchEvent(new dom.window.ErrorEvent('error', { message: resizeMessage }));
         await new Promise(resolve => setTimeout(resolve, 20));
         assert.equal((await queue.list()).length, 0);
-        assert.equal(warning.mock.calls[0]?.arguments[0], resizeMessage);
         reporter.setBuild('abc1234');
         reporter.log('game diagnostics');
         dom.window.document.querySelector('textarea')!.value = 'Character is stuck';
@@ -111,4 +109,41 @@ test('reports exceeding the compressed limit are rejected before fetch', async (
         throw new Error('unexpected upload');
     }), /100 MiB compressed upload limit/);
     assert.equal(uploaded, false);
+});
+
+test('automatic reports ignore resize notifications and coalesce panic/trap duplicates', async t => {
+    const { JSDOM } = await import('jsdom');
+    const { installDiagnostics } = await import('./diagnostics.ts');
+    const dom = new JSDOM('<button id="report-bug"></button><dialog id="bug-report-dialog"><form id="bug-report-form"><textarea id="bug-report-description"></textarea><p id="bug-report-status"></p><button id="bug-report-send"></button></form></dialog>', { url: 'https://game.test/' });
+    const previous = ['window', 'document', 'fetch'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)] as const);
+    t.after(() => {
+        for (const [key, descriptor] of previous) {
+            if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+            else Reflect.deleteProperty(globalThis, key);
+        }
+        dom.window.close();
+    });
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: dom.window });
+    Object.defineProperty(globalThis, 'document', { configurable: true, value: dom.window.document });
+    globalThis.fetch = async () => new Response('', { status: 503 });
+    const queue = diagnosticQueue(new IDBFactory());
+    const reporter = installDiagnostics(queue);
+    for (let i = 0; i < 10; i++) {
+        dom.window.dispatchEvent(new dom.window.ErrorEvent('error', {
+            message: 'ResizeObserver loop completed with undelivered notifications.',
+        }));
+    }
+    // An unexplained WASM trap is still actionable.
+    reporter.failure(new WebAssembly.RuntimeError('unreachable'));
+    reporter.log('panicked at engine.rs:12: missing entity');
+    reporter.failure(new WebAssembly.RuntimeError('unreachable executed'));
+    reporter.log('panicked at engine.rs:12: missing entity');
+    reporter.failure(new Error('a distinct failure'));
+    for (let retry = 0; retry < 100 && (await queue.list()).length < 3; retry++) await new Promise(resolve => setTimeout(resolve, 10));
+    const reports = (await queue.list()).map(row => JSON.parse(row.body));
+    assert.equal(reports.length, 3);
+    assert.deepEqual(reports.map(report => report.description).sort(), [
+        'a distinct failure', 'panicked at engine.rs:12: missing entity', 'unreachable',
+    ]);
+    assert.equal(reports.find(report => report.description.includes('panicked at')).kind, 'panic');
 });

@@ -193,6 +193,7 @@ fn verify_map_patch_camera_alignment(gpu: GpuContext, oversized_atlas: bool) {
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 pub(crate) fn verify_offscreen_gpu_contract(gpu: GpuContext) {
+    verify_map_appearance_pixels(gpu.clone());
     verify_coop_compositing(gpu.clone());
     verify_map_patch_camera_alignment(gpu.clone(), false);
     verify_map_patch_camera_alignment(gpu.clone(), true);
@@ -450,6 +451,90 @@ pub(crate) fn verify_offscreen_gpu_contract(gpu: GpuContext) {
     crate::ingame_menu::resources::verify_menu_gpu_ownership(&mut menu_renderer, &mut menu_peer);
     verify_deferred_menu_surfaces(&mut renderer);
     verify_managed_surface_rectangles(&mut renderer);
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+fn verify_map_appearance_pixels(gpu: GpuContext) {
+    use robin_engine::engine::level_loading::{
+        BackgroundAppearancePixels, BackgroundAppearanceRegion, PreDecodedBackground,
+    };
+    let mut renderer =
+        Renderer::with_optional_surface(gpu, None, None, 1, 1, TextureScaleMode::Nearest);
+    let background = PreDecodedBackground {
+        width: 1,
+        height: 1,
+        pixels: vec![0xf800],
+        occlusion_depth: Some(vec![50000]),
+        appearance_regions: vec![BackgroundAppearanceRegion {
+            bounds: [0, 0, 1, 1],
+            patches: vec![0],
+            states: vec![
+                BackgroundAppearancePixels {
+                    color: vec![0xf800],
+                    depth: vec![50000],
+                },
+                BackgroundAppearancePixels {
+                    color: vec![0x07e0],
+                    depth: vec![1000],
+                },
+            ],
+        }],
+    };
+    renderer.upload_background_texture(1, 1, &background.pixels);
+    renderer
+        .upload_occlusion_depth(background.occlusion_depth.as_ref().unwrap(), 1, 1)
+        .unwrap();
+    renderer.install_map_appearance(&background, 1).unwrap();
+    let white = renderer
+        .create_rgba_gpu_image(1, 1, &[255; 4], "appearance actor")
+        .unwrap();
+    let mut patches = [robin_engine::patch::Patch::default()];
+    for (applied, in_transition) in [
+        (false, false),
+        (true, false),
+        (true, true),
+        (false, false),
+        (true, false),
+    ] {
+        patches[0].applied = applied;
+        patches[0].in_transition = in_transition;
+        renderer.sync_map_appearance(&patches);
+        let showing_applied = applied && !in_transition;
+        renderer.begin_gpu_frame_clear();
+        renderer.render_background_texture(None, None);
+        let (r, g, b) =
+            robin_util::color::rgb565_to_rgb8(if showing_applied { 0x07e0 } else { 0xf800 });
+        assert_eq!(
+            renderer.try_capture_frame_rgba().unwrap().2,
+            vec![r, g, b, 255]
+        );
+        renderer.begin_gpu_frame_clear();
+        renderer.render_gpu_rect(0, 0, 1, 1, [0, 0, 0, 255]);
+        let checkpoint = renderer.draw_queue_checkpoint();
+        renderer.render_gpu_image(&white, None, None, BlendMode::None);
+        renderer.mask_queued_draws_impl(
+            checkpoint,
+            &[],
+            Rect::new(0, 0, 1, 1),
+            Some((Rect::new(0, 0, 1, 1), 0.4)),
+        );
+        assert_eq!(
+            renderer.try_capture_frame_rgba().unwrap().2,
+            if showing_applied {
+                vec![255; 4]
+            } else {
+                vec![0, 0, 0, 255]
+            }
+        );
+    }
+    let static_background = PreDecodedBackground {
+        appearance_regions: Vec::new(),
+        ..background
+    };
+    renderer
+        .install_map_appearance(&static_background, 0)
+        .unwrap();
+    assert!(renderer.map_appearance.is_none());
 }
 
 #[cfg(all(test, not(target_arch = "wasm32")))]

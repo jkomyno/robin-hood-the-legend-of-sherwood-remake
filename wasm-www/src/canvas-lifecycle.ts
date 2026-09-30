@@ -8,14 +8,24 @@ function browserEnvironment(canvas: HTMLCanvasElement): CanvasEnvironment {
         viewport: () => ({ fullscreen: document.fullscreenElement === canvas, innerWidth: window.innerWidth,
             innerHeight: window.innerHeight, devicePixelRatio: window.devicePixelRatio }),
         subscribe: sync => {
-            const observer = new ResizeObserver(sync);
+            // Changing layout during ResizeObserver delivery starts another
+            // delivery cycle. Coalesce size changes into the next frame.
+            let frame: number | undefined;
+            const schedule = (): void => {
+                frame ??= window.requestAnimationFrame(() => {
+                    frame = undefined;
+                    sync();
+                });
+            };
+            const observer = new ResizeObserver(schedule);
             observer.observe(canvas);
-            window.addEventListener('resize', sync, { passive: true });
-            document.addEventListener('fullscreenchange', sync);
+            window.addEventListener('resize', schedule, { passive: true });
+            document.addEventListener('fullscreenchange', schedule);
             return () => {
                 observer.disconnect();
-                window.removeEventListener('resize', sync);
-                document.removeEventListener('fullscreenchange', sync);
+                if (frame !== undefined) window.cancelAnimationFrame(frame);
+                window.removeEventListener('resize', schedule);
+                document.removeEventListener('fullscreenchange', schedule);
             };
         },
     };

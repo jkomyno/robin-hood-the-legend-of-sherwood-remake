@@ -1,3 +1,8 @@
+import TerrainPanel from "./TerrainPanel";
+import NewMapSettings from "./NewMapSettings";
+import WorkspacePanel from "./WorkspacePanel";
+import { followTerrainEdit, followTerrainTransform } from "./terrain-follow";
+import MissionPanel from "./MissionPanel";
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
 import type { JSX } from "@solidjs/web";
@@ -23,7 +28,7 @@ import {
   patchGroup,
   type Selection,
 } from "./document-commands";
-import { createNewMap } from "./new-map";
+import { createNewMap, defaultNewMapOptions } from "./new-map";
 import MapCard from "./MapCard";
 import { encodeMapThumbnail, writeMapThumbnail } from "./map-thumbnail";
 import SplinePanel from "./SplinePanel";
@@ -34,7 +39,7 @@ import { ASSET_DRAG_TYPE } from "./asset-library";
 import { insertProjectionAsset } from "./asset-commands";
 import {
   listProjectionAssets,
-  prepareProjectionAsset,
+  prepareProjectionPlacement,
   readPinnedAssetDescriptors,
 } from "./projection-library";
 import { prepareMapCandidate } from "./map-candidate";
@@ -42,11 +47,13 @@ import { EditorViewport } from "./editor-viewport";
 import { disposeObjectResources } from "./resources";
 import { listFiles, subdir, writeText } from "./fs";
 import { MissionEntities, readMission } from "./mission";
+import { loadEditableMission, remainingMissionPreview } from "./import-mission.ts";
 import { PopulationView, type SceneEntities } from "./population-view";
 import type { DatadirIndex } from "./datadir";
 import { missionsForMap } from "./mission-catalog.ts";
 import { downloadMap } from "./http-library.ts";
-import { packageCompiledMap } from "./map-compile.ts";
+import { MapExportWorker } from "./map-export-client.ts";
+import type { BakeProgress } from "./map-bake-render.ts";
 
 export type { Selection } from "./document-commands";
 
@@ -76,9 +83,14 @@ export default function Editor3D(props: EditorProps) {
   let viewportElement!: HTMLDivElement;
   let newMapDialog!: HTMLDialogElement;
   const [newMapName, setNewMapName] = createSignal("Untitled map");
+  const [newMapOptions, setNewMapOptions] = createSignal(defaultNewMapOptions());
+  const [assetDisplayMode, setAssetDisplayMode] = createSignal<"visible" | "outline" | "hidden">(
+    "visible",
+  );
   const [creatingMap, setCreatingMap] = createSignal(false);
   const [newMapError, setNewMapError] = createSignal("");
   const [panel, setPanel] = createSignal("Selection");
+  const [drawMode, setDrawMode] = createSignal<"Terrain" | "Paths">("Terrain");
   const [libraryOpen, setLibraryOpen] = createSignal(true);
   const [libraryWidth, setLibraryWidth] = createSignal(284);
   let libraryResize: { x: number; width: number } | undefined;
@@ -131,12 +143,30 @@ export default function Editor3D(props: EditorProps) {
     setRevision(snapshot);
     if (reason === "load") setTransformBaseline(snapshot.document);
     if (reason === "saved") setTransformBaseline(session.current!.saved);
-    if (reason === "revision") viewport.syncViews(snapshot.document, false);
+    if (reason === "revision") {
+      viewport.syncViews(snapshot.document, false);
+      setMissionName(snapshot.document.mission?.importedFrom ?? "");
+      const mission = snapshot.document.mission;
+      setMissionInfo(
+        mission
+          ? `${mission.spawnPoints.length} editable PC spawns, ${mission.soldiers.length} editable soldiers. Import limitations are listed in Mission.`
+          : "",
+      );
+    }
   });
   let saving = false;
   const [compiling, setCompiling] = createSignal(false);
+  const [exportProgress, setExportProgress] = createSignal<BakeProgress | null>(null);
+  let exportWorker: MapExportWorker | undefined;
+  let exportCancelled = false;
+  function cancelExport() {
+    exportCancelled = true;
+    exportWorker?.dispose();
+  }
+  onCleanup(cancelExport);
   let disposed = false;
   const [selected, setSelected] = createSignal<Selection>(null);
+  const [revealSelectionInList, setRevealSelectionInList] = createSignal(false);
   const [filter, setFilter] = createSignal("");
   const [expanded, setExpanded] = createSignal<Set<string>>(new Set());
   const [showObstacles, setShowObstacles] = createSignal(false);
@@ -155,7 +185,8 @@ export default function Editor3D(props: EditorProps) {
     level,
     showObstacles,
     showElevation,
-    onSelection: (selection) => {
+    onSelection: (selection, revealInList) => {
+      setRevealSelectionInList(revealInList);
       setSelected(selection);
       if (selection?.kind === "part") {
         const group = doc()?.objects.find((o) => o.id === selection.id)?.group;
@@ -165,7 +196,8 @@ export default function Editor3D(props: EditorProps) {
     commitTransform: setTransform,
     onError: props.onError,
   });
-  const select = (selection: Selection) => viewport.select(selection);
+  const select = (selection: Selection, revealInList = true) =>
+    viewport.select(selection, revealInList);
   createEffect(
     () => ({ selection: selected(), document: doc() }),
     ({ selection, document }) => {
@@ -235,7 +267,7 @@ export default function Editor3D(props: EditorProps) {
     return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
   }
 
-  type PreparedAsset = Awaited<ReturnType<typeof prepareProjectionAsset>>;
+  type PreparedAsset = Awaited<ReturnType<typeof prepareProjectionPlacement>>;
   type WarmAsset = {
     id: string;
     library: LibraryRef;
@@ -271,7 +303,7 @@ export default function Editor3D(props: EditorProps) {
       map: document.map,
       retired: false,
       value: null,
-      promise: prepareProjectionAsset(library.handle, entry, document.map).then((value) => {
+      promise: prepareProjectionPlacement(library.handle, entry, document.map).then((value) => {
         if (next.retired) {
           disposeObjectResources([value.asset]);
           throw new Error("Asset preload cancelled");
@@ -299,6 +331,7 @@ export default function Editor3D(props: EditorProps) {
     inside: boolean;
     dropped: boolean;
     position: [number, number, number] | null;
+    elevationOffset: number;
     result: ReturnType<typeof insertProjectionAsset> | null;
   };
   let assetDrag: AssetDrag | null = null;
@@ -325,6 +358,7 @@ export default function Editor3D(props: EditorProps) {
       (group) => group.id === drag.result!.selection.id,
     )!;
     [group.transform.dx, group.transform.dy, group.transform.dz] = drag.position;
+    group.transform.dz += drag.elevationOffset;
     viewport.syncViews(drag.result.document, false);
     if (drag.dropped) {
       assetDrag = null;
@@ -344,6 +378,7 @@ export default function Editor3D(props: EditorProps) {
       inside: false,
       dropped: false,
       position: null,
+      elevationOffset: 0,
       result: null,
     };
     assetDrag = drag;
@@ -357,9 +392,20 @@ export default function Editor3D(props: EditorProps) {
         prepared.descriptor,
         prepared.reference,
         [0, 0, 0],
+        prepared.additionalAssets,
       );
+      drag.elevationOffset = drag.result.document.groups.find(
+        (group) => group.id === drag.result!.selection.id,
+      )!.transform.dz;
       parseLevel3D(drag.result.document, { level: level() ?? undefined });
-      if (!viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources))
+      if (
+        !viewport.adoptAsset(
+          prepared.reference,
+          prepared.asset,
+          prepared.sources,
+          prepared.additionalAssets.map((member) => member.reference),
+        )
+      )
         disposeObjectResources([prepared.asset]);
       prepared = null;
       updateAssetDrag();
@@ -379,7 +425,7 @@ export default function Editor3D(props: EditorProps) {
     const attempt = openAttempt;
     if (!document || !library || addingAsset()) return;
     setAddingAsset(true);
-    let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
+    let prepared: PreparedAsset | null = null;
     try {
       prepared = await takeAsset(entry);
       if (disposed || attempt !== openAttempt || props.library() !== library || doc() !== document)
@@ -392,9 +438,15 @@ export default function Editor3D(props: EditorProps) {
         prepared.descriptor,
         prepared.reference,
         position,
+        prepared.additionalAssets,
       );
       parseLevel3D(result.document, { level: level() ?? undefined });
-      const adopted = viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources);
+      const adopted = viewport.adoptAsset(
+        prepared.reference,
+        prepared.asset,
+        prepared.sources,
+        prepared.additionalAssets.map((member) => member.reference),
+      );
       if (!adopted) disposeObjectResources([prepared.asset]);
       prepared = null;
       pushHistory(result.document);
@@ -421,7 +473,7 @@ export default function Editor3D(props: EditorProps) {
           throw new Error("Save the current map successfully before creating another map.");
       }
       if (disposed || props.library() !== library) return;
-      name = await createNewMap(library.handle, name);
+      name = await createNewMap(library.handle, name, newMapOptions());
       if (disposed || props.library() !== library) return;
       setMaps((current) => [...new Set([...current, name])].sort());
       newMapDialog.close();
@@ -437,6 +489,10 @@ export default function Editor3D(props: EditorProps) {
   // ── document ──
   function pushHistory(next: Level3D) {
     session.edit(next);
+  }
+  function commitTerrain(next: Level3D) {
+    const previous = doc();
+    pushHistory(previous ? followTerrainEdit(previous, next) : next);
   }
   function undo() {
     session.undo();
@@ -557,6 +613,7 @@ export default function Editor3D(props: EditorProps) {
       !disposed && attempt === openAttempt && props.index() === idx && props.library() === lib;
     let preparedAsset: THREE.Object3D | null = null;
     let preparedEntities: SceneEntities | null = null;
+    let importedMission: Level3D["mission"];
     props.onStatus(null);
     setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
@@ -589,15 +646,22 @@ export default function Editor3D(props: EditorProps) {
         loadedIndex === idx &&
         loadedLibrary === lib
       ) {
-        if (mission && idx && currentLevel)
+        if (mission && idx && currentLevel) {
+          importedMission = await loadEditableMission(idx, mission, currentLevel, lib.handle);
           preparedEntities = await MissionEntities.load(
             idx,
-            mission,
+            remainingMissionPreview(mission),
             currentLevel,
             currentDocument.camera,
             current,
-          );
-        else if (currentDocument.population)
+          ).catch((error) => {
+            importedMission?.importWarnings?.push(
+              `Other mission previews unavailable: ${String(error)}`,
+            );
+            return null;
+          });
+        } else if (mission) throw new Error("Mission import requires its source level data");
+        else if (currentDocument.population && !currentDocument.mission)
           preparedEntities = await PopulationView.load(
             lib.handle,
             currentDocument.population,
@@ -613,15 +677,24 @@ export default function Editor3D(props: EditorProps) {
           preparedEntities?.dispose();
           return;
         }
+        if (doc() !== currentDocument)
+          throw new Error("Map changed during mission import; please load the mission again.");
+        if (importedMission) pushHistory({ ...currentDocument, mission: importedMission });
+        else if (!mission && currentDocument.mission) {
+          const { mission: _mission, ...mapOnly } = currentDocument;
+          pushHistory(mapOnly);
+        }
         viewport.replaceEntities(preparedEntities);
         viewport.setEntitiesVisible(showEntities());
         viewport.setPopulationPlaying(populationPlaying());
         viewport.setPopulationRoutesVisible(populationRoutes());
         setMissionName(mission?.name ?? "");
         setMissionInfo(
-          preparedEntities
-            ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
-            : "",
+          importedMission
+            ? `${importedMission.spawnPoints.length} editable PC spawns, ${importedMission.soldiers.length} editable soldiers. Import limitations are listed in Mission.`
+            : preparedEntities
+              ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
+              : "",
         );
         preparedEntities = null;
         props.onStatus(null);
@@ -647,14 +720,20 @@ export default function Editor3D(props: EditorProps) {
       preparedAsset = candidate.asset;
       if (mission && idx) {
         if (!candidate.level) throw new Error("Mission requires level data");
+        importedMission = await loadEditableMission(idx, mission, candidate.level, lib.handle);
         preparedEntities = await MissionEntities.load(
           idx,
-          mission,
+          remainingMissionPreview(mission),
           candidate.level,
           candidate.document.camera,
           current,
-        );
-      } else if (candidate.document.population) {
+        ).catch((error) => {
+          importedMission?.importWarnings?.push(
+            `Other mission previews unavailable: ${String(error)}`,
+          );
+          return null;
+        });
+      } else if (candidate.document.population && !candidate.document.mission) {
         preparedEntities = await PopulationView.load(
           lib.handle,
           candidate.document.population,
@@ -663,13 +742,14 @@ export default function Editor3D(props: EditorProps) {
         );
       }
       const {
-        document: d,
+        document: baseDocument,
         directory: dir,
         level: lvl,
         sources: nextSources,
         ground: nextGround,
         suspects: nextSuspects,
       } = candidate;
+      const d = importedMission ? { ...baseDocument, mission: importedMission } : baseDocument;
       if (
         disposed ||
         !session.isCurrent(generation) ||
@@ -697,11 +777,13 @@ export default function Editor3D(props: EditorProps) {
       viewport.setEntitiesVisible(showEntities());
       viewport.setPopulationPlaying(populationPlaying());
       viewport.setPopulationRoutesVisible(populationRoutes());
-      setMissionName(mission?.name ?? "");
+      setMissionName(mission?.name ?? d.mission?.importedFrom ?? "");
       setMissionInfo(
-        preparedEntities
-          ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
-          : "",
+        d.mission
+          ? `${d.mission.spawnPoints.length} editable PC spawns, ${d.mission.soldiers.length} editable soldiers. Import limitations are listed in Mission.`
+          : preparedEntities
+            ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
+            : "",
       );
       preparedEntities = null;
       if (transientMapName && transientMapName !== name) {
@@ -721,7 +803,8 @@ export default function Editor3D(props: EditorProps) {
             ),
           );
       }
-      session.publish(generation, name, d, dir, candidate.saved && !importedFile);
+      session.publish(generation, name, baseDocument, dir, candidate.saved && !importedFile);
+      if (importedMission) pushHistory(d);
       loadedIndex = idx;
       loadedLibrary = lib;
       setLevel(lvl);
@@ -764,6 +847,10 @@ export default function Editor3D(props: EditorProps) {
   createEffect(
     () => spriteOrientationLock(),
     (value) => viewport.setSpriteOrientationLock(value),
+  );
+  createEffect(
+    () => assetDisplayMode(),
+    (value) => viewport.setAssetDisplayMode(value),
   );
   createEffect(
     () => showEntities(),
@@ -822,14 +909,26 @@ export default function Editor3D(props: EditorProps) {
   function setTransformField(field: keyof GameTransform, value: number) {
     const t = selectedTransform();
     if (!t || !Number.isFinite(value)) return;
-    setTransform({ ...t, [field]: value });
+    const document = doc(),
+      selection = selected();
+    if (!document || !selection) return;
+    const next = { ...t, [field]: value };
+    setTransform(
+      field === "dx" || field === "dy" ? followTerrainTransform(document, selection, next) : next,
+    );
   }
   function previewTransformField(field: keyof GameTransform, value: number) {
     const document = doc(),
       transform = selectedTransform(),
       selection = selected();
     if (!document || !transform || !selection) return;
-    const changes = { transform: { ...transform, [field]: value } };
+    const proposed = { ...transform, [field]: value };
+    const changes = {
+      transform:
+        field === "dx" || field === "dy"
+          ? followTerrainTransform(document, selection, proposed)
+          : proposed,
+    };
     const next =
       selection.kind === "group"
         ? patchGroup(document, selection.id, changes)
@@ -897,7 +996,13 @@ export default function Editor3D(props: EditorProps) {
     const document = doc();
     if (!document || compiling()) return;
     setCompiling(true);
-    props.onStatus("Compiling map and sprite occlusion…", true);
+    exportCancelled = false;
+    const progress = (value: BakeProgress) => {
+      if (disposed || exportCancelled) throw new Error("Map export was cancelled.");
+      setExportProgress(value);
+    };
+    progress({ stage: "Reading asset definitions…", completed: 0, total: 0 });
+    props.onStatus("Exporting map…", true);
     try {
       // Let the busy state paint before borrowing the viewport's GPU resources.
       await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
@@ -908,9 +1013,17 @@ export default function Editor3D(props: EditorProps) {
         document.assetSources ?? [],
         document.sceneAssets,
       );
-      const { compiled, pixels } = viewport.bakeMap(document, assets);
-      props.onStatus("Packaging mod ZIP…", true);
-      const bytes = await packageCompiledMap(compiled, pixels);
+      progress({ stage: "Compiling gameplay and connections…", completed: 0, total: 0 });
+      const worker = new MapExportWorker();
+      exportWorker = worker;
+      const { compiled, pixels, appearance } = await viewport.bakeMapAsync(
+        document,
+        assets,
+        progress,
+        (bounds) => worker.compile(document, bounds, assets),
+      );
+      progress({ stage: "Encoding images and packaging ZIP…", completed: 0, total: 0 });
+      const bytes = await worker.package(compiled, pixels, appearance);
       if (disposed) return;
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes)], { type: "application/zip" }),
@@ -921,15 +1034,20 @@ export default function Editor3D(props: EditorProps) {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       props.onStatus(
-        `Exported ${compiled.name}.zip — gameplay geometry compiled from placed assets. See the compile report for supported features.`,
+        `Exported ${compiled.name}.zip with ${compiled.warnings.length} warnings; see compile-report.json in the ZIP for omitted or incomplete gameplay. Put it in the game’s configured mods directory, then choose ${compiled.details.title} in Custom Missions. The editable map is included.`,
       );
     } catch (error) {
       if (!disposed) {
         props.onStatus(null);
-        props.onError(`Map compilation failed: ${String(error)}`);
+        if (!exportCancelled) props.onError(`Map compilation failed: ${String(error)}`);
       }
     } finally {
-      if (!disposed) setCompiling(false);
+      exportWorker?.dispose();
+      exportWorker = undefined;
+      if (!disposed) {
+        setCompiling(false);
+        setExportProgress(null);
+      }
     }
   }
 
@@ -1061,9 +1179,16 @@ export default function Editor3D(props: EditorProps) {
   };
   let sceneObjectList: HTMLUListElement | undefined;
   createEffect(
-    () => ({ selection: selected(), panel: panel(), expanded: expanded(), filter: filter() }),
-    ({ selection, panel }) => {
-      if (!selection || panel !== "Selection") return undefined;
+    () => ({
+      selection: selected(),
+      revealInList: revealSelectionInList(),
+      panel: panel(),
+      expanded: expanded(),
+      filter: filter(),
+    }),
+    ({ selection, revealInList, panel }) => {
+      // List selections are already visible; keep the user's scroll position.
+      if (!selection || !revealInList || panel !== "Selection") return undefined;
       // Wait for the selected row and any expanded parent to finish rendering.
       const frame = requestAnimationFrame(() => {
         const list = sceneObjectList;
@@ -1119,7 +1244,9 @@ export default function Editor3D(props: EditorProps) {
           }}
         >
           <h2 id="new-map-title">New map</h2>
-          <p>Start with an open canvas. Add assets, walls and paths in any direction.</p>
+          <p>
+            Choose a reference size and starting ground grid. Resize later without deleting content.
+          </p>
           <fieldset disabled={creatingMap()}>
             <label>
               Map name
@@ -1133,6 +1260,7 @@ export default function Editor3D(props: EditorProps) {
                 onInput={(event) => setNewMapName(event.currentTarget.value)}
               />
             </label>
+            <NewMapSettings value={newMapOptions()} onChange={setNewMapOptions} />
             <p class="hint">Saved in this browser. Use Download to export the map JSON.</p>
             <Show when={dirty()}>
               <p class="hint">Your current map will be saved before creating the new one.</p>
@@ -1179,7 +1307,9 @@ export default function Editor3D(props: EditorProps) {
               }}
             >
               <option value="">Map only</option>
-              <For each={missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName())}>
+              <For
+                each={missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName())}
+              >
                 {(mission) => <option value={mission.id}>{mission.label}</option>}
               </For>
             </select>
@@ -1187,9 +1317,6 @@ export default function Editor3D(props: EditorProps) {
         </Show>
         <span class="spacer" />
         <Show when={doc()}>
-          <button disabled={!doc()} onClick={() => viewport.gameCamera()} title="g">
-            Reset view
-          </button>
           <button disabled={history().past.length === 0} onClick={undo} title="ctrl+z">
             Undo
           </button>
@@ -1208,7 +1335,9 @@ export default function Editor3D(props: EditorProps) {
             Download
           </button>
           <button
-            disabled={!doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()}
+            disabled={
+              !doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()
+            }
             onClick={() => void exportMod()}
             title="Compile geometry and connections from placed asset definitions"
           >
@@ -1229,6 +1358,40 @@ export default function Editor3D(props: EditorProps) {
           </button>
         </Show>
       </header>
+      <Show when={exportProgress()}>
+        {(progress) => (
+          <dialog
+            class="map-load-dialog"
+            aria-label="Exporting map"
+            ref={(dialog) =>
+              queueMicrotask(() => {
+                if (dialog.isConnected) dialog.showModal();
+              })
+            }
+            onCancel={(event) => {
+              event.preventDefault();
+              cancelExport();
+            }}
+          >
+            <h2>Exporting map</h2>
+            <div class="map-load-progress" role="status" aria-live="polite">
+              <div class="map-load-progress-label">
+                <span>{progress().stage}</span>
+                <span>
+                  {progress().total > 0
+                    ? `${Math.round((progress().completed / progress().total) * 100)}%`
+                    : ""}
+                </span>
+              </div>
+              <progress
+                max={Math.max(1, progress().total)}
+                value={progress().total > 0 ? progress().completed : undefined}
+              />
+            </div>
+            <button onClick={cancelExport}>Cancel export</button>
+          </dialog>
+        )}
+      </Show>
       <Show when={mapLoadProgress()}>
         {(progress) => (
           <dialog
@@ -1385,6 +1548,36 @@ export default function Editor3D(props: EditorProps) {
             } else if (entry && placement) void addAsset(entry, placement);
           }}
         >
+          <Show when={doc()}>
+            <div class="viewport-navigation" aria-label="Quick camera controls">
+              <button onClick={() => viewport.gameCamera()} title="Game camera (g)">
+                Game camera
+              </button>
+              <For each={["N", "E", "S", "W"] as const}>
+                {(direction) => (
+                  <button
+                    title={`Orient ${direction} up`}
+                    onClick={() => viewport.setCardinalView(direction)}
+                  >
+                    {direction}
+                  </button>
+                )}
+              </For>
+              <button onClick={() => viewport.topView()}>Top</button>
+              <button
+                aria-label="Turn camera left 90 degrees"
+                onClick={() => viewport.rotateViewQuarterTurn(-1)}
+              >
+                ↶
+              </button>
+              <button
+                aria-label="Turn camera right 90 degrees"
+                onClick={() => viewport.rotateViewQuarterTurn(1)}
+              >
+                ↷
+              </button>
+            </div>
+          </Show>
           <Show when={!doc()}>
             <section class="map-selection" aria-label="Select Map">
               <span class="eyebrow">MAP WORKSPACE</span>
@@ -1464,7 +1657,7 @@ export default function Editor3D(props: EditorProps) {
         </div>
         <aside class="editor-panel" aria-label="Inspector">
           <nav class="inspector-tabs" aria-label="Inspector sections">
-            <For each={["Selection", "Draw", "View"]}>
+            <For each={["Selection", "Draw", "View", "Mission"]}>
               {(name) => (
                 <button
                   aria-pressed={panel() === name ? "true" : "false"}
@@ -1482,25 +1675,113 @@ export default function Editor3D(props: EditorProps) {
               )}
             </For>
           </nav>
-          <div class="inspector-content" hidden={panel() !== "Draw"}>
-            <p class="panel-intro">
-              Draw walls, rivers and paths directly in the scene. Finish or cancel a path before
-              switching tools.
-            </p>
-            <SplinePanel
-              document={doc}
+          <div class="inspector-content" hidden={panel() !== "Mission"}>
+            <MissionPanel
               library={() => props.library()?.handle ?? null}
-              entries={assetEntries}
-              viewport={viewport}
+              document={doc}
               commit={pushHistory}
               onError={props.onError}
-              active={panel() === "Draw"}
-              onEditingChange={setEditingPath}
+              active={panel() === "Mission"}
+              viewport={viewport}
             />
+          </div>
+          <div class="inspector-content" hidden={panel() !== "Draw"}>
+            <nav class="draw-subtabs" role="tablist" aria-label="Draw mode">
+              <For each={["Terrain", "Paths"] as const}>
+                {(mode) => (
+                  <button
+                    role="tab"
+                    id={`draw-tab-${mode.toLowerCase()}`}
+                    aria-controls={`draw-panel-${mode.toLowerCase()}`}
+                    aria-selected={drawMode() === mode ? "true" : "false"}
+                    disabled={editingPath() && mode === "Terrain"}
+                    title={
+                      editingPath() && mode === "Terrain"
+                        ? "Finish or cancel the path first"
+                        : undefined
+                    }
+                    onClick={() => setDrawMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                )}
+              </For>
+            </nav>
+            <div
+              role="tabpanel"
+              id="draw-panel-terrain"
+              aria-labelledby="draw-tab-terrain"
+              hidden={drawMode() !== "Terrain"}
+            >
+              <TerrainPanel
+                viewport={viewport}
+                active={panel() === "Draw" && drawMode() === "Terrain"}
+                document={doc}
+                commit={commitTerrain}
+                onError={props.onError}
+                disabled={editingPath()}
+              />
+            </div>
+            <div
+              role="tabpanel"
+              id="draw-panel-paths"
+              aria-labelledby="draw-tab-paths"
+              hidden={drawMode() !== "Paths"}
+            >
+              <SplinePanel
+                document={doc}
+                library={() => props.library()?.handle ?? null}
+                entries={assetEntries}
+                viewport={viewport}
+                commit={commitTerrain}
+                onError={props.onError}
+                active={panel() === "Draw" && drawMode() === "Paths"}
+                onEditingChange={setEditingPath}
+              />
+            </div>
           </div>
           <div class="inspector-content" hidden={panel() !== "View"}>
             <section class="view-settings">
               <h2>Camera &amp; display</h2>
+              <div class="camera-directions" aria-label="Camera direction">
+                <button onClick={() => viewport.gameCamera()} title="Game camera (g)">
+                  Game camera
+                </button>
+                <For each={["N", "E", "S", "W"] as const}>
+                  {(direction) => (
+                    <button onClick={() => viewport.setCardinalView(direction)}>{direction}</button>
+                  )}
+                </For>
+                <button onClick={() => viewport.topView()}>Top view</button>
+                <button
+                  aria-label="Rotate view left 90 degrees"
+                  onClick={() => viewport.rotateViewQuarterTurn(-1)}
+                >
+                  ↶ 90°
+                </button>
+                <button
+                  aria-label="Rotate view right 90 degrees"
+                  onClick={() => viewport.rotateViewQuarterTurn(1)}
+                >
+                  ↷ 90°
+                </button>
+              </div>
+              <label>
+                Asset display
+                <select
+                  aria-label="Asset display"
+                  value={assetDisplayMode()}
+                  onChange={(event) =>
+                    setAssetDisplayMode(
+                      event.currentTarget.value as "visible" | "outline" | "hidden",
+                    )
+                  }
+                >
+                  <option value="visible">Visible</option>
+                  <option value="outline">Outline</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </label>
               <ScrubNumber
                 label="Gizmo rotation (°)"
                 step={1}
@@ -1678,19 +1959,26 @@ export default function Editor3D(props: EditorProps) {
                   {missionName()} — {missionInfo()}
                 </p>
                 <p class="hint">
-                  Initial placements; mission scripts are not run. Green markers show spawn points.
-                  Magenta markers indicate missing sprite assets. Standing characters, prone bodies,
-                  pickups, and scenery use different depth profiles.
+                  PC spawns and soldiers are editable in Mission. Other entities are previews only;
+                  mission scripts are not run. See Mission for import limitations.
                 </p>
               </Show>
             </section>
+            <WorkspacePanel document={doc} commit={commitTerrain} onError={props.onError} />
             <LightingPanel document={doc} commit={pushHistory} />
             <section class="view-settings export-settings">
+              <h2>Test your map</h2>
+              <p class="hint">
+                Choose Export mod ZIP, put the downloaded ZIP in the game’s configured mods
+                directory, then select your map in Custom Missions. Use the base game data for
+                characters and shared resources. The editor’s population preview does not run
+                mission scripts.
+              </p>
               <h2>Export frame</h2>
               <p class="hint">
-                Gameplay is compiled from asset-local definitions. Assets need authored walkable
-                surfaces and door connections. Player spawns belong to missions. Missing map
-                definitions stop export.
+                Terrain generates walking areas and height layers automatically. Asset gameplay is
+                compiled from local definitions. Assets need authored walkable surfaces and door
+                connections. Player spawns belong to missions. Missing map definitions stop export.
                 Mission scripts, lifts, jumps and interactive state changes are not supported yet.
               </p>
               <p class="hint">
@@ -1721,30 +2009,23 @@ export default function Editor3D(props: EditorProps) {
                   <div class="export-fields">
                     <For each={["Left", "Top", "Width", "Height"]}>
                       {(label, index) => (
-                        <label>
-                          {label}
-                          <input
-                            type="number"
-                            aria-label={`Export ${label.toLowerCase()}`}
-                            step="1"
-                            min={index() > 1 ? 1 : undefined}
-                            value={bounds()[index()]}
-                            onChange={(event) => {
-                              const value = Number(event.currentTarget.value);
-                              if (
-                                !event.currentTarget.value ||
-                                !Number.isInteger(value) ||
-                                (index() > 1 && value < 1)
-                              ) {
-                                event.currentTarget.value = String(bounds()[index()]);
-                                return;
-                              }
-                              const next = [...bounds()] as [number, number, number, number];
-                              next[index()] = value;
-                              pushHistory({ ...doc()!, exportBounds: next });
-                            }}
-                          />
-                        </label>
+                        <ScrubNumber
+                          label={`Export ${label.toLowerCase()}`}
+                          step={1}
+                          min={index() > 1 ? 1 : undefined}
+                          value={bounds()[index()]!}
+                          onPreview={(value) => {
+                            const next = [...bounds()] as [number, number, number, number];
+                            next[index()] = Math.round(value);
+                            viewport.syncViews({ ...doc()!, exportBounds: next }, false);
+                          }}
+                          onCommit={(value) => {
+                            const next = [...bounds()] as [number, number, number, number];
+                            next[index()] = Math.round(value);
+                            pushHistory({ ...doc()!, exportBounds: next });
+                          }}
+                          onCancel={() => viewport.syncViews(doc()!, false)}
+                        />
                       )}
                     </For>
                   </div>
@@ -1815,10 +2096,18 @@ export default function Editor3D(props: EditorProps) {
                     <button
                       class="asset-action"
                       aria-label="Hidden"
-                      aria-pressed={(selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "true" : "false"}
-                      title={(selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "Show asset" : "Hide asset"}
+                      aria-pressed={
+                        (selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "true" : "false"
+                      }
+                      title={
+                        (selectedGroup()?.hidden ?? selectedPart()?.hidden)
+                          ? "Show asset"
+                          : "Hide asset"
+                      }
                       disabled={!!selectedStatePart()}
-                      onClick={() => setHidden(!(selectedGroup()?.hidden ?? selectedPart()?.hidden))}
+                      onClick={() =>
+                        setHidden(!(selectedGroup()?.hidden ?? selectedPart()?.hidden))
+                      }
                     >
                       <svg
                         width="18"
@@ -2011,10 +2300,10 @@ export default function Editor3D(props: EditorProps) {
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          select({ kind: r.kind, id: r.id });
+                          select({ kind: r.kind, id: r.id }, false);
                         }
                       }}
-                      onClick={() => select({ kind: r.kind, id: r.id })}
+                      onClick={() => select({ kind: r.kind, id: r.id }, false)}
                     >
                       <Show
                         when={r.kind === "group"}

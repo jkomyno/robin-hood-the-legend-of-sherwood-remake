@@ -1,0 +1,9 @@
+{
+  "review": "These four adjacent physical parts share a single applied-state appearance and are controlled by no other map transition. Assemble them into one movable asset; visual state masks require separate authoring.",
+  "groups": [
+    {
+      "id": "croisement02-north-state-assembly",
+      "parts": [{ "obstacle": 146 }, { "obstacle": 147 }, { "obstacle": 148 }, { "obstacle": 149 }]
+    }
+  ]
+}

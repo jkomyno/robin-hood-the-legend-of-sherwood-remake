@@ -1,3 +1,4 @@
+import ScrubNumber from "./ScrubNumber";
 import { For, Show, createEffect, createSignal, onCleanup, untrack } from "solid-js";
 import {
   parseLevel3D,
@@ -15,6 +16,9 @@ import { readWallPresets, wallPreset, type WallPreset } from "./wall-presets";
 import AssetPreview, { AssetPreviewRenderer } from "./AssetPreview";
 import AssetPickerDialog from "./AssetPickerDialog";
 import { availableWallPresets, builtInWallPresets, cornerAssetIds } from "./spline-presets";
+import MaterialPicker from "./MaterialPicker";
+import { splineMaterialWeightsAt } from "../../shared/src/spline-sampling.ts";
+import { terrainHeightAt } from "../../shared/src/authored-terrain.ts";
 
 export default function SplinePanel(props: {
   document: () => Level3D | null;
@@ -29,6 +33,7 @@ export default function SplinePanel(props: {
   const [active, setActive] = createSignal("");
   const [draft, setDraft] = createSignal<LevelSpline | null>(null);
   const [point, setPoint] = createSignal(0);
+  const [section, setSection] = createSignal(-1);
   const [picker, setPicker] = createSignal<"wall" | "corner" | null>(null);
   const [sourceMap, setSourceMap] = createSignal("");
   const previewRenderer = new AssetPreviewRenderer();
@@ -41,6 +46,14 @@ export default function SplinePanel(props: {
   let attempt = 0;
   const path = () =>
     draft() ?? props.document()?.splines?.find((path) => path.id === active()) ?? null;
+  const pointHeight = (path: LevelSpline, index: number) => {
+    const p = path.points[index],
+      document = props.document();
+    if (!p) return 0;
+    return path.kind === "road" && document
+      ? (terrainHeightAt(document, p[0], p[1]) ?? p[2]) + (path.pointHeightOffsets?.[index] ?? 0)
+      : p[2];
+  };
   const choices = () => [
     ...availableWallPresets(props.entries()),
     ...presets().filter((p) => props.entries().some((e) => e.id === p.asset)),
@@ -123,6 +136,33 @@ export default function SplinePanel(props: {
     const current = path();
     if (current) change({ ...current, ...values });
   }
+  function NumberField(field: {
+    label: string;
+    value: number;
+    step?: number;
+    min?: number;
+    max?: number;
+    patch(value: number): Partial<LevelSpline>;
+  }) {
+    return (
+      <ScrubNumber
+        label={field.label}
+        value={field.value}
+        step={field.step ?? 1}
+        min={field.min}
+        max={field.max}
+        onPreview={(value) => {
+          const current = path();
+          if (current) props.viewport.previewSpline({ ...current, ...field.patch(value) });
+        }}
+        onCommit={(value) => {
+          props.viewport.previewSpline(null);
+          patch(field.patch(value));
+        }}
+        onCancel={() => props.viewport.previewSpline(null)}
+      />
+    );
+  }
   function move(index: number, position: Vec3) {
     const current = path();
     if (current) patch({ points: current.points.map((p, i) => (i === index ? position : p)) });
@@ -173,12 +213,16 @@ export default function SplinePanel(props: {
       };
       if (draft()) {
         pendingSources = pendingSources.filter((s) => s.id !== id).concat(reference);
-        setDraft((latest) => latest?.id === current.id ? {
-          ...latest,
-          cornerAsset: id,
-          cornerMinAngle: latest.cornerMinAngle ?? 35,
-          cornerScale: latest.cornerScale ?? 1,
-        } : latest);
+        setDraft((latest) =>
+          latest?.id === current.id
+            ? {
+                ...latest,
+                cornerAsset: id,
+                cornerMinAngle: latest.cornerMinAngle ?? 35,
+                cornerScale: latest.cornerScale ?? 1,
+              }
+            : latest,
+        );
       } else
         publish({
           ...document,
@@ -242,7 +286,7 @@ export default function SplinePanel(props: {
         cornerDisabled: latest.cornerDisabled,
       });
       if (draft())
-        setDraft((latest) => latest?.id === current.id ? replaceSource(latest) : latest);
+        setDraft((latest) => (latest?.id === current.id ? replaceSource(latest) : latest));
       else
         publish({
           ...document,
@@ -262,7 +306,7 @@ export default function SplinePanel(props: {
     if (preset) preset = wallPreset(preset);
     const document = props.document(),
       root = props.library();
-    if (!document || !root || busy()) return;
+    if (!document || (kind === "wall" && !root) || busy()) return;
     const token = ++attempt;
     setBusy(true);
     let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
@@ -275,7 +319,7 @@ export default function SplinePanel(props: {
         const wanted = preset?.asset;
         const entry = wanted ? sources().find((entry) => entry.id === wanted) : sources()[0];
         if (!entry) throw new Error("Publish a wall asset to the shared library first");
-        prepared = await prepareProjectionAsset(root, entry, document.map);
+        prepared = await prepareProjectionAsset(root!, entry, document.map);
         if (
           disposed ||
           token !== attempt ||
@@ -307,6 +351,7 @@ export default function SplinePanel(props: {
         name: kind === "river" ? "River" : kind === "road" ? "Footpath" : "Battlement wall",
         kind,
         points: [],
+        ...(kind === "wall" ? {} : { pointWidths: [], pointMaterials: [] }),
         closed: false,
         width: kind === "river" ? 110 : kind === "road" ? 26 : wallWidth,
         repeatLength: kind === "river" ? 150 : wallRepeat,
@@ -349,6 +394,10 @@ export default function SplinePanel(props: {
     const index = Math.min(point(), current.points.length - 1);
     patch({
       points: current.points.filter((_, i) => i !== index),
+      pointWidths: current.pointWidths?.filter((_, i) => i !== index),
+      pointHeightOffsets: current.pointHeightOffsets?.filter((_, i) => i !== index),
+      pointMaterials: current.pointMaterials?.filter((_, i) => i !== index),
+      pointMaterialMixes: current.pointMaterialMixes?.filter((_, i) => i !== index),
       cornerDisabled: current.cornerDisabled
         ?.filter((i) => i !== index)
         .map((i) => (i > index ? i - 1 : i)),
@@ -370,15 +419,17 @@ export default function SplinePanel(props: {
     () => ({
       current: props.active === false ? null : path(),
       selected: point(),
+      selectedSection: section(),
       drawing: !!draft(),
     }),
-    ({ current, selected, drawing }) => {
+    ({ current, selected, selectedSection, drawing }) => {
       untrack(() =>
         props.viewport.setSplineEdit(
           current
             ? {
                 path: current,
                 point: selected,
+                section: selectedSection,
                 drawing,
                 append(position) {
                   // A pointer gesture can retain this callback while reactive
@@ -394,11 +445,38 @@ export default function SplinePanel(props: {
                       return latest;
                     }
                     setPoint(latest.points.length);
-                    return { ...latest, points: [...latest.points, position] };
+                    const height = latest.points[0]?.[2] ?? position[2];
+                    return {
+                      ...latest,
+                      points: [...latest.points, [position[0], position[1], height]],
+                      pointWidths: latest.pointWidths
+                        ? [...latest.pointWidths, latest.pointWidths.at(-1) ?? latest.width]
+                        : undefined,
+                      pointHeightOffsets: latest.pointHeightOffsets
+                        ? [...latest.pointHeightOffsets, latest.pointHeightOffsets.at(-1) ?? 0]
+                        : undefined,
+                      pointMaterials: latest.pointMaterials
+                        ? [
+                            ...latest.pointMaterials,
+                            latest.pointMaterials.at(-1) ??
+                              (latest.kind === "river" ? "water_still" : "path_dirt"),
+                          ]
+                        : undefined,
+                      pointMaterialMixes: latest.pointMaterialMixes
+                        ? [...latest.pointMaterialMixes, latest.pointMaterialMixes.at(-1) ?? null]
+                        : undefined,
+                    };
                   });
                 },
                 move,
-                selectPoint: setPoint,
+                selectPoint(index) {
+                  setPoint(index);
+                  setSection(-1);
+                },
+                selectSection(index) {
+                  setSection(index);
+                  setPoint(index);
+                },
               }
             : null,
         ),
@@ -438,31 +516,40 @@ export default function SplinePanel(props: {
   return (
     <section class="spline-panel">
       <h2>Paths &amp; walls</h2>
-      <Show
-        when={!path() && props.active !== false}
-        fallback={
-          <Show when={path()}>
-            <button onClick={exit}>Choose another preset</button>
-          </Show>
-        }
-      >
-        <label>
-          Source map
-          <select
-            aria-label="Preset source map"
-            value={sourceMap()}
-            onChange={(event) => setSourceMap(event.currentTarget.value)}
-          >
-            <option value="">All maps</option>
-            <For each={[...new Set(sources().map((entry) => entry.source_map))].sort()}>
-              {(name) => <option value={name}>{name}</option>}
+      <Show when={!path() && props.active !== false}>
+        <Show when={props.document()?.splines?.length}>
+          <h3>On this map</h3>
+          <div class="spline-list" aria-label="Saved paths">
+            <For each={props.document()?.splines ?? []}>
+              {(item) => (
+                <button
+                  class={active() === item.id ? "selected" : ""}
+                  onClick={() => {
+                    pendingSources = [];
+                    setActive(item.id);
+                    setPoint(0);
+                  }}
+                >
+                  <strong>{item.name}</strong>
+                  <span>
+                    {item.kind === "road" ? "Footpath" : item.kind === "river" ? "River" : "Wall"} ·{" "}
+                    {item.points.length} points
+                  </span>
+                </button>
+              )}
             </For>
-          </select>
-        </label>
+          </div>
+        </Show>
+        <h3>Create a path</h3>
+        <p class="hint">Choose a surface, then click the map to place points.</p>
         <div class="spline-preset-grid">
           <For each={["road", "river"] as const}>
             {(kind) => (
-              <button class="asset-card" disabled={busy()} onClick={() => void begin(kind)}>
+              <button
+                class="asset-card"
+                disabled={busy() || !props.document()}
+                onClick={() => void begin(kind)}
+              >
                 <svg
                   class={`surface-preset-preview ${kind}`}
                   viewBox="0 0 160 100"
@@ -476,36 +563,57 @@ export default function SplinePanel(props: {
               </button>
             )}
           </For>
-          <For
-            each={choices().filter(
-              (p) =>
-                !sourceMap() ||
-                props.entries().find((e) => e.id === p.asset)?.source_map === sourceMap(),
-            )}
-          >
-            {(preset) => {
-              const entry = () => props.entries().find((entry) => entry.id === preset.asset);
-              return (
-                <button
-                  class="asset-card"
-                  disabled={busy()}
-                  onClick={() => void begin("wall", preset)}
-                >
-                  <Show when={entry() && props.library()}>
-                    <AssetPreview
-                      entry={entry()!}
-                      root={props.library()!}
-                      renderer={previewRenderer}
-                    />
-                  </Show>
-                  <span class="asset-card-info">
-                    <strong>{preset.name}</strong>
-                  </span>
-                </button>
-              );
-            }}
-          </For>
         </div>
+        <details class="spline-settings">
+          <summary>Walls &amp; fences</summary>
+          <label>
+            Source map
+            <select
+              aria-label="Preset source map"
+              value={sourceMap()}
+              onChange={(event) => setSourceMap(event.currentTarget.value)}
+            >
+              <option value="">All maps</option>
+              <For each={[...new Set(sources().map((entry) => entry.source_map))].sort()}>
+                {(name) => <option value={name}>{name}</option>}
+              </For>
+            </select>
+          </label>
+          <Show when={!props.library()}>
+            <p class="hint">Load an asset library to draw walls and fences.</p>
+          </Show>
+          <div class="spline-preset-grid">
+            <For
+              each={choices().filter(
+                (p) =>
+                  !sourceMap() ||
+                  props.entries().find((e) => e.id === p.asset)?.source_map === sourceMap(),
+              )}
+            >
+              {(preset) => {
+                const entry = () => props.entries().find((entry) => entry.id === preset.asset);
+                return (
+                  <button
+                    class="asset-card"
+                    disabled={busy()}
+                    onClick={() => void begin("wall", preset)}
+                  >
+                    <Show when={entry() && props.library()}>
+                      <AssetPreview
+                        entry={entry()!}
+                        root={props.library()!}
+                        renderer={previewRenderer}
+                      />
+                    </Show>
+                    <span class="asset-card-info">
+                      <strong>{preset.name}</strong>
+                    </span>
+                  </button>
+                );
+              }}
+            </For>
+          </div>
+        </details>
       </Show>
       <Show when={picker() && props.library()}>
         <AssetPickerDialog
@@ -514,12 +622,15 @@ export default function SplinePanel(props: {
           entries={
             picker() === "wall"
               ? sources()
-              : props
-                  .entries()
-                  .filter((entry) => cornerAssetIds.has(entry.id))
+              : props.entries().filter((entry) => cornerAssetIds.has(entry.id))
           }
-          selected={picker() === "wall" ? path()?.asset :
-            cornerAssetIds.has(path()?.cornerAsset ?? "") ? path()?.cornerAsset : undefined}
+          selected={
+            picker() === "wall"
+              ? path()?.asset
+              : cornerAssetIds.has(path()?.cornerAsset ?? "")
+                ? path()?.cornerAsset
+                : undefined
+          }
           emptyLabel={picker() === "corner" ? "Continuous join — no corner model" : undefined}
           onClose={() => setPicker(null)}
           onSelect={(id) => {
@@ -530,306 +641,27 @@ export default function SplinePanel(props: {
           }}
         />
       </Show>
-      <div class="spline-list">
-        <For each={props.document()?.splines ?? []}>
-          {(item) => (
-            <button
-              class={active() === item.id ? "selected" : ""}
-              onClick={() => {
-                setDraft(null);
-                setActive(item.id);
-                setPoint(0);
-              }}
-            >
-              {item.name} · {item.kind}
-            </button>
-          )}
-        </For>
-      </div>
       <Show when={path()}>
         {(current) => (
           <>
-            <p class="hint">
-              {draft()
-                ? "Click the ground to add points. Enter finishes; Escape cancels."
-                : "Drag the cyan control points. Right drag orbits; click elsewhere to pan."}
-            </p>
-            <label>
-              Name
-              <input
-                aria-label="Path name"
-                value={current().name}
-                onChange={(event) => patch({ name: event.currentTarget.value })}
-              />
-            </label>
-            <div class="spline-fields">
-              <label>
-                Width
-                <input
-                  type="number"
-                  aria-label="Path width"
-                  min="1"
-                  step="5"
-                  value={current().width}
-                  onChange={(event) => patch({ width: Number(event.currentTarget.value) })}
-                />
-              </label>
-              <label>
-                Repeat length
-                <input
-                  type="number"
-                  aria-label="Path repeat length"
-                  min="1"
-                  step="5"
-                  value={current().repeatLength}
-                  onChange={(event) => patch({ repeatLength: Number(event.currentTarget.value) })}
-                />
-              </label>
-            </div>
-            <label class="check">
-              <input
-                type="checkbox"
-                checked={current().closed}
-                disabled={current().points.length < 3}
-                onChange={(event) => patch({ closed: event.currentTarget.checked })}
-              />{" "}
-              Closed loop
-            </label>
-            <Show when={current().kind === "wall"}>
-              <div class="spline-actions">
-                <button disabled={busy()} onClick={() => setPicker("wall")}>
-                  Change wall type
-                </button>
-                <button disabled={busy()} onClick={() => setPicker("corner")}>
-                  Change corner type
-                </button>
-              </div>
-              <Show when={cornerAssetIds.has(current().cornerAsset ?? "")}>
-                <label>
-                  Minimum corner angle
-                  <input
-                    aria-label="Corner minimum angle"
-                    type="number"
-                    min="1"
-                    max="179"
-                    value={current().cornerMinAngle ?? 35}
-                    onChange={(e) => patch({ cornerMinAngle: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label>
-                  Tower scale
-                  <input
-                    aria-label="Corner tower scale"
-                    type="number"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={current().cornerScale ?? 1}
-                    onChange={(e) => patch({ cornerScale: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label>
-                  Tower width multiplier
-                  <input
-                    aria-label="Corner tower width"
-                    type="number"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={current().cornerWidthScale ?? 1}
-                    onChange={(e) => patch({ cornerWidthScale: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label>
-                  Tower rotation offset
-                  <input
-                    type="number"
-                    value={current().cornerRotation ?? 0}
-                    onChange={(e) => patch({ cornerRotation: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label class="check">
-                  <input
-                    type="checkbox"
-                    aria-label="Tower at selected corner"
-                    checked={!current().cornerDisabled?.includes(point())}
-                    onChange={(e) =>
-                      patch({
-                        cornerDisabled: e.currentTarget.checked
-                          ? current().cornerDisabled?.filter((i) => i !== point())
-                          : [...(current().cornerDisabled ?? []), point()],
-                      })
-                    }
-                  />{" "}
-                  Tower at selected corner
-                </label>
-              </Show>
-              <button
-                onClick={() => {
-                  try {
-                    const preset = wallPreset(current());
-                    const next = presets()
-                      .filter((p) => p.name !== preset.name)
-                      .concat(preset);
-                    localStorage.setItem("rle.wallPresets", JSON.stringify(next));
-                    setPresets(next);
-                  } catch (error) {
-                    props.onError("Could not save wall preset: " + error);
-                  }
-                }}
-              >
-                Save as wall preset
-              </button>
-              <p class="hint">
-                Presets use the path name and are available across levels in this browser.
-              </p>
-              <label class="check">
-                <input
-                  type="checkbox"
-                  aria-label="Flip battlement side"
-                  checked={current().flipCrossSection ?? false}
-                  onChange={(event) => patch({ flipCrossSection: event.currentTarget.checked })}
-                />{" "}
-                Flip battlement side
-              </label>
-              <label>
-                Source direction
-                <select
-                  aria-label="Wall source direction"
-                  value={current().axis}
-                  onChange={(event) => patch({ axis: event.currentTarget.value as "x" | "y" })}
-                >
-                  <option value="x">Along X</option>
-                  <option value="y">Along Y</option>
-                </select>
-              </label>
-              <label>
-                Source alignment angle
-                <input
-                  type="number"
-                  step="1"
-                  value={current().sourceAngle ?? 0}
-                  onChange={(event) => patch({ sourceAngle: Number(event.currentTarget.value) })}
-                />
-              </label>
-              <div class="spline-fields">
-                <label>
-                  Trim start %
-                  <input
-                    type="number"
-                    min="0"
-                    max="95"
-                    value={(current().sourceStart ?? 0) * 100}
-                    onChange={(event) =>
-                      patch({ sourceStart: Number(event.currentTarget.value) / 100 })
-                    }
-                  />
-                </label>
-                <label>
-                  Trim end %
-                  <input
-                    type="number"
-                    min="5"
-                    max="100"
-                    value={(current().sourceEnd ?? 1) * 100}
-                    onChange={(event) =>
-                      patch({ sourceEnd: Number(event.currentTarget.value) / 100 })
-                    }
-                  />
-                </label>
-              </div>
-            </Show>
-            <Show when={current().kind !== "wall"}>
-              <label>
-                Surface texture tile
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0],
-                      id = current().id;
-                    if (!file) return;
-                    if (file.size > 8 * 1024 * 1024) {
-                      props.onError("Use a tile smaller than 8 MB");
-                      return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      if (!disposed && path()?.id === id) patch({ texture: String(reader.result) });
-                    };
-                    reader.onerror = () => props.onError("Could not read river texture");
-                    reader.readAsDataURL(file);
-                  }}
-                />
-              </label>
-              <Show when={current().texture}>
-                <button onClick={() => patch({ texture: undefined })}>
-                  Use default surface tile
-                </button>
-              </Show>
-            </Show>
-            <div class="spline-points">
-              <For each={current().points}>
-                {(_, index) => (
-                  <button
-                    class={point() === index() ? "selected" : ""}
-                    onClick={() => setPoint(index())}
-                  >
-                    {index() + 1}
+            <header class="spline-edit-header">
+              <strong>
+                {draft() ? "Drawing" : "Editing"}{" "}
+                {current().kind === "road" ? "footpath" : current().kind}
+              </strong>
+              <span>{current().points.length} points</span>
+            </header>
+            <div class="spline-actions spline-edit-actions">
+              <Show
+                when={draft()}
+                fallback={
+                  <button class="spline-primary" onClick={exit}>
+                    Done editing
                   </button>
-                )}
-              </For>
-            </div>
-            <Show when={current().points[point()]}>
-              {(position) => (
-                <div class="spline-coordinates">
-                  <For each={["X", "Y", "Z"]}>
-                    {(label, axis) => (
-                      <label>
-                        {label}
-                        <input
-                          type="number"
-                          step="1"
-                          aria-label={"Control point " + label}
-                          value={Math.round(position()[axis()]! * 10) / 10}
-                          onChange={(event) => {
-                            const value: Vec3 = [...position()];
-                            value[axis()] = Number(event.currentTarget.value);
-                            move(point(), value);
-                          }}
-                        />
-                      </label>
-                    )}
-                  </For>
-                </div>
-              )}
-            </Show>
-            <div class="spline-actions">
-              <button
-                disabled={current().points.length < 2}
-                onClick={() => {
-                  const points = current().points,
-                    index = Math.min(point(), points.length - 2);
-                  const a = points[index]!,
-                    b = points[index + 1]!;
-                  patch({
-                    points: [
-                      ...points.slice(0, index + 1),
-                      a.map((v, i) => (v + b[i]!) / 2) as Vec3,
-                      ...points.slice(index + 1),
-                    ],
-                    cornerDisabled: current().cornerDisabled?.map((i) => (i > index ? i + 1 : i)),
-                  });
-                  setPoint(index + 1);
-                }}
+                }
               >
-                Insert point
-              </button>
-              <button onClick={removePoint}>Remove point</button>
-            </div>
-            <div class="spline-actions">
-              <Show when={draft()} fallback={<button onClick={exit}>Done editing</button>}>
                 <button
+                  class="spline-primary"
                   disabled={busy() || current().points.length < (current().closed ? 3 : 2)}
                   onClick={finish}
                 >
@@ -854,6 +686,468 @@ export default function SplinePanel(props: {
                   Delete path
                 </button>
               </Show>
+            </div>
+            <p class="hint" role="status">
+              {draft()
+                ? "Click the ground to add points. Enter finishes; Escape cancels."
+                : "Drag the cyan points to reshape. Drag empty ground to pan; right-drag to orbit."}
+            </p>
+            <label>
+              Name
+              <input
+                aria-label="Path name"
+                value={current().name}
+                onChange={(event) => patch({ name: event.currentTarget.value })}
+              />
+            </label>
+            <div class="spline-fields">
+              <NumberField
+                label="Path width"
+                value={current().width}
+                min={1}
+                patch={(value) => ({ width: value, pointWidths: undefined })}
+              />
+              <Show when={current().kind === "wall"}>
+                <NumberField
+                  label="Path repeat length"
+                  value={current().repeatLength}
+                  min={1}
+                  patch={(value) => ({ repeatLength: value })}
+                />
+              </Show>
+            </div>
+            <Show when={current().points.length > 0}>
+              <NumberField
+                label="Path elevation"
+                value={pointHeight(current(), 0)}
+                patch={(value) => ({
+                  points: current().points.map((p) => [p[0], p[1], value]),
+                  pointHeightOffsets:
+                    current().kind === "road"
+                      ? current().points.map(
+                          (p) => value - (terrainHeightAt(props.document()!, p[0], p[1]) ?? p[2]),
+                        )
+                      : current().pointHeightOffsets,
+                })}
+              />
+            </Show>
+            <Show when={current().kind === "river"}>
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={current().channel?.enabled ?? true}
+                  onChange={(event) =>
+                    patch({
+                      channel: {
+                        bedDepth: 24,
+                        bankSlope: 1,
+                        ...current().channel,
+                        enabled: event.currentTarget.checked,
+                      },
+                    })
+                  }
+                />
+                Automatically shape riverbed
+              </label>
+              <NumberField
+                label="Riverbed depth (pixels)"
+                value={current().channel?.bedDepth ?? 24}
+                min={0}
+                patch={(value) => ({
+                  channel: { enabled: true, bankSlope: 1, ...current().channel, bedDepth: value },
+                })}
+              />
+              <NumberField
+                label="Bank slope (rise / run)"
+                value={current().channel?.bankSlope ?? 1}
+                min={0.01}
+                step={0.1}
+                patch={(value) => ({
+                  channel: { enabled: true, bedDepth: 24, ...current().channel, bankSlope: value },
+                })}
+              />
+            </Show>
+            <label class="check">
+              <input
+                type="checkbox"
+                checked={current().closed}
+                disabled={current().points.length < 3}
+                onChange={(event) => patch({ closed: event.currentTarget.checked })}
+              />{" "}
+              Closed loop
+            </label>
+            <Show when={current().kind === "wall"}>
+              <div class="spline-actions">
+                <button disabled={busy()} onClick={() => setPicker("wall")}>
+                  Change wall type
+                </button>
+                <button disabled={busy()} onClick={() => setPicker("corner")}>
+                  Change corner type
+                </button>
+              </div>
+              <details class="spline-settings">
+                <summary>Corner settings</summary>
+                <Show when={cornerAssetIds.has(current().cornerAsset ?? "")}>
+                  <NumberField
+                    label="Corner minimum angle"
+                    value={current().cornerMinAngle ?? 35}
+                    min={1}
+                    max={179}
+                    patch={(value) => ({ cornerMinAngle: value })}
+                  />
+                  <NumberField
+                    label="Corner tower scale"
+                    value={current().cornerScale ?? 1}
+                    min={0.1}
+                    max={10}
+                    step={0.1}
+                    patch={(value) => ({ cornerScale: value })}
+                  />
+                  <NumberField
+                    label="Corner tower width"
+                    value={current().cornerWidthScale ?? 1}
+                    min={0.1}
+                    max={10}
+                    step={0.1}
+                    patch={(value) => ({ cornerWidthScale: value })}
+                  />
+                  <NumberField
+                    label="Tower rotation offset"
+                    value={current().cornerRotation ?? 0}
+                    patch={(value) => ({ cornerRotation: value })}
+                  />
+                  <label class="check">
+                    <input
+                      type="checkbox"
+                      aria-label="Tower at selected corner"
+                      checked={!current().cornerDisabled?.includes(point())}
+                      onChange={(e) =>
+                        patch({
+                          cornerDisabled: e.currentTarget.checked
+                            ? current().cornerDisabled?.filter((i) => i !== point())
+                            : [...(current().cornerDisabled ?? []), point()],
+                        })
+                      }
+                    />{" "}
+                    Tower at selected corner
+                  </label>
+                </Show>
+              </details>
+              <details class="spline-settings">
+                <summary>Wall alignment &amp; presets</summary>
+                <button
+                  onClick={() => {
+                    try {
+                      const preset = wallPreset(current());
+                      const next = presets()
+                        .filter((p) => p.name !== preset.name)
+                        .concat(preset);
+                      localStorage.setItem("rle.wallPresets", JSON.stringify(next));
+                      setPresets(next);
+                    } catch (error) {
+                      props.onError("Could not save wall preset: " + error);
+                    }
+                  }}
+                >
+                  Save as wall preset
+                </button>
+                <p class="hint">
+                  Presets use the path name and are available across levels in this browser.
+                </p>
+                <label class="check">
+                  <input
+                    type="checkbox"
+                    aria-label="Flip battlement side"
+                    checked={current().flipCrossSection ?? false}
+                    onChange={(event) => patch({ flipCrossSection: event.currentTarget.checked })}
+                  />{" "}
+                  Flip battlement side
+                </label>
+                <label>
+                  Source direction
+                  <select
+                    aria-label="Wall source direction"
+                    value={current().axis}
+                    onChange={(event) => patch({ axis: event.currentTarget.value as "x" | "y" })}
+                  >
+                    <option value="x">Along X</option>
+                    <option value="y">Along Y</option>
+                  </select>
+                </label>
+                <NumberField
+                  label="Source alignment angle"
+                  value={current().sourceAngle ?? 0}
+                  patch={(value) => ({ sourceAngle: value })}
+                />
+                <div class="spline-fields">
+                  <NumberField
+                    label="Trim start %"
+                    value={(current().sourceStart ?? 0) * 100}
+                    min={0}
+                    max={(current().sourceEnd ?? 1) * 100 - 5}
+                    patch={(value) => ({ sourceStart: value / 100 })}
+                  />
+                  <NumberField
+                    label="Trim end %"
+                    value={(current().sourceEnd ?? 1) * 100}
+                    min={(current().sourceStart ?? 0) * 100 + 5}
+                    max={100}
+                    patch={(value) => ({ sourceEnd: value / 100 })}
+                  />
+                </div>
+              </details>
+            </Show>
+            <Show when={current().kind !== "wall"}>
+              <details class="spline-settings">
+                <summary>Surface texture</summary>
+                <p class="hint">
+                  {current().texture
+                    ? "Using a custom texture."
+                    : "Using the built-in terrain texture."}
+                </p>
+                <Show when={current().texture}>
+                  <NumberField
+                    label="Path repeat length"
+                    value={current().repeatLength}
+                    min={1}
+                    patch={(value) => ({ repeatLength: value })}
+                  />
+                </Show>
+                <label>
+                  Surface texture tile
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0],
+                        id = current().id;
+                      if (!file) return;
+                      if (file.size > 8 * 1024 * 1024) {
+                        props.onError("Use a tile smaller than 8 MB");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        if (!disposed && path()?.id === id)
+                          patch({ texture: String(reader.result) });
+                      };
+                      reader.onerror = () => props.onError("Could not read surface texture");
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+                <Show when={current().texture}>
+                  <button onClick={() => patch({ texture: undefined })}>
+                    Use default surface tile
+                  </button>
+                </Show>
+              </details>
+            </Show>
+            <Show when={current().points.length > 0}>
+              <h3>Control points</h3>
+              <Show when={current().points.length > 1}>
+                <label>
+                  Section
+                  <select
+                    aria-label="Selected section"
+                    value={section()}
+                    onChange={(event) => {
+                      const index = Number(event.currentTarget.value);
+                      setSection(index);
+                      if (index >= 0) setPoint(index);
+                    }}
+                  >
+                    <option value={-1}>Choose a section</option>
+                    <For each={current().points.slice(0, current().closed ? undefined : -1)}>
+                      {(_, index) => (
+                        <option value={index()}>
+                          Point {index() + 1} → Point{" "}
+                          {((index() + 1) % current().points.length) + 1}
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+                <Show when={section() >= 0}>
+                  <div class="spline-actions">
+                    <button onClick={() => setPoint(section())}>Edit start point</button>
+                    <button onClick={() => setPoint((section() + 1) % current().points.length)}>
+                      Edit end point
+                    </button>
+                  </div>
+                </Show>
+              </Show>
+              <Show when={current().kind !== "wall"}>
+                <NumberField
+                  label="Point width"
+                  value={current().pointWidths?.[point()] ?? current().width}
+                  min={1}
+                  patch={(value) => ({
+                    pointWidths: current().points.map((_, i) =>
+                      i === point() ? value : (current().pointWidths?.[i] ?? current().width),
+                    ),
+                  })}
+                />
+                <MaterialPicker
+                  label="Point material"
+                  value={
+                    current().pointMaterials?.[point()] ??
+                    (current().kind === "river" ? "water_still" : "path_dirt")
+                  }
+                  customMaterials={props.document()?.customMaterials ?? []}
+                  onCustomMaterialsChange={(customMaterials) => {
+                    const document = props.document();
+                    if (document) publish({ ...document, customMaterials });
+                  }}
+                  onChange={(id) =>
+                    patch({
+                      texture: undefined,
+                      pointMaterialMixes: current().pointMaterialMixes?.map((mix, i) =>
+                        i === point() ? null : mix,
+                      ),
+                      pointMaterials: current().points.map((_, i) =>
+                        i === point()
+                          ? id
+                          : (current().pointMaterials?.[i] ??
+                            (current().kind === "river" ? "water_still" : "path_dirt")),
+                      ),
+                    })
+                  }
+                />
+                <Show when={current().pointMaterialMixes?.[point()]}>
+                  <p class="hint">
+                    This inserted point preserves a material blend. Choosing a material replaces
+                    that blend.
+                  </p>
+                </Show>
+                <p class="hint">
+                  Width and material blend between points. Equal materials at both ends give a
+                  uniform section.
+                </p>
+              </Show>
+              <label>
+                Selected point
+                <select
+                  aria-label="Selected control point"
+                  value={point()}
+                  onChange={(e) => setPoint(Number(e.currentTarget.value))}
+                >
+                  <For each={current().points}>
+                    {(_, index) => (
+                      <option value={index()}>
+                        Point {index() + 1} of {current().points.length}
+                      </option>
+                    )}
+                  </For>
+                </select>
+              </label>
+            </Show>
+            <details class="spline-settings">
+              <summary>Point coordinates</summary>
+              <Show when={current().points[point()]}>
+                {(position) => (
+                  <div class="spline-coordinates">
+                    <For each={["X", "Y", "Z"]}>
+                      {(label, axis) => (
+                        <NumberField
+                          label={"Control point " + label}
+                          value={
+                            Math.round(
+                              (axis() === 2
+                                ? pointHeight(current(), point())
+                                : position()[axis()]!) * 10,
+                            ) / 10
+                          }
+                          patch={(number) => {
+                            const value: Vec3 = [...position()];
+                            value[axis()] = number;
+                            return {
+                              points: current().points.map((p, i) => (i === point() ? value : p)),
+                              pointHeightOffsets:
+                                axis() === 2 && current().kind === "road"
+                                  ? current().points.map((p, i) =>
+                                      i === point()
+                                        ? number -
+                                          (terrainHeightAt(props.document()!, p[0], p[1]) ?? p[2])
+                                        : (current().pointHeightOffsets?.[i] ?? 0),
+                                    )
+                                  : current().pointHeightOffsets,
+                            };
+                          }}
+                        />
+                      )}
+                    </For>
+                  </div>
+                )}
+              </Show>
+            </details>
+            <div class="spline-actions">
+              <button
+                disabled={current().points.length < 2 || current().points.length >= 256}
+                onClick={() => {
+                  const points = current().points,
+                    index = Math.min(
+                      point(),
+                      current().closed ? points.length - 1 : points.length - 2,
+                    );
+                  const a = points[index]!,
+                    b = points[(index + 1) % points.length]!;
+                  patch({
+                    points: [
+                      ...points.slice(0, index + 1),
+                      a.map((v, i) => (v + b[i]!) / 2) as Vec3,
+                      ...points.slice(index + 1),
+                    ],
+                    cornerDisabled: current().cornerDisabled?.map((i) => (i > index ? i + 1 : i)),
+                    pointWidths: current().pointWidths
+                      ? [
+                          ...current().pointWidths!.slice(0, index + 1),
+                          (current().pointWidths![index]! +
+                            current().pointWidths![(index + 1) % points.length]!) /
+                            2,
+                          ...current().pointWidths!.slice(index + 1),
+                        ]
+                      : undefined,
+                    pointHeightOffsets: current().pointHeightOffsets
+                      ? [
+                          ...current().pointHeightOffsets!.slice(0, index + 1),
+                          (current().pointHeightOffsets![index]! +
+                            current().pointHeightOffsets![(index + 1) % points.length]!) /
+                            2,
+                          ...current().pointHeightOffsets!.slice(index + 1),
+                        ]
+                      : undefined,
+                    pointMaterials: current().pointMaterials
+                      ? [
+                          ...current().pointMaterials!.slice(0, index + 1),
+                          current().pointMaterials![index]!,
+                          ...current().pointMaterials!.slice(index + 1),
+                        ]
+                      : undefined,
+                    pointMaterialMixes: [
+                      ...current()
+                        .points.slice(0, index + 1)
+                        .map((_, i) => current().pointMaterialMixes?.[i] ?? null),
+                      splineMaterialWeightsAt(
+                        current(),
+                        (index + 0.5) / (current().closed ? points.length : points.length - 1),
+                      ),
+                      ...current()
+                        .points.slice(index + 1)
+                        .map((_, i) => current().pointMaterialMixes?.[index + 1 + i] ?? null),
+                    ],
+                  });
+                  setPoint(index + 1);
+                }}
+              >
+                Insert point
+              </button>
+              <button
+                disabled={current().points.length <= (draft() ? 0 : current().closed ? 3 : 2)}
+                onClick={removePoint}
+              >
+                Remove point
+              </button>
             </div>
           </>
         )}
