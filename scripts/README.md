@@ -79,6 +79,9 @@ proof of dead code. Most require external game data or Python imaging packages.
 
 ## Browser measurement and experiments
 
+For a local Full-game browser build, asset staging, serving and verification,
+see [wasm-www/README.md](../wasm-www/README.md).
+
 - `wasm_decode_bench.mjs`, `wasm_decode_bench_chrome.mjs`: decoder measurements in Node/browser.
 - `wasm_mission_install_chrome.mjs`: mission-install browser measurements.
 - `wasm_production_startup_chrome.mjs`: production startup probe; see the adjacent Markdown usage.
