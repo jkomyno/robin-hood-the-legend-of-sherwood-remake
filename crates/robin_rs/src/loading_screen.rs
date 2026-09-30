@@ -807,7 +807,15 @@ impl LoadingScreenRenderer {
 
     /// Render the current phase status ("Loading sprite bank…" etc.)
     /// centred horizontally near the bottom of the artwork rectangle.
+    ///
+    /// The original shows only the artwork, progress bar and version text.
+    /// Phase lines name internal assets, so they are a developer aid drawn
+    /// only when debug logging is enabled (`RUST_LOG`, or `?wasm-log=debug`
+    /// in the browser); they are logged at info level either way.
     fn render_status_text(&mut self, art: Rect) {
+        if !tracing::enabled!(tracing::Level::DEBUG) {
+            return;
+        }
         let Some(font) = self.status_font.as_ref().or(self.version_font.as_ref()) else {
             return;
         };

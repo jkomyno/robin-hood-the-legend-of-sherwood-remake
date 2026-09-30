@@ -283,7 +283,9 @@ are listed in
 `wasm_boot` starts the game loop.
 Replay delivery itself remains handled by the existing browser/RPC path.
 Wasm logging defaults to `info`; add `?wasm-log=debug` (or `trace`,
-`warn`, `error`) to the URL to override it for browser sessions.
+`warn`, `error`) to the URL to override it for browser sessions. At `debug`
+or `trace` the loading screen also shows its internal phase status line; the
+default URL keeps the original loading screen.
 
 The checked-in deployment topology and security headers are validated by
 `pnpm test:deployment`. Runtime publication must retain the complete prior
