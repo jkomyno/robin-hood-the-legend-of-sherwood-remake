@@ -101,6 +101,13 @@
       "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
       "entries": [
         {
+          "source": 242,
+          "id": "keep-west-view-occlusion",
+          "node": "building-287",
+          "anchor": [416, 608, 0],
+          "review": "Static view-only coverage belongs to the keep among the audited building candidates. All 1,814 pixels have exact mesh-backed coverage; the recovered 92 triangles are identical across all four combinations of appearance-1 and appearance-2. The receiving anchor is on verified ground. No character/projectile boundaries, obstacle links or patch mask references are present. Exact coverage follows an independent one-pixel eastward move."
+        },
+        {
           "source": 436,
           "id": "keep-initial-roof-cover",
           "node": "building-375",
