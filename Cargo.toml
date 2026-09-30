@@ -144,7 +144,12 @@ rilua = { path = "vendor/rilua" }
 # OS cursor and draw our own). The fork is v0.30.13 plus the upstream fix
 # (rust-windowing/winit#4387, in 0.31 only) backported. Drop this once we
 # migrate to winit 0.31.
-winit = { git = "https://github.com/phiresky/winit.git", rev = "571b50f3c2fd9911d46564d8def16f0955b194a8" }
+# macOS port (robin-hood): local sibling checkout of the same fork rev
+# (571b50f3c2fd9911d46564d8def16f0955b194a8) + one more patch:
+# raw_window_handle_rwh_06 dispatches to the main thread instead of returning
+# HandleError::Unavailable, so wgpu surface creation works from the game thread
+# on macOS. To revert to upstream, restore the git = ... line below.
+winit = { path = "../winit-fork" }
 
 [profile.release]
 opt-level = 3

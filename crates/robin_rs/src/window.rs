@@ -49,7 +49,7 @@ mod android;
 mod gpu;
 mod input_map;
 
-use gpu::{build_game_window_async, create_surface_any_thread};
+use gpu::{build_game_window_async, create_surface_any_thread, instance_descriptor};
 use input_map::{is_android_back_key, physical_key_to_key_code, physical_key_to_keycode};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -383,14 +383,27 @@ enum HostMsg {
     LifecycleAutosave,
 }
 
+/// Window plus the wgpu pieces that must be created on the main thread.
+///
+/// On macOS, winit only exposes the AppKit window handle on the main
+/// thread, and wgpu surface creation mutates the view's `CAMetalLayer`,
+/// which aborts off-main. So the instance and surface are created in
+/// `resumed()`/`on_window_ready` (main thread) and shipped to the game
+/// thread together with the window. `wgpu::Surface` is `Send + Sync`,
+/// and this ordering is correct on every platform.
+pub(crate) struct ReadyWindow {
+    pub window: Arc<Window>,
+    pub instance: Arc<wgpu::Instance>,
+    pub surface: wgpu::Surface<'static>,
+}
+
 /// Process-wide handle on the live winit [`Window`].  Populated when
 /// the OS window is created so the game thread can reach the window
 /// for fire-and-forget calls like [`Window::reset_dead_keys`] without
 /// round-tripping through the [`HostCmd`] queue.  The cmd queue is
 /// only drained at `about_to_wait`, which is too late for dead-key
 /// resets — by the time it runs, the next keypress has already been
-/// composed.
-///
+/// composed.///
 /// This stays a global (rather than a field on [`GameWindow`]) because
 /// [`start_text_input`] is called from game-session and menu code that
 /// holds no `GameWindow` handle.
@@ -1073,6 +1086,13 @@ impl AppHandler {
             text,
             ..
         } = event;
+        tracing::trace!(
+            "winit KeyboardInput: state={:?} physical={:?} logical={:?} text={:?}",
+            state,
+            physical_key,
+            logical_key,
+            text
+        );
         let (keycode, physical_key) = if is_android_back_key(&logical_key, physical_key) {
             (Keycode::Escape, Some(KeyCode::Escape))
         } else {
@@ -1511,15 +1531,29 @@ where
     #[cfg(target_os = "android")]
     android::install_back_sender(events_tx.clone());
 
-    // The game future receives the bare winit window through this
-    // oneshot-style channel.  All wgpu init (instance / surface /
-    // adapter / device) happens *async* on the game side so the
-    // wasm executor can yield while `request_adapter` etc. resolve.
-    let (window_tx, window_rx) = async_channel::unbounded::<Arc<Window>>();
+    // The game future receives the window through this oneshot-style
+    // channel, together with the wgpu instance and surface that were
+    // created on the main thread (see `ReadyWindow`).  Adapter/device
+    // init happens *async* on the game side so the wasm executor can
+    // yield while `request_adapter` etc. resolve.
+    let (window_tx, window_rx) = async_channel::unbounded::<ReadyWindow>();
     let event_loop_proxy = event_loop.create_proxy();
 
     let on_ready: WindowReadyFn = Box::new(move |w: Arc<Window>| {
-        report_window_send(window_tx.try_send(w));
+        // Main thread: wgpu instance + surface bring-up. See `ReadyWindow`.
+        let instance = Arc::new(wgpu::Instance::new(instance_descriptor()));
+        let surface = match instance.create_surface(w.clone()) {
+            Ok(surface) => surface,
+            Err(e) => {
+                tracing::error!("wgpu surface creation on main thread failed: {e}");
+                return;
+            }
+        };
+        report_window_send(window_tx.try_send(ReadyWindow {
+            window: w,
+            instance,
+            surface,
+        }));
     });
 
     let logical_w = width;
@@ -1591,7 +1625,7 @@ where
 /// bring up wgpu on it. Failures are logged here; `None` means the caller must
 /// publish a failing exit code.
 async fn await_game_window(
-    window_rx: async_channel::Receiver<Arc<Window>>,
+    window_rx: async_channel::Receiver<ReadyWindow>,
     logical_w: u32,
     logical_h: u32,
     events_rx: async_channel::Receiver<HostMsg>,
@@ -1601,7 +1635,7 @@ async fn await_game_window(
     #[cfg(target_os = "android")]
     {
         loop {
-            let window = match window_rx.recv().await {
+            let bundle = match window_rx.recv().await {
                 Ok(w) => w,
                 Err(_) => {
                     tracing::error!("event loop exited before window was ready");
@@ -1609,7 +1643,7 @@ async fn await_game_window(
                 }
             };
             match build_game_window_async(
-                window,
+                bundle,
                 logical_w,
                 logical_h,
                 events_rx.clone(),
@@ -1633,11 +1667,12 @@ async fn await_game_window(
     }
     #[cfg(not(target_os = "android"))]
     {
-        // Wait for `resumed()` to ship us the bare winit window.  On
-        // native this blocks the dedicated thread; on wasm this
-        // `.await`s on the channel, yielding back to the JS event loop
-        // until winit fires resumed().
-        let window = match window_rx.recv().await {
+        // Wait for `resumed()` to ship us the window (with its
+        // main-thread-created instance and surface).  On native this
+        // blocks the dedicated thread; on wasm this `.await`s on the
+        // channel, yielding back to the JS event loop until winit
+        // fires resumed().
+        let bundle = match window_rx.recv().await {
             Ok(w) => w,
             Err(_) => {
                 tracing::error!("event loop exited before window was ready");
@@ -1645,7 +1680,7 @@ async fn await_game_window(
             }
         };
         match build_game_window_async(
-            window,
+            bundle,
             logical_w,
             logical_h,
             events_rx,

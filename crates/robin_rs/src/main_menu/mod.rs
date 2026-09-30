@@ -543,6 +543,9 @@ impl MainMenuState {
         let mut activated: Option<u32> = None;
         let mut exit_requested = false;
         for event in events {
+            if let GameEvent::KeyDown { keycode, .. } = &event {
+                tracing::debug!("main_menu: KeyDown {:?} (selection={})", keycode, self.keyboard_selection);
+            }
             self.input_state.update_from_event(&event, transform);
             if let Some(direction) = self.input_state.gamepad_direction(&event) {
                 match direction {
@@ -564,11 +567,17 @@ impl MainMenuState {
                     GameEvent::KeyDown {
                         keycode: Keycode::Up,
                         ..
-                    } => move_keyboard_selection(&self.frame, &mut self.keyboard_selection, -1),
+                    } => {
+                        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, -1);
+                        tracing::debug!("main_menu: moved up -> selection={}", self.keyboard_selection);
+                    }
                     GameEvent::KeyDown {
                         keycode: Keycode::Down,
                         ..
-                    } => move_keyboard_selection(&self.frame, &mut self.keyboard_selection, 1),
+                    } => {
+                        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, 1);
+                        tracing::debug!("main_menu: moved down -> selection={}", self.keyboard_selection);
+                    }
                     GameEvent::KeyDown {
                         keycode: Keycode::Space,
                         ..

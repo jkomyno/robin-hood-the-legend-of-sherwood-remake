@@ -7,7 +7,7 @@ use std::sync::atomic::AtomicBool;
 
 use winit::window::Window;
 
-use super::{GameWindow, GpuContext, HostCmd, HostMsg, SharedSurface};
+use super::{GameWindow, GpuContext, HostCmd, HostMsg, ReadyWindow, SharedSurface};
 
 /// Create a wgpu surface for `window` from the game thread.
 ///
@@ -51,7 +51,7 @@ pub(super) fn create_surface_any_thread(
 }
 
 /// Backend selection per target.
-fn instance_descriptor() -> wgpu::InstanceDescriptor {
+pub(super) fn instance_descriptor() -> wgpu::InstanceDescriptor {
     let mut instance_descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     // Native: PRIMARY (Vulkan / Metal / DX12).  Wasm: WebGPU + WebGL2
     // — WebGL2 is the fallback when the browser doesn't expose WebGPU
@@ -211,17 +211,22 @@ fn configure_initial_surface(
 /// genuinely yield on wasm, so they have to live on the async path
 /// (not behind `pollster::block_on`).
 pub(super) async fn build_game_window_async(
-    window: Arc<Window>,
+    bundle: crate::window::ReadyWindow,
     logical_w: u32,
     logical_h: u32,
     events_rx: async_channel::Receiver<HostMsg>,
     cmd_tx: async_channel::Sender<HostCmd>,
     lifecycle_autosave_requested: Arc<AtomicBool>,
 ) -> Result<GameWindow, String> {
-    let instance = wgpu::Instance::new(instance_descriptor());
-
-    let surface = create_surface_any_thread(&instance, window.clone())
-        .map_err(|e| format!("create_surface: {e}"))?;
+    // The wgpu instance and the surface are created on the main thread
+    // (see `ReadyWindow`): on macOS both the AppKit window handle and
+    // the CAMetalLayer setup are main-thread-only, so the game thread
+    // must never call `create_surface` itself.
+    let ReadyWindow {
+        window,
+        instance,
+        surface,
+    } = bundle;
 
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {
@@ -240,7 +245,7 @@ pub(super) async fn build_game_window_async(
         configure_initial_surface(&window, &surface, &adapter, &device, logical_w, logical_h);
 
     let gpu = GpuContext {
-        instance: Arc::new(instance),
+        instance,
         adapter: Arc::new(adapter),
         device: Arc::new(device),
         queue: Arc::new(queue),
