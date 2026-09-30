@@ -1285,28 +1285,25 @@ impl EngineInner {
         if self.players.seats[0].selection.is_empty() {
             return ConsoleResponse::Ok(format!("{banner}\n{err_if_empty}"));
         }
-        let selected: Vec<EntityId> = self.players.seats[0].selection.clone();
-        let profile_indices: Vec<(EntityId, crate::profiles::CharacterProfileIdx)> = selected
+        // Ammunition lives on the PC's campaign description, which is
+        // identified independently of its character profile index.
+        let targets: Vec<(EntityId, usize)> = self.players.seats[0]
+            .selection
             .iter()
             .filter_map(|&id| {
-                self.get_entity(id)
-                    .and_then(|e| e.pc_data())
-                    .map(|pc| (id, pc.profile_index))
+                let pc = self.get_entity(id)?.pc_data()?;
+                Some((id, self.pc_description_index_for_pc_data(pc)?))
             })
             .collect();
-        if let Some(campaign) = Some(&mut self.mission_domain.campaign) {
-            for (_id, idx) in &profile_indices {
-                if let Some(desc) = campaign.characters.get_mut(usize::from(*idx)) {
-                    desc.status.force_set_ammo(action, amount);
-                }
-            }
+        for &(_, description_idx) in &targets {
+            self.mission_domain.campaign.characters[description_idx]
+                .status
+                .force_set_ammo(action, amount);
         }
-        if amount > 0 {
-            for (id, _idx) in profile_indices {
+        for (id, _) in targets {
+            if amount > 0 {
                 self.enable_pc_action(assets, id, action);
-            }
-        } else {
-            for (id, _idx) in profile_indices {
+            } else {
                 self.disable_pc_action(assets, id, action);
             }
         }
@@ -2048,6 +2045,76 @@ mod tests {
             1,
             "the handler itself spends no amulet"
         );
+    }
+
+    #[test]
+    fn amor_and_wasp_master_force_stock_on_the_selected_pcs_campaign_description() {
+        use crate::profiles::Action;
+        let sim = crate::sim_rng::test_context();
+        for (input, action, banner, empty_error) in [
+            (
+                "AMOR",
+                Action::Bow,
+                "Arrows",
+                "You must selected at meast one PC.",
+            ),
+            (
+                "WASP MASTER",
+                Action::WaspNest,
+                "Wasps",
+                "You must selected at meast one PC which must go to paradise.",
+            ),
+        ] {
+            let (mut engine, mut dev, mut assets, pcs) =
+                engine_with_named_pcs(&["Robin des bois", "Petit Jean"]);
+            let mut profiles = (*assets.profile_manager).clone();
+            profiles.characters[0].actions[0] = action;
+            assets.profile_manager = std::sync::Arc::new(profiles);
+            // Campaign descriptions are stored in the opposite order of the
+            // profiles, so a profile index would address the other PC.
+            engine.mission_domain.campaign.characters = [1, 0]
+                .map(|profile| crate::campaign::PcDescription {
+                    character_profile_idx: Some(crate::profiles::CharacterProfileIdx(profile)),
+                    ..Default::default()
+                })
+                .into();
+            for (pc, description) in [(pcs[0], 1), (pcs[1], 0)] {
+                let data = engine.get_entity_mut(pc).unwrap().pc_data_mut().unwrap();
+                data.campaign_description_index = Some(description);
+                data.disabled_actions = vec![true, false, false];
+            }
+
+            let mut dispatch = |engine: &mut EngineInner| {
+                engine.run_console_command(TickCtx::new(&sim, &assets), &mut dev, &mut None, input)
+            };
+            assert_eq!(
+                dispatch(&mut engine),
+                ConsoleResponse::Ok(format!("{banner}\n{empty_error}"))
+            );
+            engine.players.seats[0].selection = vec![pcs[0]];
+            assert_eq!(
+                dispatch(&mut engine),
+                ConsoleResponse::Ok(banner.to_owned())
+            );
+
+            let ammo = |description: usize| {
+                engine.mission_domain.campaign.characters[description]
+                    .status
+                    .get_ammo(action)
+            };
+            assert_eq!((ammo(1), ammo(0)), (0xFFFF, 0), "{input}");
+            let disabled = |pc: EntityId| {
+                engine
+                    .get_entity(pc)
+                    .unwrap()
+                    .pc_data()
+                    .unwrap()
+                    .disabled_actions
+                    .clone()
+            };
+            assert_eq!(disabled(pcs[0]), [false, false, false], "{input}");
+            assert_eq!(disabled(pcs[1]), [true, false, false], "{input}");
+        }
     }
 
     #[test]
