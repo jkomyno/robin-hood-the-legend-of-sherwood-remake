@@ -204,6 +204,13 @@ impl MainMenuAudio {
         })
     }
 
+    /// Play one menu-bank sound directly, for keyboard focus changes and
+    /// activations that do not come from a widget event.
+    fn play_noise(&mut self, sound_id: u32) {
+        self.sound
+            .play_menu_sound(sound_id, &mut self.backend, &self.sample_loader);
+    }
+
     fn play_button_noise(&mut self, events: &[crate::ui::UiEvent], frame: &FrameWnd) {
         widget_bridge::play_frame_widget_noise(
             events,
@@ -506,12 +513,33 @@ struct MainMenuSession<'a> {
     save_manager: &'a mut SaveGameManager,
 }
 
+/// Menu-bank sound for the keyboard focus moving to another button.
+const BUTTON_FOCUSED_NOISE: u32 =
+    (widget_bridge::WIDGET_NOISY_BUTTON << 16) + widget_bridge::WIDGET_NOISY_EVENT_FOCUSED;
+/// Menu-bank sound for a button activated from the keyboard or gamepad.
+const BUTTON_ACTIVATED_NOISE: u32 =
+    (widget_bridge::WIDGET_NOISY_BUTTON << 16) + widget_bridge::WIDGET_NOISY_EVENT_ACTIVATED;
+
+/// Result of one frame of main-menu input.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct MainMenuInput {
+    activated: Option<u32>,
+    exit_requested: bool,
+    /// Menu-bank sound played for keyboard/gamepad navigation this frame.
+    /// Pointer hover and clicks keep their widget-event noises.
+    keyboard_noise: Option<u32>,
+}
+
 /// Owns the live menu widget/input state, button actions and menu audio;
 /// phase resources stay borrowed.
 struct MainMenuState {
     frame: FrameWnd,
     input_state: ModalInputState,
     keyboard_selection: u32,
+    /// Set by Up/Down and cleared when the pointer moves or presses over a
+    /// button. While set, only `keyboard_selection` is highlighted, even if
+    /// the pointer rests on another button, as in the original menus.
+    keyboard_navigating: bool,
     buttons: Vec<(String, ClickAction)>,
     bg: Option<MenuSurface>,
     menu_audio: Option<MainMenuAudio>,
@@ -528,9 +556,31 @@ impl MainMenuState {
             frame,
             input_state: ModalInputState::new(),
             keyboard_selection: 0,
+            keyboard_navigating: false,
             buttons,
             bg,
             menu_audio,
+        }
+    }
+
+    /// Move the keyboard cursor and take over the highlight from the
+    /// pointer. Returns whether the selection landed on another button.
+    fn move_keyboard_cursor(&mut self, direction: i32) -> bool {
+        let previous = self.keyboard_selection;
+        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, direction);
+        self.keyboard_navigating = true;
+        self.keyboard_selection != previous
+    }
+
+    /// Whether `widget` draws in its highlighted (hover) state: the pointer
+    /// hover normally, the keyboard cursor while navigating by keyboard.
+    fn is_highlighted(&self, widget: &crate::widget::Widget) -> bool {
+        let state = widget.base().state;
+        if self.keyboard_navigating {
+            widget.id() == self.keyboard_selection
+        } else {
+            matches!(state, UiState::Focused | UiState::Pushed)
+                || (widget.id() == self.keyboard_selection && state == UiState::Default)
         }
     }
 
@@ -538,50 +588,59 @@ impl MainMenuState {
         &mut self,
         events: Vec<GameEvent>,
         transform: MenuTransform,
-    ) -> (Option<u32>, bool) {
+    ) -> MainMenuInput {
         // ── Events ──────────────────────────────────────────────
         let mut activated: Option<u32> = None;
         let mut exit_requested = false;
+        let mut keyboard_moved = false;
+        let mut keyboard_activated = false;
+        let mut pointer_moved = false;
         for event in events {
+            pointer_moved |= matches!(
+                event,
+                GameEvent::MouseMove { .. } | GameEvent::MouseDown(..)
+            );
             if let GameEvent::KeyDown { keycode, .. } = &event {
                 tracing::debug!("main_menu: KeyDown {:?} (selection={})", keycode, self.keyboard_selection);
             }
             self.input_state.update_from_event(&event, transform);
             if let Some(direction) = self.input_state.gamepad_direction(&event) {
                 match direction {
-                    Keycode::Up => {
-                        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, -1)
-                    }
-                    Keycode::Down => {
-                        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, 1)
-                    }
+                    Keycode::Up => keyboard_moved |= self.move_keyboard_cursor(-1),
+                    Keycode::Down => keyboard_moved |= self.move_keyboard_cursor(1),
                     _ => {}
                 }
                 continue;
             }
             match ScreenKey::from_event(&event) {
                 Some(ScreenKey::Quit | ScreenKey::Cancel) => exit_requested = true,
-                Some(ScreenKey::Confirm) => activated = Some(self.keyboard_selection),
+                Some(ScreenKey::Confirm) => {
+                    activated = Some(self.keyboard_selection);
+                    keyboard_activated = true;
+                }
                 Some(ScreenKey::Next) => {}
                 None => match event {
                     GameEvent::KeyDown {
                         keycode: Keycode::Up,
                         ..
                     } => {
-                        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, -1);
+                        keyboard_moved |= self.move_keyboard_cursor(-1);
                         tracing::debug!("main_menu: moved up -> selection={}", self.keyboard_selection);
                     }
                     GameEvent::KeyDown {
                         keycode: Keycode::Down,
                         ..
                     } => {
-                        move_keyboard_selection(&self.frame, &mut self.keyboard_selection, 1);
+                        keyboard_moved |= self.move_keyboard_cursor(1);
                         tracing::debug!("main_menu: moved down -> selection={}", self.keyboard_selection);
                     }
                     GameEvent::KeyDown {
                         keycode: Keycode::Space,
                         ..
-                    } => activated = Some(self.keyboard_selection),
+                    } => {
+                        activated = Some(self.keyboard_selection);
+                        keyboard_activated = true;
+                    }
                     _ => {}
                 },
             }
@@ -589,23 +648,50 @@ impl MainMenuState {
 
         let (events, widget_activated) =
             ScreenFrame::dispatch(&mut self.input_state, &mut self.frame);
+
+        // The original moves keyboard focus through the same noisy-widget
+        // gate as hover: focusing a button plays its FOCUSED sound once,
+        // and activating it plays ACTIVATED. Key repeats never reach here.
+        let keyboard_noise = if keyboard_activated {
+            Some(BUTTON_ACTIVATED_NOISE)
+        } else {
+            keyboard_moved.then_some(BUTTON_FOCUSED_NOISE)
+        };
         if let Some(audio) = self.menu_audio.as_mut() {
             audio.play_button_noise(&events, &self.frame);
+            if let Some(noise) = keyboard_noise {
+                audio.play_noise(noise);
+            }
         }
 
-        // Sync keyboard focus with the mouse-hovered widget so keyboard
-        // + mouse don't fight each other.
-        for w in self.frame.widgets() {
-            if w.base().state != UiState::Default && w.base().enabled {
-                self.keyboard_selection = w.id();
-            }
+        // Pointer movement over a button hands the highlight back to the
+        // pointer; until then a resting pointer must not pull the keyboard
+        // cursor back onto the hovered button.
+        let hovered = self
+            .frame
+            .widgets()
+            .iter()
+            .filter(|w| w.base().state != UiState::Default && w.base().enabled)
+            .map(|w| w.id())
+            .last();
+        if pointer_moved && hovered.is_some() {
+            self.keyboard_navigating = false;
+        }
+        if !self.keyboard_navigating
+            && let Some(id) = hovered
+        {
+            self.keyboard_selection = id;
         }
 
         if let Some(id) = widget_activated {
             activated = Some(id);
         }
 
-        (activated, exit_requested)
+        MainMenuInput {
+            activated,
+            exit_requested,
+            keyboard_noise,
+        }
     }
 
     async fn tick(
@@ -626,7 +712,11 @@ impl MainMenuState {
         // round-trip.
         let transform = MenuTransform::for_renderer(io.renderer);
 
-        let (activated, mut exit_requested) = self.process_events(events, transform);
+        let MainMenuInput {
+            activated,
+            mut exit_requested,
+            ..
+        } = self.process_events(events, transform);
 
         // ── Dispatch ────────────────────────────────────────────
         // OS close takes priority over a simultaneous Start/other activation:
@@ -687,8 +777,7 @@ impl MainMenuState {
         for widget in self.frame.widgets() {
             let base = widget.base();
             let enabled = base.enabled;
-            let hovered = matches!(base.state, UiState::Focused | UiState::Pushed)
-                || (widget.id() == self.keyboard_selection && base.state == UiState::Default);
+            let hovered = self.is_highlighted(widget);
             let pressed = base.state == UiState::Pushed;
             let state_idx = button_sprite_state(enabled, hovered, pressed);
             let Some(rect) = base.bbox.0 else { continue };
@@ -1263,8 +1352,7 @@ fn seconds_to_time(seconds: u32) -> String {
 mod tests {
     use super::*;
 
-    #[test]
-    fn main_menu_frame_state_retains_navigation_and_reports_close_with_activation() {
+    fn three_button_state() -> MainMenuState {
         let mut frame = FrameWnd::interactive();
         for id in 0..3 {
             frame.add_widget_absolute(widget_bridge::make_button_enabled(
@@ -1277,34 +1365,123 @@ mod tests {
                 20,
             ));
         }
-        let mut state = MainMenuState::new(frame, Vec::new(), None, None);
-        let transform = MenuTransform::centered(640, 480);
-        let key = |keycode| GameEvent::KeyDown {
+        MainMenuState::new(frame, Vec::new(), None, None)
+    }
+
+    fn key(keycode: Keycode) -> GameEvent {
+        GameEvent::KeyDown {
             keycode,
             physical_key: None,
             logical_key: None,
-        };
+        }
+    }
+
+    fn input(activated: Option<u32>, exit_requested: bool, noise: Option<u32>) -> MainMenuInput {
+        MainMenuInput {
+            activated,
+            exit_requested,
+            keyboard_noise: noise,
+        }
+    }
+
+    #[test]
+    fn main_menu_frame_state_retains_navigation_and_reports_close_with_activation() {
+        let mut state = three_button_state();
+        let transform = MenuTransform::centered(640, 480);
         assert_eq!(
             state.process_events(vec![key(Keycode::Down)], transform),
-            (None, false)
+            input(None, false, Some(BUTTON_FOCUSED_NOISE))
         );
         assert_eq!(state.keyboard_selection, 2);
-        assert_eq!(state.process_events(vec![], transform), (None, false));
+        assert_eq!(
+            state.process_events(vec![], transform),
+            input(None, false, None)
+        );
         assert_eq!(state.keyboard_selection, 2);
         assert_eq!(
             state.process_events(vec![key(Keycode::Return), GameEvent::Quit], transform),
-            (Some(2), true)
+            input(Some(2), true, Some(BUTTON_ACTIVATED_NOISE))
         );
         assert_eq!(
             state.process_events(vec![key(Keycode::Up)], transform),
-            (None, false)
+            input(None, false, Some(BUTTON_FOCUSED_NOISE))
         );
         // Space activates like Return; Escape requests exit like Quit.
         assert_eq!(
             state.process_events(vec![key(Keycode::Space), key(Keycode::Escape)], transform),
-            (Some(0), true)
+            input(Some(0), true, Some(BUTTON_ACTIVATED_NOISE))
         );
         assert_eq!(state.keyboard_selection, 0);
+    }
+
+    #[test]
+    fn keyboard_navigation_sounds_once_per_move() {
+        let mut frame = FrameWnd::interactive();
+        frame.add_widget_absolute(widget_bridge::make_button_enabled(
+            0, "only", true, 100, 100, 80, 20,
+        ));
+        let mut state = MainMenuState::new(frame, Vec::new(), None, None);
+        let transform = MenuTransform::centered(640, 480);
+        // A cursor that cannot move stays silent, like the original's
+        // per-state noisy gate.
+        assert_eq!(
+            state.process_events(vec![key(Keycode::Down)], transform),
+            input(None, false, None)
+        );
+
+        let mut state = three_button_state();
+        // Two moves in one frame produce a single sound, never one per frame.
+        assert_eq!(
+            state.process_events(vec![key(Keycode::Down), key(Keycode::Up)], transform),
+            input(None, false, Some(BUTTON_FOCUSED_NOISE))
+        );
+        for _ in 0..3 {
+            assert_eq!(
+                state.process_events(vec![], transform),
+                input(None, false, None)
+            );
+        }
+    }
+
+    #[test]
+    fn resting_pointer_does_not_steal_the_keyboard_highlight() {
+        let mut state = three_button_state();
+        let transform = MenuTransform::centered(640, 480);
+        let (x, y) = transform.to_screen(140, 110);
+        let pointer = |dx| GameEvent::MouseMove {
+            x: x + dx,
+            y,
+            xrel: dx,
+            yrel: 0,
+        };
+        let highlighted = |state: &MainMenuState| -> Vec<u32> {
+            state
+                .frame
+                .widgets()
+                .iter()
+                .filter(|w| state.is_highlighted(w))
+                .map(|w| w.id())
+                .collect()
+        };
+
+        state.process_events(vec![key(Keycode::Down), pointer(0)], transform);
+        assert_eq!(state.frame.widgets()[0].base().state, UiState::Focused);
+        assert_eq!(state.keyboard_selection, 0);
+        assert_eq!(highlighted(&state), [0]);
+
+        // The pointer stays on button 0 while the keyboard moves to 2: only
+        // the keyboard cursor is highlighted and it is not pulled back.
+        state.process_events(vec![key(Keycode::Down)], transform);
+        for _ in 0..2 {
+            assert_eq!(state.keyboard_selection, 2);
+            assert_eq!(highlighted(&state), [2]);
+            state.process_events(vec![], transform);
+        }
+
+        // Moving the pointer over a button hands the highlight back.
+        state.process_events(vec![pointer(1)], transform);
+        assert_eq!(state.keyboard_selection, 0);
+        assert_eq!(highlighted(&state), [0]);
     }
 
     #[test]
