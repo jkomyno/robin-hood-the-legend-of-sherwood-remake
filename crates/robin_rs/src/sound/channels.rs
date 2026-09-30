@@ -205,7 +205,7 @@ impl SoundManager {
 
     /// Hourglass phase: decay mode weights, pick and start a mission music
     /// loop, and push the music volume. Draws from `rng` exactly as before.
-    fn update_music_loop(
+    pub(super) fn update_music_loop(
         &mut self,
         backend: &mut dyn AudioBackend,
         rng: &mut dyn FnMut(u32) -> u32,

@@ -841,18 +841,11 @@ impl SoundManager {
 
     /// Adjust music mode weights based on gameplay alerts.
     pub fn set_music_mode(&mut self, mode: MusicMode) {
-        let effective = if self.persisted.forest_level && mode == MusicMode::Quiet {
-            MusicMode::Alert
-        } else {
-            mode
-        };
-        // Escalation already replaces the stream immediately. Retire the old
-        // combat weights on de-escalation too, so calm gameplay cannot keep
-        // selecting the previous combat pool until its weights decay.
-        if effective < self.persisted.music_mode {
-            self.force_music_mode(mode);
-            return;
-        }
+        // Escalation replaces the stream immediately (via `load_music`
+        // below). De-escalation only adds weight: the playing loop runs to
+        // its end and `on_music_finished` switches at the loop boundary,
+        // matching the original, which never cuts music mid-loop when the
+        // situation calms down.
         match mode {
             MusicMode::Quiet => {
                 if !self.persisted.forest_level {
@@ -915,11 +908,26 @@ impl SoundManager {
     }
 
     /// Called when the current music track finishes.
+    ///
+    /// This is the loop boundary where a calm-down takes effect: if the alert
+    /// status now asks for a quieter mode than the one playing, the stale
+    /// louder weights are retired so the next loop comes from the quieter
+    /// pool instead of repeating the previous one until the weights decay.
     pub fn on_music_finished(&mut self, alert_status: AlertStatus) {
-        match alert_status {
-            AlertStatus::Green => self.set_music_mode(MusicMode::Quiet),
-            AlertStatus::Yellow => self.set_music_mode(MusicMode::Alert),
-            AlertStatus::Red => self.set_music_mode(MusicMode::Fight),
+        let mode = match alert_status {
+            AlertStatus::Green => MusicMode::Quiet,
+            AlertStatus::Yellow => MusicMode::Alert,
+            AlertStatus::Red => MusicMode::Fight,
+        };
+        let effective = if self.persisted.forest_level && mode == MusicMode::Quiet {
+            MusicMode::Alert
+        } else {
+            mode
+        };
+        if effective < self.persisted.music_mode {
+            self.force_music_mode(mode);
+        } else {
+            self.set_music_mode(mode);
         }
         self.persisted.load_music = true;
     }
