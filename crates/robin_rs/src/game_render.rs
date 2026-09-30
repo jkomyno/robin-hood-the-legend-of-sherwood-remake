@@ -104,6 +104,46 @@ pub(crate) fn zoomed_sprite_rect(x: i32, y: i32, width: u16, height: u16, zoom: 
     )
 }
 
+// ─── Selection marks ───────────────────────────────────────────────
+
+/// Clip a selection circle queued since `draw_checkpoint` with the scenery
+/// masks in front of its owner, so walls hide it like they hide the
+/// character. The original renders the mark through the generic masked
+/// sprite path with the owner's layer (FUN_00581ee0 -> FUN_005bba00), the
+/// same character mask query the ground marks use here.
+pub(crate) fn render_selection_mark_masks(
+    engine: &PresentationView<'_>,
+    renderer: &mut Renderer,
+    layer: u16,
+    center: MapPoint,
+    mark_rect: Rect,
+    draw_checkpoint: usize,
+    view_pos: MapPoint,
+    zoom: f32,
+) {
+    // The circle is drawn at sprite size, so its map footprint shrinks with
+    // zoom.
+    let half_w = mark_rect.w as f32 * 0.5 / zoom;
+    let half_h = mark_rect.h as f32 * 0.5 / zoom;
+    let mark_world_bbox = engine_coordinates::MapBBox::from_coords(
+        center.x - half_w,
+        center.y - half_h,
+        center.x + half_w,
+        center.y + half_h,
+    );
+    render_character_masks_clipped(
+        engine,
+        renderer,
+        layer,
+        &mark_world_bbox,
+        center,
+        mark_rect,
+        draw_checkpoint,
+        view_pos,
+        zoom,
+    );
+}
+
 // ─── Ground marks ──────────────────────────────────────────────────
 
 /// Render every active destination marker.
