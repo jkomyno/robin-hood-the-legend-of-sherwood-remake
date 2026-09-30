@@ -2153,6 +2153,9 @@ pub struct CompiledAssetGeometry {
     #[serde(default)]
     pub buildings: Vec<RawBuildingEntry>,
     pub sight_obstacles: Vec<RawSightObstacle>,
+    /// Boundaries which update an actor's receiving plane during movement.
+    #[serde(default)]
+    pub elevation_lines: Vec<RawElevationLine>,
     #[serde(default)]
     pub masks: Vec<RawMask>,
     #[serde(default)]
@@ -2768,7 +2771,7 @@ impl LoadedLevel {
             .collect();
         level.mission.timed_mission = descriptor.timed_mission;
         level.mission.ambience_schedule = descriptor.ambience_schedule;
-        if let Some(geometry) = descriptor.asset_geometry {
+        if let Some(mut geometry) = descriptor.asset_geometry {
             if geometry.motion_data.layers.len() < 2 || !geometry.motion_data.graph_bytes.is_empty()
             {
                 return Err("asset geometry requires ordinary motion layers, a reserved lift layer and a freshly constructed graph".into());
@@ -2806,6 +2809,34 @@ impl LoadedLevel {
                                 .map_err(|_| "too many asset obstacles")?,
                         )
                         .ok_or("too many asset sectors")?;
+                }
+            }
+            if geometry.elevation_lines.is_empty() {
+                geometry.elevation_lines = crate::compiled_elevation::derive(&geometry)?;
+            }
+            for (index, line) in geometry.elevation_lines.iter().enumerate() {
+                if line.point_a == line.point_b
+                    || usize::from(line.layer) >= geometry.motion_data.layers.len()
+                    || line.right_obstacle_index == line.left_obstacle_index
+                {
+                    return Err(format!("invalid compiled elevation line {index}"));
+                }
+                for receiver in [line.right_obstacle_index, line.left_obstacle_index] {
+                    if receiver == u16::MAX {
+                        continue;
+                    }
+                    let valid_receiver = geometry
+                        .sight_obstacles
+                        .get(usize::from(receiver))
+                        .and_then(|obstacle| obstacle.projection_area)
+                        .is_some_and(|(sector, layer)| {
+                            layer == line.layer && area_refs.contains(&(sector, layer))
+                        });
+                    if !valid_receiver {
+                        return Err(format!(
+                            "compiled elevation line {index} references an invalid receiving obstacle {receiver}"
+                        ));
+                    }
                 }
             }
             let mut transition_ids = std::collections::BTreeSet::new();
@@ -3242,6 +3273,7 @@ impl LoadedLevel {
             level.proto.sight_material_indices = geometry.sight_material_indices;
             level.proto.motion_data = Some(geometry.motion_data);
             level.proto.sight_obstacles = geometry.sight_obstacles;
+            level.proto.elevation_lines = geometry.elevation_lines;
             level.proto.masks = geometry.masks;
             level.proto.buildings = geometry.buildings;
             // Asset interiors currently describe empty rooms. The runtime needs
@@ -5740,6 +5772,48 @@ fn read_archery_sectors(
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn compiled_elevation_lines_preserve_receiver_boundaries_and_validate_references() {
+        let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../robin_engine/tests/fixtures/asset-multi-plane-region.level.json"
+        ))
+        .unwrap();
+        let lines = serde_json::json!([
+            {"point_a":[400,300],"point_b":[400,400],"layer":0,"right_obstacle_index":0,"left_obstacle_index":1},
+            {"point_a":[410,300],"point_b":[410,400],"layer":0,"right_obstacle_index":0,"left_obstacle_index":65535}
+        ]);
+        descriptor["asset_geometry"]["elevation_lines"] = lines.clone();
+        let loaded =
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap()).unwrap();
+        assert_eq!(
+            serde_json::to_value(&loaded.proto.elevation_lines).unwrap(),
+            lines
+        );
+        for (field, value) in [
+            ("point_b", serde_json::json!([400, 300])),
+            ("point_a", serde_json::json!([400.5, 300])),
+            ("point_a", serde_json::json!([null, 300])),
+            ("layer", serde_json::json!(1)),
+            ("layer", serde_json::json!(65535)),
+            ("left_obstacle_index", serde_json::json!(0)),
+            ("right_obstacle_index", serde_json::json!(65534)),
+        ] {
+            let mut invalid = descriptor.clone();
+            invalid["asset_geometry"]["elevation_lines"][0][field] = value;
+            assert!(
+                LoadedLevel::hackable_from_json(&serde_json::to_vec(&invalid).unwrap()).is_err(),
+                "accepted invalid {field}"
+            );
+        }
+        descriptor["asset_geometry"]["sight_obstacles"][0]["projection_area"] =
+            serde_json::Value::Null;
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("invalid receiving obstacle")
+        );
+    }
 
     #[test]
     fn authored_mission_spawns_use_navigation_areas_and_beam_me_slots() {

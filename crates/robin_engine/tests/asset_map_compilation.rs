@@ -642,6 +642,7 @@ fn recovered_static_exports_construct_native_geometry() {
         }
         let jump_pairs = level.proto.jump_line_pairs.clone();
         let jump_zones = level.proto.jump_zones.clone();
+        let expected_elevation_count = level.proto.elevation_lines.len();
         let expected_masks = level.proto.masks.clone();
         let expected_sounds = level.proto.sound_sources.clone();
         let expected_ambience = level.mission.header.ambiance;
@@ -810,8 +811,18 @@ fn recovered_static_exports_construct_native_geometry() {
                 assert!(!home.gate_indices.is_empty(), "{file}");
             }
         }
+        let elevation_count = grid
+            .level
+            .lines
+            .iter()
+            .filter(|line| line.is_elevation)
+            .count();
+        assert_eq!(
+            elevation_count, expected_elevation_count,
+            "{file}: elevation registration"
+        );
         println!(
-            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs, {} grid blocks",
+            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs, {} grid blocks, {elevation_count} elevation boundaries",
             assets.environment.static_sight_obstacles.len(),
             engine.presentation_view().doors().len(),
             jump_pairs.len(),
